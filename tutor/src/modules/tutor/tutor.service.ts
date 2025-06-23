@@ -2,6 +2,8 @@ import { ConflictError } from "../../errors/conflict-error";
 import { GenericError } from "../../errors/generic-error";
 import { User } from "../../models/User";
 import { Tutor } from "../../models/Tutor";
+import { TutorExperience } from "../../models/TutorExperience";
+import { TutorEducation } from "../../models/TutorEducation";
 import { uploadFile } from "../../helper/file-upload";
 import path from "path";
 import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
@@ -21,10 +23,25 @@ interface UpdateProfileData {
   password?: string;
 }
 
+interface ExperienceData {
+  company: string;
+  startDate: Date;
+  endDate: Date;
+  description: string;
+}
+
+interface EducationData {
+  institute: string;
+  startDate: Date;
+  endDate: Date;
+  description: string;
+}
+
 export default class TutorService {
   async createTutorProfile(data: TutorProfileData) {
     try {
       // Check if user exists
+
       const user = await User.findByPk(data.userId);
       if (!user) {
         throw new UnProcessableEntityError(
@@ -50,10 +67,17 @@ export default class TutorService {
         uploadFile(data.idBack, userFolder, "id-back"),
       ]);
 
-      // Create tutor profile
+      const formattedSubjects = Array.isArray(data.subjects)
+        ? data.subjects
+        : (data.subjects as string)
+            .replace(/^\[|\]$/g, "")
+            .split(",")
+            .map((s: string) => s.trim().replace(/^['"]|['"]$/g, ""));
+
       const tutor = await Tutor.create({
         userId: data.userId,
         bankName: data.bankName,
+        subjects: formattedSubjects,
         accountNumber: data.accountNumber,
         resumeUrl,
         idFrontUrl,
@@ -116,7 +140,13 @@ export default class TutorService {
         include: [
           {
             model: Tutor,
-            attributes: ["bankName", "accountNumber", "resumeUrl", "idFrontUrl", "idBackUrl"],
+            attributes: [
+              "bankName",
+              "accountNumber",
+              "resumeUrl",
+              "idFrontUrl",
+              "idBackUrl",
+            ],
           },
         ],
       });
@@ -128,6 +158,209 @@ export default class TutorService {
       return user;
     } catch (error) {
       console.error("Error in getProfile:", error);
+      throw error;
+    }
+  }
+
+  async addExperience(userId: string, data: ExperienceData) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      const experience = await TutorExperience.create({
+        tutorId: tutor.userId,
+        ...data,
+      });
+
+      return experience;
+    } catch (error) {
+      console.error("Error in addExperience:", error);
+      throw error;
+    }
+  }
+  async allExperience(userId: string) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      const experience = await TutorExperience.findAll({
+        where: { tutorId: tutor.userId },
+      });
+
+      return experience;
+    } catch (error) {
+      console.error("Error in allExperience:", error);
+      throw error;
+    }
+  }
+
+  async updateExperience(
+    userId: string,
+    experienceId: string,
+    data: ExperienceData
+  ) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      const experience = await TutorExperience.findOne({
+        where: { id: experienceId, tutorId: tutor.userId },
+      });
+
+      if (!experience) {
+        throw new UnProcessableEntityError("Experience not found");
+      }
+
+      await experience.update(data);
+      return experience;
+    } catch (error) {
+      console.error("Error in updateExperience:", error);
+      throw error;
+    }
+  }
+
+  async deleteExperience(userId: string, experienceId: string) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      const experience = await TutorExperience.findOne({
+        where: { id: experienceId, tutorId: tutor.userId },
+      });
+
+      if (!experience) {
+        throw new UnProcessableEntityError("Experience not found");
+      }
+
+      await experience.destroy();
+    } catch (error) {
+      console.error("Error in deleteExperience:", error);
+      throw error;
+    }
+  }
+
+  async addEducation(userId: string, data: EducationData) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      const education = await TutorEducation.create({
+        tutorId: tutor.userId,
+        ...data,
+      });
+
+      return education;
+    } catch (error) {
+      console.error("Error in addEducation:", error);
+      throw error;
+    }
+  }
+
+  async allEducation(userId: string) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      const education = await TutorEducation.findAll({
+        where: { tutorId: tutor.userId },
+      });
+
+      return education;
+    } catch (error) {
+      console.error("Error in allEducation:", error);
+      throw error;
+    }
+  }
+
+  async updateEducation(
+    userId: string,
+    educationId: string,
+    data: EducationData
+  ) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      const education = await TutorEducation.findOne({
+        where: { id: educationId, tutorId: tutor.userId },
+      });
+
+      if (!education) {
+        throw new UnProcessableEntityError("Education not found");
+      }
+
+      await education.update(data);
+      return education;
+    } catch (error) {
+      console.error("Error in updateEducation:", error);
+      throw error;
+    }
+  }
+
+  async deleteEducation(userId: string, educationId: string) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      const education = await TutorEducation.findOne({
+        where: { id: educationId, tutorId: tutor.userId },
+      });
+
+      if (!education) {
+        throw new UnProcessableEntityError("Education not found");
+      }
+
+      await education.destroy();
+    } catch (error) {
+      console.error("Error in deleteEducation:", error);
+      throw error;
+    }
+  }
+
+  async addAbout(userId: string, about: string) {
+    try {
+      console.log(userId);
+
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      await tutor.update({ about });
+      return tutor;
+    } catch (error) {
+      console.error("Error in addAbout:", error);
+      throw error;
+    }
+  }
+
+  async editAbout(userId: string, about: string) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      await tutor.update({ about });
+      return tutor;
+    } catch (error) {
+      console.error("Error in editAbout:", error);
       throw error;
     }
   }
