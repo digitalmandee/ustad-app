@@ -7,11 +7,13 @@ export interface TutorAttributes {
   userId: string;
   bankName: string;
   accountNumber: string;
+  subjects: string[];
   ifscCode?: string;
   upiId?: string;
   resumeUrl: string;
   idFrontUrl: string;
   idBackUrl: string;
+  about: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -26,9 +28,11 @@ export class Tutor
   public userId!: string;
   public bankName!: string;
   public accountNumber!: string;
+  public subjects!: string[];
   public resumeUrl: string;
   public idFrontUrl: string;
   public idBackUrl: string;
+  public about: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -44,6 +48,7 @@ export function initTutorModel(sequelize: Sequelize): typeof Tutor {
       userId: {
         type: DataTypes.UUID,
         allowNull: false,
+        unique: true,
         references: {
           model: "users",
           key: "id",
@@ -57,6 +62,10 @@ export function initTutorModel(sequelize: Sequelize): typeof Tutor {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      subjects: {
+        type: DataTypes.ARRAY(DataTypes.STRING),
+        allowNull: false,
+      },
       resumeUrl: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -68,6 +77,10 @@ export function initTutorModel(sequelize: Sequelize): typeof Tutor {
       idBackUrl: {
         type: DataTypes.STRING,
         allowNull: false,
+      },
+      about: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
     },
     {
