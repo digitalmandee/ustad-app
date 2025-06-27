@@ -1,6 +1,6 @@
 import { body } from 'express-validator';
 import constant from '../../constant/constant';
-import { UserRole } from '../../constant/enums';
+import { OtpPurpose, OtpType, UserRole } from '../../constant/enums';
 
 export const signupValidationRules = () => {
   return [
@@ -125,7 +125,7 @@ export const verifyEmailOtpRules = () => {
 
 export const passwordResetRules = () => {
   return [
-    body('password')
+    body('newPassword')
       .exists()
       .withMessage(constant.VALIDATION.KEY_MISSING('password'))
       .bail()
@@ -137,6 +137,33 @@ export const passwordResetRules = () => {
       .bail()
       .matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-])/)
       .withMessage(constant.AUTH.PASSWORD_COMPLEXITY),
+
+      body('userId')
+      .exists().withMessage(constant.VALIDATION.KEY_MISSING('userId'))
+      .bail().isUUID().withMessage('Invalid userId format'),
+
+    body('purpose')
+      .exists().withMessage(constant.VALIDATION.KEY_MISSING('purpose'))
+      .bail().isIn(Object.values(OtpPurpose)).withMessage('Invalid purpose'),
+
+    body('type')
+      .exists().withMessage(constant.VALIDATION.KEY_MISSING('type'))
+      .bail().isIn(Object.values(OtpType)).withMessage('Invalid type'),
+
+    body('otp')
+    .exists().withMessage(constant.VALIDATION.KEY_MISSING('otp'))
+    .bail().isString().withMessage('Invalid type'),
+  ];
+};
+
+export const forgotPasswordRules = () => {
+  return [
+    body('email')
+      .exists()
+      .withMessage(constant.VALIDATION.KEY_MISSING('email'))
+      .bail()
+      .isEmail()
+      .withMessage(constant.AUTH.INVALID_EMAIL),
   ];
 };
 
