@@ -2,6 +2,7 @@ import { Sequelize } from "sequelize";
 import { initUserModel } from "../models/User";
 import { initTutorModel } from "../models/Tutor";
 import { initSubjectModel } from "../models/Subjects";
+import { initTutorExperienceModel } from "../models/TutorExperience";
 
 const MAX_RETRIES = 5;
 const RETRY_DELAY = 5000; // milliseconds
@@ -38,6 +39,7 @@ export const connectToPostgres = async (retryCount = 0): Promise<Sequelize> => {
     initUserModel(sequelize);
     initTutorModel(sequelize);
     initSubjectModel(sequelize);
+    initTutorExperienceModel(sequelize);
 
     // Sync models with the database
     await sequelize.sync({ alter: true }); // Use force: true only in dev or reset migrations
