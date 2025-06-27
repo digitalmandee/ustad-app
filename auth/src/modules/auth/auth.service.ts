@@ -7,6 +7,11 @@ import { comparePassword, generateOtp, hashPassword } from '../../helper/generic
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import { NotAuthorizedError } from '../../errors/not-authorized-error';
+import { OtpPurpose, OtpStatus, OtpType } from '../../constant/enums';
+import { OtpServices } from '../otp/otp.service';
+import { Otp } from '../../models/otp.model';
+import { BadRequestError } from '../../errors/bad-request-error';
+
 export interface IAuthService {
   signUp: (userCreateDTO: ISignUpCreateDTO) => Promise<any>;
   signIn: (userSignInDTO: ISignInCreateDTO) => Promise<any>;
@@ -201,6 +206,86 @@ export default class AuthService implements IAuthService {
       }
 
       throw new GenericError(err, 'Unable to change password ');
+    }
+  }
+
+  public async forgotPassword(email: string): Promise<any> {
+    try {
+      const user = await User.findOne({ where: { email } });
+      if (!user) {
+        throw new NotAuthorizedError('user not registered');
+      }
+      // Send OTP for password reset
+      const otpService = new OtpServices();
+      await otpService.sendOtp({
+        userId: user.id,
+        type: OtpType.EMAIL,
+        purpose: OtpPurpose.PASSWORD_RESET,
+      });
+      return { userId: user.id, email: user.email };
+    } catch (err: any) {
+      if (err instanceof NotAuthorizedError) {
+        throw err;
+      }
+      throw new GenericError(err, 'Unable to send password reset OTP');
+    }
+  }
+
+  public async resetPasswordWithToken(
+    otp: string,
+    newPassword: string,
+    userId: string,
+    type: string,
+    purpose: string
+  ): Promise<void> {
+    try {
+      const user = await User.findOne({ where: { id: userId } });
+      if (!user) {
+        throw new NotAuthorizedError('user not registered');
+      }
+
+      const now = new Date();
+      // Find OTP entry
+      const otpEntry = await Otp.findOne({
+        where: {
+          userId,
+          type,
+          purpose,
+          status: OtpStatus.ACTIVE,
+          expiry: {
+            [Op.gt]: now, // Not expired
+          },
+        },
+        order: [['createdAt', 'DESC']],
+      });
+
+      if (!otpEntry) {
+        throw new BadRequestError('OTP invalid or expired');
+      }
+
+      // Check OTP code
+      if (otpEntry.otp !== otp) {
+        throw new BadRequestError('Invalid OTP code');
+      }
+
+      // Mark OTP as used
+      otpEntry.status = OtpStatus.USED;
+      otpEntry.usedAt = now;
+      await otpEntry.save();
+
+      // Change password
+      const hashedPassword = await hashPassword(newPassword);
+      user.password = hashedPassword;
+      await user.save();
+    } catch (err: any) {
+      if (
+        err instanceof BadRequestError ||
+        err instanceof NotAuthorizedError ||
+        err instanceof GenericError
+      ) {
+        throw err;
+      }
+      throw new GenericError(err, 'Invalid or expired OTP');
     }
   }
 }
