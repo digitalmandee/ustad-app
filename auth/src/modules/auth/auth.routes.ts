@@ -6,6 +6,7 @@ import {
   signinValidationRules,
   verifyEmailOtpRules,
   passwordResetRules,
+  forgotPasswordRules,
 } from './auth.validators';
 import { validateRequest } from '../../middlewares';
 import { authenticateJwt } from '../../middlewares/auth';
@@ -28,12 +29,26 @@ router.post(
   authController.userSignIn
 );
 
+// router.post(
+//   routes.RESET_PASSWORD,
+//   // authenticateJwt,
+//   passwordResetRules(),
+//   validateRequest,
+//   authController.passwordReset
+// );
+
+router.post(
+  routes.FORGOT_PASSWORD,
+  forgotPasswordRules(),
+  validateRequest,
+  authController.forgotPassword
+);
+
 router.post(
   routes.RESET_PASSWORD,
-  authenticateJwt,
   passwordResetRules(),
   validateRequest,
-  authController.passwordReset
+  authController.resetPasswordWithToken
 );
 
 export { router as authRouter };
