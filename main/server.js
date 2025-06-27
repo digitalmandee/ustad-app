@@ -35,6 +35,17 @@ app.use(
   })
 );
 
+
+// Proxy /tutor/* → http://localhost:3002/*
+app.use(
+  "/parent",
+  createProxyMiddleware({
+    target: "http://localhost:301",
+    changeOrigin: true,
+    pathRewrite: { "^/parent": "/api/v1/parent" },
+  })
+);
+
 app.get("/", (req, res) => {
   res.send("API Gateway is running 🚀");
 });
