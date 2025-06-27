@@ -134,3 +134,29 @@ export const educationValidationRules = () => {
       .withMessage("Description must be at least 10 characters long"),
   ];
 };
+
+export const tutorSettingsValidationRules = () => [
+  body("minSubjects")
+    .exists().withMessage("minSubjects is required")
+    .isInt({ min: 1 }).withMessage("minSubjects must be an integer >= 1"),
+  body("maxStudentsDaily")
+    .exists().withMessage("maxStudentsDaily is required")
+    .isInt({ min: 1 }).withMessage("maxStudentsDaily must be an integer >= 1"),
+  body("subjectCosts")
+    .exists().withMessage("subjectCosts is required")
+    .isObject().withMessage("subjectCosts must be an object")
+    .custom((value) => {
+      if (typeof value !== "object" || Array.isArray(value)) return false;
+      for (const key in value) {
+        const entry = value[key];
+        if (
+          typeof entry !== "object" ||
+          typeof entry.cost !== "number" || entry.cost < 0 ||
+          typeof entry.active !== "boolean"
+        ) {
+          throw new Error("Each subject must have a cost (number >= 0) and active (boolean)");
+        }
+      }
+      return true;
+    }),
+];

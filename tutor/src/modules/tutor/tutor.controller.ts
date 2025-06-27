@@ -67,13 +67,14 @@ export default class TutorController {
   editProfile = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-      const { fullName, email, phone, password } = req.body;
+      const { fullName, email, phone, password, image } = req.body;
 
       const result = await this.tutorService.updateProfile(userId, {
         fullName,
         email,
         phone,
         password,
+        image
       });
 
       return sendSuccessResponse(
@@ -386,6 +387,50 @@ export default class TutorController {
 
       const errorMessage = error?.message || "Something went wrong while updating about information";
       return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  setTutorSettings = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { minSubjects, maxStudentsDaily, subjectCosts } = req.body;
+      const tutor = await this.tutorService.getTutorByUserId(userId);
+      if (!tutor) {
+        return sendErrorResponse(res, "Tutor not found", 404);
+      }
+      const result = await this.tutorService.setTutorSettings(tutor.id, { minSubjects, maxStudentsDaily, subjectCosts });
+      return sendSuccessResponse(res, "Tutor settings saved successfully", 201, result);
+    } catch (error: any) {
+      return sendErrorResponse(res, error.message || "Failed to save tutor settings", 400);
+    }
+  };
+
+  getTutorSettings = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const tutor = await this.tutorService.getTutorByUserId(userId);
+      if (!tutor) {
+        return sendErrorResponse(res, "Tutor not found", 404);
+      }
+      const result = await this.tutorService.getTutorSettings(tutor.id);
+      return sendSuccessResponse(res, "Tutor settings fetched successfully", 200, result);
+    } catch (error: any) {
+      return sendErrorResponse(res, error.message || "Failed to fetch tutor settings", 400);
+    }
+  };
+
+  updateTutorSettings = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { minSubjects, maxStudentsDaily, subjectCosts } = req.body;
+      const tutor = await this.tutorService.getTutorByUserId(userId);
+      if (!tutor) {
+        return sendErrorResponse(res, "Tutor not found", 404);
+      }
+      const result = await this.tutorService.updateTutorSettings(tutor.id, { minSubjects, maxStudentsDaily, subjectCosts });
+      return sendSuccessResponse(res, "Tutor settings updated successfully", 200, result);
+    } catch (error: any) {
+      return sendErrorResponse(res, error.message || "Failed to update tutor settings", 400);
     }
   };
 }

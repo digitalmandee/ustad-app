@@ -6,6 +6,9 @@ async function startServer() {
   const app = express();
   await require('./loaders').default({ expressApp: app });
 
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
   try {
     const server = app.listen(config.port, () => {
       console.info(`

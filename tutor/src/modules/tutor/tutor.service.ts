@@ -9,6 +9,7 @@ import path from "path";
 import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
 import { ITutorOnboardingDTO } from "./tutor.dto";
 import bcrypt from "bcrypt";
+import { TutorSettings, SubjectCostSetting } from "../../models/TutorSettings";
 
 interface TutorProfileData extends ITutorOnboardingDTO {
   resume: Express.Multer.File;
@@ -21,6 +22,9 @@ interface UpdateProfileData {
   email?: string;
   phone?: string;
   password?: string;
+  image?:string
+  isEmailVerified?:boolean;
+  isPhoneVerified?:boolean;
 }
 
 interface ExperienceData {
@@ -38,6 +42,8 @@ interface EducationData {
 }
 
 export default class TutorService {
+  tutorModel = Tutor;
+
   async createTutorProfile(data: TutorProfileData) {
     try {
       // Check if user exists
@@ -97,41 +103,52 @@ export default class TutorService {
       if (!user) {
         throw new UnProcessableEntityError("User not found");
       }
-
+  
+      let emailChanged = false;
+      let phoneChanged = false;
+  
       if (data.email && data.email !== user.email) {
-        const existingUser = await User.findOne({
-          where: { email: data.email },
-        });
+        const existingUser = await User.findOne({ where: { email: data.email } });
         if (existingUser) {
           throw new ConflictError("Email is already taken");
         }
+        emailChanged = true;
       }
-
+  
       if (data.phone && data.phone !== user.phone) {
-        const existingUser = await User.findOne({
-          where: { phone: data.phone },
-        });
+        const existingUser = await User.findOne({ where: { phone: data.phone } });
         if (existingUser) {
           throw new ConflictError("Phone number is already taken");
         }
+        phoneChanged = true;
       }
-
+  
+      // ✅ Reset verification flags if changed
+      if (emailChanged) {
+        data.isEmailVerified = false;
+      }
+  
+      if (phoneChanged) {
+        data.isPhoneVerified = false;
+      }
+  
       if (data.password) {
         data.password = await bcrypt.hash(data.password, 10);
       }
-
+  
       await user.update(data);
-
+  
       const updatedUser = await User.findByPk(userId, {
         attributes: { exclude: ["password"] },
       });
-
+  
       return updatedUser;
     } catch (error) {
       console.error("Error in updateProfile:", error);
       throw error;
     }
   }
+  
 
   async getProfile(userId: string) {
     try {
@@ -363,5 +380,23 @@ export default class TutorService {
       console.error("Error in editAbout:", error);
       throw error;
     }
+  }
+
+  async getTutorByUserId(userId: string) {
+    return this.tutorModel.findOne({ where: { userId } });
+  }
+
+  async setTutorSettings(tutorId: string, settings: { minSubjects: number; maxStudentsDaily: number; subjectCosts: Record<string, SubjectCostSetting> }) {
+    return TutorSettings.create({ tutorId, ...settings });
+  }
+
+  async getTutorSettings(tutorId: string) {
+    return TutorSettings.findOne({ where: { tutorId } });
+  }
+
+  async updateTutorSettings(tutorId: string, settings: { minSubjects: number; maxStudentsDaily: number; subjectCosts: Record<string, SubjectCostSetting> }) {
+    const tutorSettings = await TutorSettings.findOne({ where: { tutorId } });
+    if (!tutorSettings) throw new Error("Tutor settings not found");
+    return tutorSettings.update(settings);
   }
 }

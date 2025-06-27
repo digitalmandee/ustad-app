@@ -7,6 +7,7 @@ import {
   editProfileValidationRules,
   experienceValidationRules,
   educationValidationRules,
+  tutorSettingsValidationRules,
 } from "./tutor.validators";
 import routes from "../../routes/routes";
 import { authenticateJwt } from "../../middlewares/auth";
@@ -95,16 +96,30 @@ router.get(
 );
 
 // About routes
-router.post(
-  routes.ADD_TUTOR_ABOUT,
-  authenticateJwt,
-  tutorController.addAbout
-);
+router.post(routes.ADD_TUTOR_ABOUT, authenticateJwt, tutorController.addAbout);
 
 router.post(
   routes.EDIT_TUTOR_ABOUT,
   authenticateJwt,
   tutorController.editAbout
+);
+
+router.post(
+  routes.SET_TUTOR_SUBJECT_SETTINGS,
+  authenticateJwt,
+  tutorSettingsValidationRules(),
+  validateRequest,
+  tutorController.setTutorSettings
+);
+router.get(
+  routes.GET_TUTOR_SUBJECT_SETTINGS,
+  authenticateJwt,
+  tutorController.getTutorSettings
+);
+router.put(
+  routes.UPDATE_TUTOR_SUBJECT_SETTINGS,
+  authenticateJwt,
+  tutorController.updateTutorSettings
 );
 
 export { router as tutorRouter };

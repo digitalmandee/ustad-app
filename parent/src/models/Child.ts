@@ -9,6 +9,7 @@ export interface ChildAttributes {
   grade: string;
   age: number;
   schoolName: string;
+  image?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -26,6 +27,7 @@ export class Child
   public grade!: string;
   public age!: number;
   public schoolName!: string;
+  public image?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -65,7 +67,11 @@ export function initChildModel(sequelize: Sequelize): typeof Child {
       schoolName: {
         type: DataTypes.STRING,
         allowNull: false,
-      }
+      },
+      image: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
     },
     {
       sequelize,

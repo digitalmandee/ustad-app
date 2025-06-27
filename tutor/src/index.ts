@@ -4,6 +4,11 @@ import config from './config';
 // Start the server
 async function startServer() {
   const app = express();
+
+  // Add body parsers with 10mb limit
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
   await require('./loaders').default({ expressApp: app });
 
   try {

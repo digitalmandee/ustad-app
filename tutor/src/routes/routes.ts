@@ -12,6 +12,9 @@ const routes = {
   EDIT_EDUCATION: "/tutor/education/edit/:educationId",
   ADD_TUTOR_ABOUT: "/tutor/about/add",
   EDIT_TUTOR_ABOUT: "/tutor/about/edit",
+  SET_TUTOR_SUBJECT_SETTINGS: "/tutor/subject/settings",
+  GET_TUTOR_SUBJECT_SETTINGS: "/tutor/subject/settings",
+  UPDATE_TUTOR_SUBJECT_SETTINGS: "/tutor/subject/settings",
 };
 
 export default routes;

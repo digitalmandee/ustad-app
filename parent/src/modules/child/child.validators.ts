@@ -42,5 +42,10 @@ export const addChildValidationRules = () => {
       .trim()
       .isLength({ min: 2 })
       .withMessage("School name must be at least 2 characters long"),
+
+    body('image')
+      .optional()
+      .isString().withMessage('Image must be a string')
+      .matches(/^([A-Za-z0-9+/=]+)$/).withMessage('Image must be base64 encoded'),
   ];
 }; 

@@ -4,6 +4,7 @@ export class CreateChildDto {
   grade: string;
   age: number;
   schoolName: string;
+  image?: string;
 }
 
 export class UpdateChildDto extends CreateChildDto {
