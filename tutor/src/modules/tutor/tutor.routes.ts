@@ -8,12 +8,14 @@ import {
   experienceValidationRules,
   educationValidationRules,
   tutorSettingsValidationRules,
+  tutorLocationValidationRules
 } from "./tutor.validators";
 import routes from "../../routes/routes";
 import { authenticateJwt } from "../../middlewares/auth";
+import { Router } from 'express';
 
 const tutorController = new TutorController();
-const router = express.Router();
+const router = Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
 const uploadFields = upload.fields([
@@ -122,4 +124,15 @@ router.put(
   tutorController.updateTutorSettings
 );
 
-export { router as tutorRouter };
+router.post(routes.ADD_CHILD_NOTE, authenticateJwt, tutorController.addChildNote);
+router.post(routes.ADD_CHILD_REVIEW, authenticateJwt,tutorController.addChildReview);
+
+router.get(
+  routes.TUTOR_LOCATION,
+  authenticateJwt,
+  tutorLocationValidationRules(),
+  validateRequest,
+  tutorController.findTutorsByLocation
+);
+
+export  {router as tutorRouter};

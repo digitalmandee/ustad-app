@@ -17,6 +17,30 @@ export const tutorOnboardingValidationRules = () => {
       .withMessage("Account number must be numeric"),
   ];
 };
+export const tutorLocationValidationRules = () => {
+  return [
+    body("latitude")
+      .notEmpty()
+      .withMessage("latitude is required")
+      .isFloat({ min: -90, max: 90 })
+      .withMessage("latitude must be a valid float between -90 and 90")
+      .toFloat(),
+
+    body("longitude")
+      .notEmpty()
+      .withMessage("longitude is required")
+      .isFloat({ min: -180, max: 180 })
+      .withMessage("longitude must be a valid float between -180 and 180")
+      .toFloat(),
+
+    body("address")
+      .isString()
+      .withMessage("address must be a string")
+      .trim()
+      .isLength({ max: 255 })
+      .withMessage("address must be at most 255 characters long"),
+  ];
+};
 
 export const editProfileValidationRules = () => {
   return [

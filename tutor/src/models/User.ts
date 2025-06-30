@@ -28,7 +28,6 @@ interface UserAttributes {
   isPhoneVerified: boolean;
 
   googleId?: string | null;
-  image?: string | null;
 
   createdAt?: Date;
   updatedAt?: Date;
@@ -53,7 +52,6 @@ interface UserCreationAttributes
     | "phone"
     | "isPhoneVerified"
     | "googleId"
-    | "image"
     | "createdAt"
     | "updatedAt"
   > {}
@@ -84,7 +82,6 @@ export class User
   public isPhoneVerified!: boolean;
 
   public googleId!: string | null;
-  public image!: string | null;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -162,10 +159,6 @@ export function initUserModel(sequelize: Sequelize): typeof User {
         type: DataTypes.STRING,
         allowNull: true,
         unique: true,
-      },
-      image: {
-        type: DataTypes.TEXT,
-        allowNull: true,
       },
       createdAt: {
         type: DataTypes.DATE,

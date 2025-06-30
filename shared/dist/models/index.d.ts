@@ -1,0 +1,16 @@
+import { Sequelize } from "sequelize";
+import { Child } from "./Child";
+import { ChildNotes } from "./ChildNotes";
+import { ChildReview } from "./ChildReview";
+import { Parent } from "./Parent";
+import { User } from "./User";
+import { Otp } from "./Otp";
+import { Session } from "./Session";
+import { Subject } from "./Subjects";
+import { Tutor } from "./Tutor";
+import { TutorEducation } from "./TutorEducation";
+import { TutorExperience } from "./TutorExperience";
+import { TutorSettings } from "./TutorSettings";
+import { TutorLocation } from "./TutorLocations";
+export declare function initAllModels(sequelize: Sequelize): void;
+export { Child, ChildNotes, ChildReview, Parent, Session, Subject, Tutor, TutorEducation, TutorExperience, TutorSettings, User, Otp, TutorLocation };

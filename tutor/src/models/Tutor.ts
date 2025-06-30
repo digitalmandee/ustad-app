@@ -14,6 +14,7 @@ export interface TutorAttributes {
   idFrontUrl: string;
   idBackUrl: string;
   about: string;
+  grade: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -33,6 +34,7 @@ export class Tutor
   public idFrontUrl: string;
   public idBackUrl: string;
   public about: string;
+  public grade: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -79,6 +81,10 @@ export function initTutorModel(sequelize: Sequelize): typeof Tutor {
         allowNull: false,
       },
       about: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      grade: {
         type: DataTypes.STRING,
         allowNull: true,
       },

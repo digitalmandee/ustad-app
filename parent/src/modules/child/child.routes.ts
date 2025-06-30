@@ -4,9 +4,10 @@ import { validateRequest } from "../../middlewares";
 import { authenticateJwt } from "../../middlewares/auth";
 import routes from "../../routes/routes";
 import { addChildValidationRules } from "./child.validators";
+import { Router } from 'express';
 
 const childController = new ChildController();
-const router = express.Router();
+const router = Router();
 
 router.post(
   routes.CHILD_CREATE,
@@ -43,4 +44,8 @@ router.get(
   childController.getChild
 );
 
-export { router as childRouter }; 
+router.get(routes.CHILD_GET_NOTES, childController.getChildNotesByChildId.bind(childController));
+
+router.get(routes.CHILD_GET_REVIEWS, childController.getChildReviewsByChildId.bind(childController));
+
+export  { router as childRouter }; 

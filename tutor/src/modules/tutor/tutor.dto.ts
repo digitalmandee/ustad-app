@@ -35,5 +35,13 @@ export interface ITutorOnboardingDTO {
   accountNumber: string;
 }
 
+export interface FindTutorsByLocationDto {
+  latitude: number;
+  longitude: number;
+  radius: number;
+  limit?: number;
+  offset?: number;
+}
+
 
 

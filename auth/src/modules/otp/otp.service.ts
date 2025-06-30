@@ -5,8 +5,10 @@ import { InternalServerError } from '../../errors/internal-server-error';
 import { BadRequestError } from '../../errors/bad-request-error';
 import { GenericError } from '../../errors/generic-error';
 import { UnProcessableEntityError } from '../../errors/unprocessable-entity.error';
-import { User } from '../../models/user.model';
-import { Otp } from '../../models/otp.model';
+// import { User } from '../../models/user.model';
+// import { Otp } from '../../models/otp.model';
+
+import { User, Otp } from "@ustaad/shared";
 import { NotAuthorizedError } from '../../errors/not-authorized-error';
 import { generateOtp } from '../../helper/generic';
 import { IOtpSendDTO, IOtpVerifyDTO } from './otp.dto';
