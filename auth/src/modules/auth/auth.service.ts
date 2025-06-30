@@ -2,14 +2,13 @@ import { UnProcessableEntityError } from '../../errors/unprocessable-entity.erro
 import { ConflictError } from '../../errors/conflict-error';
 import { GenericError } from '../../errors/generic-error';
 import { ISignUpCreateDTO, ISignInCreateDTO, IVerifyEmailOtpDTO } from './auth.dto';
-import { User } from '../../models/user.model';
+import { User, Otp } from "@ustaad/shared";
 import { comparePassword, generateOtp, hashPassword } from '../../helper/generic'; // should have hashPassword
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
 import { NotAuthorizedError } from '../../errors/not-authorized-error';
 import { OtpPurpose, OtpStatus, OtpType } from '../../constant/enums';
 import { OtpServices } from '../otp/otp.service';
-import { Otp } from '../../models/otp.model';
 import { BadRequestError } from '../../errors/bad-request-error';
 
 export interface IAuthService {

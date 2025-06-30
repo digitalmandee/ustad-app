@@ -1,11 +1,13 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import { GenericError } from "../../errors/generic-error";
 import { sendSuccessResponse, sendErrorResponse } from "../../helper/response";
 import InfoMessages from "../../constant/messages";
 import TutorService from "./tutor.service";
 import { AuthenticatedRequest } from "../../middlewares/auth";
-import { User } from "../../models/User";
+// import { User } from "../../models/User";
 import { IsOnBaord } from "../../constant/enums";
+import { User } from "@ustaad/shared";
+import { FindTutorsByLocationDto } from "./tutor.dto";
 
 export default class TutorController {
   private tutorService: TutorService;
@@ -343,9 +345,9 @@ export default class TutorController {
   addAbout = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-      const { about } = req.body;
+      const { about, grade } = req.body;
 
-      const result = await this.tutorService.addAbout(userId, about);
+      const result = await this.tutorService.addAbout(userId, about, grade);
 
       return sendSuccessResponse(
         res,
@@ -433,4 +435,38 @@ export default class TutorController {
       return sendErrorResponse(res, error.message || "Failed to update tutor settings", 400);
     }
   };
+
+  async addChildNote(req: AuthenticatedRequest, res: Response, ) {
+    try {
+      const { id: tutorId } = req.user;
+      const { childId, headline, description } = req.body;
+      const note = await this.tutorService.createChildNote({ childId, tutorId, headline, description });
+      return sendSuccessResponse(res, "Child note added successfully", 200, note);
+    } catch (error: any) {
+      return sendErrorResponse(res, error.message || "Failed to add child note", 400);
+    }
+  }
+  
+  async addChildReview(req: AuthenticatedRequest, res: Response, ) {
+    try {
+      const { id: tutorId } = req.user;
+      const { childId, rating, review } = req.body;
+      const reviewObj = await this.tutorService.createChildReview({ childId, tutorId, rating, review });
+      return sendSuccessResponse(res, "Child review added successfully", 200, reviewObj);
+    } catch (error: any) {
+      return sendErrorResponse(res, error.message || "Failed to add child review", 400);
+    }
+  }
+
+  findTutorsByLocation = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { latitude, longitude, radius, limit = 20, offset = 0 } = req.query as unknown as FindTutorsByLocationDto;
+      const results = await this.tutorService.findTutorsByLocation(latitude,longitude,radius,limit,offset);
+  
+      return sendSuccessResponse(res,InfoMessages.GENERIC.ITEM_GET_SUCCESSFULLY("Nearby Tutors"),200,results);
+    } catch (e: any) {
+      throw new GenericError(e, `Error from findTutorsByLocation ${__filename}`);
+    }
+  };
+
 }

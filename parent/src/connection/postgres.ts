@@ -5,6 +5,8 @@ import { initSubjectModel } from "../models/Subjects";
 import { initTutorExperienceModel } from "../models/TutorExperience";
 import { initParentModel } from "../models/Parent";
 import { initChildModel } from "../models/Child";
+import { initChildReviewModel } from "../models/ChildReview";
+import { initChildNotesModel } from "../models/ChildNotes";
 
 const MAX_RETRIES = 5;
 const RETRY_DELAY = 5000; // milliseconds
@@ -44,6 +46,8 @@ export const connectToPostgres = async (retryCount = 0): Promise<Sequelize> => {
     initTutorExperienceModel(sequelize);
     initParentModel(sequelize);
     initChildModel(sequelize);
+    initChildReviewModel(sequelize);
+    initChildNotesModel(sequelize);
 
     // Sync models with the database
     await sequelize.sync({ alter: true }); // Use force: true only in dev or reset migrations

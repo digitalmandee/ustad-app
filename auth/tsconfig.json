@@ -64,7 +64,11 @@
     "emitDecoratorMetadata": true /* Enables experimental support for emitting type metadata for decorators. */,
     /* Advanced Options */
     "forceConsistentCasingInFileNames": true /* Disallow inconsistently-cased references to the same file. */,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".", 
+    "paths": {
+      "@ustaad/shared": ["../shared"]   // Adjust to actual path
+    }
   },
   "include": ["src/**/*.ts", "src/test/*.ts"],
   "exclude": ["node_modules", ".vscode", "src/**/**/__tests__/*.ts"]

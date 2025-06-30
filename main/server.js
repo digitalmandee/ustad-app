@@ -34,9 +34,6 @@ app.use(
     pathRewrite: { "^/tutor": "/api/v1/tutor" },
   })
 );
-
-
-// Proxy /tutor/* → http://localhost:3002/*
 app.use(
   "/parent",
   createProxyMiddleware({

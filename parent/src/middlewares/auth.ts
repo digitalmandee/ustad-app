@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt, { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
-import { User } from "../models/User";
+import { User } from "@ustaad/shared";
 import { NotAuthorizedError } from "../errors/not-authorized-error";
 import { CustomError } from "../errors/custom-error";
 

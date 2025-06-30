@@ -1,15 +1,17 @@
 import { ConflictError } from "../../errors/conflict-error";
 import { GenericError } from "../../errors/generic-error";
-import { User } from "../../models/User";
-import { Tutor } from "../../models/Tutor";
-import { TutorExperience } from "../../models/TutorExperience";
-import { TutorEducation } from "../../models/TutorEducation";
+// import { User } from "../../models/User";
+// import { Tutor } from "../../models/Tutor";
+// import { TutorExperience } from "../../models/TutorExperience";
+// import { TutorEducation } from "../../models/TutorEducation";
 import { uploadFile } from "../../helper/file-upload";
 import path from "path";
 import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
 import { IParentOnboardingDTO } from "./parent.dto";
 import bcrypt from "bcrypt";
-import { Parent } from "../../models/Parent";
+// import { Parent } from "../../models/Parent";
+
+import { Parent, User, Tutor, TutorEducation, TutorExperience } from "@ustaad/shared";
 
 interface ParentProfileData {
   userId: string;

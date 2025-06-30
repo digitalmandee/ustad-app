@@ -5,6 +5,8 @@ import {
   DeleteChildDto,
 } from "../child/child.dto";
 import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
+import { ChildNotes } from '../../models/ChildNotes';
+import { ChildReview } from '../../models/ChildReview';
 
 export class ChildService {
   async createChild(data: CreateChildDto, userId: string): Promise<Child> {
@@ -67,5 +69,13 @@ export class ChildService {
     }
 
     return child;
+  }
+
+  async getChildNotesByChildId(childId: string) {
+    return await ChildNotes.findAll({ where: { childId } });
+  }
+
+  async getChildReviewsByChildId(childId: string) {
+    return await ChildReview.findAll({ where: { childId } });
   }
 }

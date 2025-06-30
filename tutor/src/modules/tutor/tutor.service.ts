@@ -1,20 +1,33 @@
 import { ConflictError } from "../../errors/conflict-error";
 import { GenericError } from "../../errors/generic-error";
-import { User } from "../../models/User";
-import { Tutor } from "../../models/Tutor";
-import { TutorExperience } from "../../models/TutorExperience";
-import { TutorEducation } from "../../models/TutorEducation";
+import { BadRequestError } from "src/errors/bad-request-error";
+// import { User } from "../../models/User";
+// import { Tutor } from "../../models/Tutor";
+// import { TutorExperience } from "../../models/TutorExperience";
+// import { TutorEducation } from "../../models/TutorEducation";
 import { uploadFile } from "../../helper/file-upload";
 import path from "path";
 import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
 import { ITutorOnboardingDTO } from "./tutor.dto";
 import bcrypt from "bcrypt";
-import { TutorSettings, SubjectCostSetting } from "../../models/TutorSettings";
+// import { TutorSettings, SubjectCostSetting } from "../../models/TutorSettings";
+// import { ChildNotes } from '../../models/ChildNotes';
+// import { ChildReview } from '../../models/ChildReview';
+import { Op } from "sequelize";
+import geohash from "ngeohash";
+
+
+
+import { User, Tutor, Subject, TutorEducation, TutorExperience, TutorSettings, ChildNotes, ChildReview, TutorLocation } from "@ustaad/shared";
 
 interface TutorProfileData extends ITutorOnboardingDTO {
   resume: Express.Multer.File;
   idFront: Express.Multer.File;
   idBack: Express.Multer.File;
+}
+export interface SubjectCostSetting {
+  cost: number;
+  active: boolean;
 }
 
 interface UpdateProfileData {
@@ -350,7 +363,7 @@ export default class TutorService {
     }
   }
 
-  async addAbout(userId: string, about: string) {
+  async addAbout(userId: string, about: string, grade: string) {
     try {
       console.log(userId);
 
@@ -359,7 +372,7 @@ export default class TutorService {
         throw new UnProcessableEntityError("Tutor profile not found");
       }
 
-      await tutor.update({ about });
+      await tutor.update({ about, grade });
       return tutor;
     } catch (error) {
       console.error("Error in addAbout:", error);
@@ -399,4 +412,140 @@ export default class TutorService {
     if (!tutorSettings) throw new Error("Tutor settings not found");
     return tutorSettings.update(settings);
   }
+
+  async createChildNote(data: { childId: string; tutorId: string; headline: string; description: string; }) {
+    return await ChildNotes.create(data);
+  }
+
+  async createChildReview(data: { childId: string; tutorId: string; rating: number; review: string; }) {
+    return await ChildReview.create(data);
+  }
+
+  async addTutorLocation(
+    userId: string,
+    data: { latitude: number; longitude: number; address?: string }
+  ) {
+    const { latitude, longitude, address } = data;
+    const geoHash = geohash.encode(latitude, longitude, 7);
+
+    try {
+      // Step 1: Find tutor by userId
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError(
+          "Tutor profile not found for this user."
+        );
+      }
+
+      const tutorId = tutor.id;
+
+      // Step 2: Check for duplicate location
+      const existing = await TutorLocation.findOne({
+        where: { tutorId, latitude, longitude },
+      });
+
+      if (existing) {
+        throw new ConflictError("This location already exists for the tutor.");
+      }
+
+      // Step 3: Save new location
+      await TutorLocation.create({
+        tutorId,
+        latitude,
+        longitude,
+        address,
+        geoHash,
+      });
+
+      // Step 4: Return all locations (latest first)
+      return await TutorLocation.findAll({
+        where: { tutorId },
+        order: [["createdAt", "DESC"]],
+        attributes: { exclude: ["geoHash"] },
+      });
+    } catch (error: any) {
+      console.error("Error in addTutorLocation:", error);
+
+      // Let known errors bubble up
+      if (
+        error instanceof UnProcessableEntityError ||
+        error instanceof ConflictError
+      ) {
+        throw error;
+      }
+
+      throw new GenericError(error, "Failed to add tutor location");
+    }
+  }
+
+  async findTutorsByLocation(parentLat: number, parentLng: number,radiusKm: number,limit = 20, offset = 0 ) {
+    const parentGeoHash = geohash.encode(parentLat, parentLng, 7);
+    const neighbors = geohash.neighbors(parentGeoHash); // returns 8 surrounding geohashes
+    const geoHashes = [parentGeoHash, ...neighbors]; // total 9 cells
+    try {
+      if (!geoHashes || geoHashes.length === 0) {
+        throw new BadRequestError("Could not process it. geohashes for spatial search could not be generated.");
+      }
+
+      const rawResults = await TutorLocation.findAll({
+        where: {
+          geoHash: { [Op.in]: geoHashes },
+        },
+        include: [
+          {
+            model: Tutor,
+            as: "tutor",
+            include: [
+              { model: User, attributes: ["id", "name"] },
+              { model: Subject, attributes: ["name"] },
+            ],
+          },
+        ],
+        order: [["createdAt", "DESC"]],
+        limit,
+        offset,
+      });
+
+      // Clean up and add `withinRadius`
+      const processed = rawResults.map((loc: any) => {
+        const distance = this.calculateDistanceKm(
+          parentLat,
+          parentLng,
+          loc.latitude,
+          loc.longitude
+        );
+
+        const locJson = loc.toJSON() as any;
+
+        return {
+          ...locJson,
+          withinRadius: distance <= radiusKm,
+          distance: Number(distance.toFixed(2)), // optional: add distance info
+        };
+      });
+
+      return processed;
+    } catch (err: any) {
+      console.error("Error in findTutorsByLocation:", err);
+      throw new GenericError(err, "Unable to search tutors by location");
+    }
+  }
+
+  calculateDistanceKm(lat1: number,lon1: number,lat2: number,lon2: number): number {
+    const toRad = (val: number) => (val * Math.PI) / 180;
+    const R = 6371; // Radius of Earth in KM
+
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
 }

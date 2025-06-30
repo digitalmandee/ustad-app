@@ -15,6 +15,18 @@ const routes = {
   SET_TUTOR_SUBJECT_SETTINGS: "/tutor/subject/settings",
   GET_TUTOR_SUBJECT_SETTINGS: "/tutor/subject/settings",
   UPDATE_TUTOR_SUBJECT_SETTINGS: "/tutor/subject/settings",
+  
+  
+  
+  // Child 
+  
+  ADD_CHILD_NOTE: "/tutor/child/notes",
+  ADD_CHILD_REVIEW: "/tutor/child/reviews",
+
+  TUTOR_LOCATION: "/tutor/location",
+
+
+
 };
 
 export default routes;
