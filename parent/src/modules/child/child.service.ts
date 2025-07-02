@@ -1,12 +1,15 @@
-import { Child, ChildCreationAttributes } from "../../models/Child";
+import { ChildCreationAttributes } from "../../models/Child";
 import {
   CreateChildDto,
   UpdateChildDto,
   DeleteChildDto,
 } from "../child/child.dto";
 import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
-import { ChildNotes } from '../../models/ChildNotes';
-import { ChildReview } from '../../models/ChildReview';
+// import { ChildNotes } from '../../models/ChildNotes';
+// import { ChildReview } from '../../models/ChildReview';
+
+import { Child, ChildNotes, ChildReview } from "@ustaad/shared";
+
 
 export class ChildService {
   async createChild(data: CreateChildDto, userId: string): Promise<Child> {

@@ -11,7 +11,7 @@ import { IParentOnboardingDTO } from "./parent.dto";
 import bcrypt from "bcrypt";
 // import { Parent } from "../../models/Parent";
 
-import { Parent, User, Tutor, TutorEducation, TutorExperience } from "@ustaad/shared";
+import { Parent, User, Tutor } from "@ustaad/shared";
 
 interface ParentProfileData {
   userId: string;

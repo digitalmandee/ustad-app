@@ -1,12 +1,13 @@
 import { Service } from 'typedi';
-import { Otp } from '../../models/Otp';
+// import { Otp } from '../../models/Otp';
 import { OtpType } from '../../common/enums';
-import { User } from './user.model';
+// import { User } from './user.model';
 import { generateOtp } from '../../helper/generic';
 import { NotAuthorizedError } from '../../errors/not-authorized-error';
 import { emailService } from '../emails/email.service';
 import { sendSms } from '../sms/twilio';
 import { Op } from 'sequelize';
+import { User, Otp } from "@ustaad/shared";
 
 @Service()
 export class OtpService {

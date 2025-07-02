@@ -4,8 +4,9 @@ import { sendSuccessResponse, sendErrorResponse } from "../../helper/response";
 import InfoMessages from "../../constant/messages";
 import TutorService from "./parent.service";
 import { AuthenticatedRequest } from "../../middlewares/auth";
-import { User } from "../../models/User";
+// import { User } from "../../models/User";
 import { IsOnBaord } from "../../constant/enums";
+import { User } from "@ustaad/shared";
 
 export default class TutorController {
   private tutorService: TutorService;
