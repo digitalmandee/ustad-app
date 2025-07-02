@@ -18,9 +18,8 @@ export default ({ app }: { app: express.Application }) => {
   // Set security HTTP headers
   app.use(helmet());
   // Body parser, reading data from body into req.body
-  app.use(express.json({ limit: '10kb' }));
-  app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
   // Prevent parameter pollution
   app.use(
     hpp({

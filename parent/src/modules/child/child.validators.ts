@@ -46,6 +46,5 @@ export const addChildValidationRules = () => {
     body('image')
       .optional()
       .isString().withMessage('Image must be a string')
-      .matches(/^([A-Za-z0-9+/=]+)$/).withMessage('Image must be base64 encoded'),
   ];
 }; 
