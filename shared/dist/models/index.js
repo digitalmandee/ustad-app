@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.PaymentRequest = exports.TutorSessions = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
+exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.PaymentMethod = exports.PaymentRequest = exports.TutorSessions = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
 exports.initAllModels = initAllModels;
 const Child_1 = require("./Child");
 Object.defineProperty(exports, "Child", { enumerable: true, get: function () { return Child_1.Child; } });
@@ -34,6 +34,8 @@ const TutorSessions_1 = require("./TutorSessions");
 Object.defineProperty(exports, "TutorSessions", { enumerable: true, get: function () { return TutorSessions_1.TutorSessions; } });
 const PaymentRequest_1 = require("./PaymentRequest");
 Object.defineProperty(exports, "PaymentRequest", { enumerable: true, get: function () { return PaymentRequest_1.PaymentRequest; } });
+const PaymentMethod_1 = require("./PaymentMethod");
+Object.defineProperty(exports, "PaymentMethod", { enumerable: true, get: function () { return PaymentMethod_1.PaymentMethod; } });
 // Chat models
 const Conversation_1 = require("./Conversation");
 Object.defineProperty(exports, "Conversation", { enumerable: true, get: function () { return Conversation_1.Conversation; } });
@@ -60,6 +62,7 @@ function initAllModels(sequelize) {
     (0, ParentSubscription_1.initParentSubscriptionModel)(sequelize);
     (0, TutorSessions_1.initTutorSessionsModel)(sequelize);
     (0, PaymentRequest_1.initPaymentRequestModel)(sequelize);
+    (0, PaymentMethod_1.initPaymentMethodModel)(sequelize);
     // Initialize chat models
     (0, Conversation_1.initConversationModel)(sequelize);
     (0, ConversationParticipant_1.initConversationParticipantModel)(sequelize);
