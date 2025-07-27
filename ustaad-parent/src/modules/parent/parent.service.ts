@@ -12,6 +12,7 @@ import {
   TutorEducation,
   TutorExperience,
   ParentSubscription,
+  PaymentMethod,
 } from "@ustaad/shared";
 import Stripe from "stripe";
 
@@ -173,109 +174,238 @@ export default class TutorService {
     }
   }
 
-  async createStripeSubscription(customerId: string, price: number, tutorId: string, parentId: string) {
+  async createPaymentMethod(userId: string, paymentMethodId: string) {
     if (!this.stripe) {
-      throw new Error("Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.");
+      throw new Error(
+        "Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable."
+      );
     }
 
     try {
-      const subscription = await this.stripe.subscriptions.create({
-        customer: customerId,
-        items: [
-          {
-            price_data: {
-              currency: "usd",
-              product: `prod_tutoring_subscription_${tutorId}_${parentId}`,
-              unit_amount: Math.round(price * 100), // Convert to cents
-              recurring: {
-                interval: "month",
-              },
-            },
-          },
-        ],
-        payment_behavior: "default_incomplete",
-        payment_settings: { save_default_payment_method: "on_subscription" },
-        expand: ["latest_invoice.payment_intent"],
+      // Find parent by userId
+      let user = await User.findOne({
+        where: { id: userId },
       });
-      return subscription;
+
+      if (!user) {
+        throw new UnProcessableEntityError("Parent profile not found");
+      }
+
+      let parent = await Parent.findOne({
+        where: { userId: userId },
+      });
+
+      if (!parent) {
+        throw new UnProcessableEntityError("Parent profile not found");
+      }
+
+      // If parent does not have a customerId, create one in Stripe and update parent
+      if (!parent.customerId) {
+        // You can add more info to customer creation if needed (e.g., email, name)
+        const stripeCustomer = await this.stripe.customers.create({
+          email: user.email,
+          metadata: { parentId: parent.userId.toString() },
+        });
+
+        await parent.update({ customerId: stripeCustomer.id });
+        parent.customerId = stripeCustomer.id; // update local variable for further use
+      }
+
+      // Retrieve payment method from Stripe
+      const stripePaymentMethod =
+        await this.stripe.paymentMethods.retrieve(paymentMethodId);
+
+      if (!stripePaymentMethod) {
+        throw new UnProcessableEntityError(
+          "Payment method not found in Stripe"
+        );
+      }
+
+      // Check if payment method already exists
+      const existingPaymentMethod = await PaymentMethod.findOne({
+        where: { stripePaymentMethodId: paymentMethodId },
+      });
+
+      if (existingPaymentMethod) {
+        throw new ConflictError("Payment method already exists");
+      }
+
+      // Attach payment method to customer
+      await this.stripe.paymentMethods.attach(paymentMethodId, {
+        customer: parent.customerId,
+      });
+
+      // Create payment method record
+      const paymentMethod = await PaymentMethod.create({
+        parentId: parent.userId,
+        stripePaymentMethodId: paymentMethodId,
+        cardBrand: stripePaymentMethod.card?.brand || "unknown",
+        cardLast4: stripePaymentMethod.card?.last4 || "",
+        cardExpMonth: stripePaymentMethod.card?.exp_month || 0,
+        cardExpYear: stripePaymentMethod.card?.exp_year || 0,
+        isDefault: false, 
+      });
+
+      // If this is the first payment method, make it default
+      const paymentMethodCount = await PaymentMethod.count({
+        where: { parentId: parent.userId },
+      });
+
+      if (paymentMethodCount === 1) {
+        await paymentMethod.update({ isDefault: true });
+
+        // Set as default payment method in Stripe
+        await this.stripe.customers.update(parent.customerId, {
+          invoice_settings: {
+            default_payment_method: paymentMethodId,
+          },
+        });
+      }
+
+      return paymentMethod;
     } catch (error) {
-      console.error("Error creating Stripe subscription:", error);
+      console.error("Error in createPaymentMethod:", error);
       throw error;
     }
   }
 
-  async createSubscription(data: {
-    customerId: string;
-    planType: string;
-    amount: number;
-    startDate: Date;
-    endDate: Date;
-    tutorId: string;
-  }) {
+  async getPaymentMethods(userId: string) {
     try {
-      // Find parent using the customerId that was already created and saved
       const parent = await Parent.findOne({
-        where: { customerId: data.customerId },
+        where: { userId },
       });
+
       if (!parent) {
-        throw new UnProcessableEntityError(
-          "Parent not found with provided customer ID"
-        );
+        throw new UnProcessableEntityError("Parent profile not found");
       }
 
-      // Create Stripe subscription using the existing customerId and provided price
-      const stripeSubscription = await this.createStripeSubscription(
-        data.customerId,
-        data.amount,
-        data.tutorId,
-        parent.id
+      const paymentMethods = await PaymentMethod.findAll({
+        where: { parentId: parent.userId },
+        order: [["createdAt", "DESC"]],
+      });
+
+      return paymentMethods;
+    } catch (error) {
+      console.error("Error in getPaymentMethods:", error);
+      throw error;
+    }
+  }
+
+  async updatePaymentMethod(
+    userId: string,
+    paymentMethodId: string,
+    isDefault?: boolean
+  ) {
+    try {
+      const parent = await Parent.findOne({
+        where: { userId },
+      });
+
+      if (!parent) {
+        throw new UnProcessableEntityError("Parent profile not found");
+      }
+
+      const paymentMethod = await PaymentMethod.findOne({
+        where: {
+          id: paymentMethodId,
+          parentId: parent.userId,
+        },
+      });
+
+      if (!paymentMethod) {
+        throw new UnProcessableEntityError("Payment method not found");
+      }
+
+      // If setting as default, unset other default payment methods
+      if (isDefault) {
+        await PaymentMethod.update(
+          { isDefault: false },
+          { where: { parentId: parent.userId } }
+        );
+
+        // Set as default in Stripe
+        if (parent.customerId) {
+          await this.stripe?.customers.update(parent.customerId, {
+            invoice_settings: {
+              default_payment_method: paymentMethod.stripePaymentMethodId,
+            },
+          });
+        }
+      }
+
+      // Update the payment method
+      await paymentMethod.update({ isDefault });
+
+      return paymentMethod;
+    } catch (error) {
+      console.error("Error in updatePaymentMethod:", error);
+      throw error;
+    }
+  }
+
+  async deletePaymentMethod(userId: string, paymentMethodId: string) {
+    if (!this.stripe) {
+      throw new Error(
+        "Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable."
+      );
+    }
+
+    try {
+      const parent = await Parent.findOne({
+        where: { userId },
+      });
+
+      if (!parent) {
+        throw new UnProcessableEntityError("Parent profile not found");
+      }
+
+      const paymentMethod = await PaymentMethod.findOne({
+        where: {
+          id: paymentMethodId,
+          parentId: parent.userId,
+        },
+      });
+
+      if (!paymentMethod) {
+        throw new UnProcessableEntityError("Payment method not found");
+      }
+
+      // Check if this is the default payment method
+      const isDefault = paymentMethod.isDefault;
+
+      // Delete from Stripe
+      await this.stripe.paymentMethods.detach(
+        paymentMethod.stripePaymentMethodId
       );
 
-      // Create local subscription record
-      const subscription = await ParentSubscription.create({
-        ...data,
-        parentId: parent.id,
-        tutorId: data.tutorId,
-        stripeSubscriptionId: stripeSubscription.id,
-        status: "active",
-      });
+      // Delete from database
+      await paymentMethod.destroy();
 
-      return {
-        subscription,
-        stripeSubscription,
-        clientSecret: (stripeSubscription.latest_invoice as any)?.payment_intent
-          ?.client_secret,
-      };
-    } catch (error) {
-      console.error("Error in createSubscription:", error);
-      throw error;
-    }
-  }
+      // If this was the default payment method, set another one as default
+      if (isDefault) {
+        const remainingPaymentMethod = await PaymentMethod.findOne({
+          where: { parentId: parent.userId },
+          order: [["createdAt", "DESC"]],
+        });
 
-  async cancelSubscription(stripeSubscriptionId: string) {
-    if (!this.stripe) {
-      throw new Error("Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.");
-    }
+        if (remainingPaymentMethod) {
+          await remainingPaymentMethod.update({ isDefault: true });
 
-    try {
-      const subscription = await ParentSubscription.findOne({
-        where: { stripeSubscriptionId, status: "active" },
-      });
-
-      if (!subscription) {
-        throw new UnProcessableEntityError(
-          "No active subscription found for this customer"
-        );
+          // Set as default in Stripe
+          if (parent.customerId) {
+            await this.stripe.customers.update(parent.customerId, {
+              invoice_settings: {
+                default_payment_method:
+                  remainingPaymentMethod.stripePaymentMethodId,
+              },
+            });
+          }
+        }
       }
 
-      // Cancel the subscription in Stripe
-      await this.stripe.subscriptions.cancel(stripeSubscriptionId);
-
-      // Update local subscription status
-      await subscription.update({ status: "cancelled" });
-      return subscription;
+      return { message: "Payment method deleted successfully" };
     } catch (error) {
-      console.error("Error in cancelSubscription:", error);
+      console.error("Error in deletePaymentMethod:", error);
       throw error;
     }
   }

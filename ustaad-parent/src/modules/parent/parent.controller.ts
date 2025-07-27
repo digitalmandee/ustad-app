@@ -142,59 +142,107 @@ export default class TutorController {
     }
   };
 
-  createSubscription = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { customerId, planType, amount, startDate, endDate, tutorId } = req.body;
 
-      const result = await this.tutorService.createSubscription({
-        customerId,
-        planType,
-        amount,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        tutorId,
-      });
+  createPaymentMethod = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { paymentMethodId } = req.body;
+
+      const result = await this.tutorService.createPaymentMethod(userId, paymentMethodId);
 
       return sendSuccessResponse(
         res,
-        "Subscription created successfully",
+        "Payment method added successfully",
         201,
         result
       );
     } catch (error: any) {
-      console.error("Create subscription error:", error);
+      console.error("Create payment method error:", error);
 
       if (error instanceof GenericError) {
         return sendErrorResponse(res, error.message, 400);
       }
 
       const errorMessage =
-        error?.message || "Something went wrong while creating subscription";
+        error?.message || "Something went wrong while adding payment method";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
 
-  cancelSubscription = async (req: AuthenticatedRequest, res: Response) => {
+  getPaymentMethods = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { customerId } = req.body;
+      const { id: userId } = req.user;
 
-      const result = await this.tutorService.cancelSubscription(customerId);
+      const result = await this.tutorService.getPaymentMethods(userId);
 
       return sendSuccessResponse(
         res,
-        "Subscription cancelled successfully",
+        "Payment methods retrieved successfully",
         200,
         result
       );
     } catch (error: any) {
-      console.error("Cancel subscription error:", error);
+      console.error("Get payment methods error:", error);
 
       if (error instanceof GenericError) {
         return sendErrorResponse(res, error.message, 400);
       }
 
       const errorMessage =
-        error?.message || "Something went wrong while cancelling subscription";
+        error?.message || "Something went wrong while retrieving payment methods";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+
+  updatePaymentMethod = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { isDefault, paymentMethodId } = req.body;
+
+      const result = await this.tutorService.updatePaymentMethod(userId, paymentMethodId, isDefault);
+
+      return sendSuccessResponse(
+        res,
+        "Payment method updated successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Update payment method error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while updating payment method";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  deletePaymentMethod = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { paymentMethodId } = req.body;
+
+      const result = await this.tutorService.deletePaymentMethod(userId, paymentMethodId);
+
+      return sendSuccessResponse(
+        res,
+        "Payment method deleted successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Delete payment method error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while deleting payment method";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };

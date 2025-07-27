@@ -6,11 +6,15 @@ import {
   editProfileValidationRules,
   experienceValidationRules,
   educationValidationRules,
-} from "./parent.validators";
+  createPaymentMethodValidationRules,
+  updatePaymentMethodValidationRules,
+  deletePaymentMethodValidationRules,
+    } from "./parent.validators";
 import routes from "../../routes/routes";
 import { authenticateJwt } from "../../middlewares/auth";
 import { Router } from 'express';
 import ParentController from './parent.controller';
+import { authorizeRoles } from "../../middlewares/role-auth";
 
 const tutorController = new TutorController();
 const router = Router();
@@ -27,6 +31,7 @@ router.post(
   uploadFields,
   validateRequest,
   authenticateJwt,
+  authorizeRoles("PARENT"),
   tutorController.onboardParent
 );
 
@@ -36,20 +41,46 @@ router.post(
   editProfileValidationRules(),
   validateRequest,
   authenticateJwt,
+  authorizeRoles("PARENT"),
   tutorController.editProfile
 );
 
-router.get(routes.PARENT_Profile, authenticateJwt, tutorController.getProfile);
+router.get(routes.PARENT_Profile, authenticateJwt, authorizeRoles("PARENT"), tutorController.getProfile);
 
+// Payment Method routes
 router.post(
-  routes.ADD_PARENT_CUSTOMER_ID,
+  routes.PARENT_PAYMENT_METHODS,
   authenticateJwt,
-  tutorController.updateCustomerId
+  authorizeRoles("PARENT"),
+  createPaymentMethodValidationRules(),
+  validateRequest,
+  parentController.createPaymentMethod
 );
 
-router.put('/customer-id', authenticateJwt, parentController.updateCustomerId);
+router.get(
+  routes.PARENT_PAYMENT_METHODS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.getPaymentMethods
+);
 
-router.post('/subscription', authenticateJwt, parentController.createSubscription);
-router.put('/subscription/cancel', authenticateJwt, parentController.cancelSubscription);
+
+router.put(
+  routes.PARENT_PAYMENT_METHODS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  updatePaymentMethodValidationRules(),
+  validateRequest,
+  parentController.updatePaymentMethod
+);
+
+router.delete(
+  routes.PARENT_PAYMENT_METHODS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  deletePaymentMethodValidationRules(),
+  validateRequest,
+  parentController.deletePaymentMethod
+);
 
 export { router as tutorRouter };

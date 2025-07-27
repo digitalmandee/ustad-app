@@ -119,3 +119,47 @@ export const educationValidationRules = () => {
       .withMessage("Description must be at least 10 characters long"),
   ];
 };
+
+export const createPaymentMethodValidationRules = () => {
+  return [
+    body("paymentMethodId")
+      .notEmpty()
+      .withMessage("Payment method ID is required")
+      .isString()
+      .withMessage("Payment method ID must be a string")
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage("Payment method ID cannot be empty"),
+  ];
+};
+
+export const updatePaymentMethodValidationRules = () => {
+  return [
+    body("isDefault")
+      .optional()
+      .isBoolean()
+      .withMessage("isDefault must be a boolean value"),
+
+    body("paymentMethodId")
+      .notEmpty()
+      .withMessage("Payment method ID is required")
+      .isString()
+      .withMessage("Payment method ID must be a string")
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage("Payment method ID cannot be empty"),
+  ];
+};
+
+export const deletePaymentMethodValidationRules = () => {
+  return [
+    body("paymentMethodId")
+      .notEmpty()
+      .withMessage("Payment method ID is required")
+      .isString()
+      .withMessage("Payment method ID must be a string")
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage("Payment method ID cannot be empty"), 
+  ];
+};
