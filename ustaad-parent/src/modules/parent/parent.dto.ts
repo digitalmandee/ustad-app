@@ -32,5 +32,26 @@ export interface IParentOnboardingDTO {
   userId: string;
 }
 
+export interface ICreatePaymentMethodDTO {
+  paymentMethodId: string;
+}
+
+export interface IUpdatePaymentMethodDTO {
+  isDefault?: boolean;
+}
+
+export interface IPaymentMethodResponseDTO {
+  id: string;
+  parentId: string;
+  stripePaymentMethodId: string;
+  cardBrand: string;
+  cardLast4: string;
+  cardExpMonth: number;
+  cardExpYear: number;
+  isDefault: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 
 

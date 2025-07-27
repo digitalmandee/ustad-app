@@ -46,10 +46,16 @@ export async function authenticateJwt(
     }
 
     const user = await User.findByPk(decoded.user.id);
-    // console.log(user, "usre");
+    console.log(user, "usre");
 
-    if (!user || user.isActive == true) {
+    if (!user) {
       throw new NotAuthorizedError("User dose not exist");
+    }
+    if (user.isActive === false) {
+      throw new NotAuthorizedError("User is not active");
+    }
+      if (user.role !== "PARENT") {
+      throw new NotAuthorizedError("User is not a parent");
     }
     req.user = {
       id: user.id.toString(),

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>IQ Assessment Results</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <style>
+      body {
+        background-color: #f8f9fa;
+        color: #333;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .results-card {
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+
+      h1 {
+        color: #2c3e50;
+        font-weight: 600;
+      }
+
+      h3 {
+        color: #2c3e50;
+        font-weight: 600;
+      }
+
+      .score-container {
+        background-color: #e3f2fd;
+        border-radius: 8px;
+        padding: 20px;
+      }
+
+      .score-display {
+        margin: 20px 0;
+      }
+
+      .score-display h1 {
+        color: #4a4a4a;
+        font-size: 5rem;
+      }
+
+      .divider-section {
+        position: relative;
+        text-align: center;
+        margin: 30px 0;
+      }
+
+      .divider-section::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        border-top: 1px solid #ddd;
+        z-index: 1;
+      }
+
+      .divider-text {
+        position: relative;
+        display: inline-block;
+        background-color: #fff;
+        padding: 0 15px;
+        z-index: 2;
+        font-weight: 600;
+        color: #555;
+      }
+
+      .document-card {
+        border: 1px solid #eaeaea;
+        border-radius: 8px;
+        padding: 15px;
+        height: 100%;
+      }
+
+      .certificate-img {
+        max-height: 200px;
+        object-fit: contain;
+      }
+
+      .report-img {
+        max-height: 200px;
+        object-fit: contain;
+      }
+
+      .document-link {
+        color: #3498db;
+        text-decoration: none;
+        font-weight: 500;
+      }
+
+      .document-link:hover {
+        text-decoration: underline;
+      }
+
+      .btn-primary {
+        background-color: #1a4e8e;
+        border-color: #1a4e8e;
+        padding: 10px 25px;
+        font-weight: 600;
+      }
+
+      .btn-primary:hover {
+        background-color: #0d3b6f;
+        border-color: #0d3b6f;
+      }
+
+      .personality-types-container {
+        background-color: #4fbfa8;
+        border-radius: 8px;
+        padding: 20px;
+        text-align: center;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .score-display h1 {
+          font-size: 4rem;
+        }
+
+        .document-card {
+          margin-bottom: 20px;
+        }
+      }
+
+      @media (max-width: 576px) {
+        .score-display h1 {
+          font-size: 3.5rem;
+        }
+
+        h1 {
+          font-size: 1.8rem;
+        }
+
+        h3 {
+          font-size: 1.4rem;
+        }
+      }
+    </style>
+
+    <div class="container py-5 iq-report-container">
+      <div class="row justify-content-center">
+        <div class="col-lg-9 col-md-10">
+          <div class="results-card p-4">
+            <h1 class="text-center mb-4">
+              Your IQ assessment results are ready!
+            </h1>
+
+            <!-- IQ Score Section -->
+            <div class="score-container mb-5">
+              <h5 class="text-center mb-3">Your IQ score</h5>
+              <div class="score-display">
+                <h1 class="display-1 text-center fw-bold">50</h1>
+              </div>
+            </div>
+
+            <!-- Report & Certificate Section -->
+            <div class="divider-section mb-4">
+              <div class="divider-text">Your report & certificate</div>
+            </div>
+
+            <div class="row mb-5">
+              <div class="col-md-6 mb-3 mb-md-0">
+                <div class="document-card text-center">
+                  <img
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202025-06-12%20at%202.19.50%20AM-kHqVd6LWOB9Uk9t6FISAyUb4P36Nwl.jpeg"
+                    alt="Certificate"
+                    class="img-fluid certificate-img"
+                  />
+                  <div class="mt-2">
+                    <a href="#" class="document-link">View</a> |
+                    <a href="#" class="document-link">Download</a>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="document-card text-center">
+                  <img
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/WhatsApp%20Image%202025-06-12%20at%202.19.50%20AM-kHqVd6LWOB9Uk9t6FISAyUb4P36Nwl.jpeg"
+                    alt="Report"
+                    class="img-fluid report-img"
+                  />
+                  <div class="mt-2">
+                    <a href="#" class="document-link">View</a> |
+                    <a href="#" class="document-link">Download</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Additional Assessment Section -->
+            <div class="mb-5">
+              <h3 class="mb-3">
+                Is there anything else I can do to complete my assessment?
+              </h3>
+              <p>
+                The answer is YES! BMI™ also offers a certified personality
+                assessment tool. So if you would like to get the full picture,
+                you can go on and take our certified
+                <strong>BMI™ Personality Test</strong> to discover your
+                personality type.
+              </p>
+            </div>
+
+            <!-- Why Section -->
+            <div class="mb-5">
+              <h3 class="mb-3">Why should I do this?</h3>
+              <p>
+                IQ matters but it does not tell the whole story. There is more
+                to better understanding yourself besides your IQ Score.
+              </p>
+              <p>
+                Intelligence is a strong foundation for future success. But it
+                does not say much out of context.
+              </p>
+              <p>
+                Have you asked yourself why a lot of high IQ people have not
+                made it as good in life as other hard-working, passionate
+                achievers who may score a bit lower in the IQ scales?
+              </p>
+              <p>
+                Eventually it is our personality that provides the context
+                within which our intelligence operates. Knowing your personality
+                type gives you crucial, actionable insights to help you grow as
+                a person and reach your full potential in your work and in your
+                life.
+              </p>
+            </div>
+
+            <!-- Special Offer Section -->
+            <div class="mb-5">
+              <h3 class="mb-3">Special Offer for BMI Customers – Save €20</h3>
+              <p>
+                Are you a <strong>natural-born leader</strong> like Abraham
+                Lincoln, a <strong>dauntless visionary</strong> like Steve Jobs
+                or maybe a <strong>passionate caretaker</strong> like Mother
+                Teresa?
+              </p>
+              <p>Take the BMI™ Personality Test and find out now!</p>
+              <div class="text-center mt-4">
+                <a href="#" class="btn btn-primary btn-lg"
+                  >Take the Personality Test &gt;&gt;</a
+                >
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

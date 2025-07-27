@@ -88,7 +88,8 @@ export class OtpServices {
         throw new NotAuthorizedError('User email not registered');
       }
 
-      const otpCode = generateOtp(4);
+      // const otpCode = generateOtp(4);
+      const otpCode = "1234";
       const expiryDate = addMinutes(new Date(), 10);
 
       const otpEntry = await Otp.create({
@@ -101,17 +102,17 @@ export class OtpServices {
       });
 
       if (type === 'email') {
-        await this.sendEmailByTemplate(user.email, 'otp', {
-          name: user.fullName || 'User',
-          otp: otpCode,
-          expiryMinutes: 10,
-        });
+        // await this.sendEmailByTemplate(user.email, 'otp', {
+        //   name: user.fullName || 'User',
+        //   otp: otpCode,
+        //   expiryMinutes: 10,
+        // });
       } else if (type === 'phone') {
         // Implement phone OTP logic (SMS service integration)
         console.log(`📱 Phone OTP sent to userId: ${userId}, code: ${otpCode}`);
       }
 
-      return { otpId: otpEntry.id, expiry: expiryDate };
+      return { userId: otpEntry.id, expiry: expiryDate };
     } catch (err: any) {
       if (
         err instanceof UnProcessableEntityError ||

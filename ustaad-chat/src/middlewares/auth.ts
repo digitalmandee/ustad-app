@@ -47,8 +47,11 @@ export async function authenticateJwt(
 
     const user = await User.findByPk(decoded.user.id);
 
-    if (!user || !user.isActive) {
-      throw new NotAuthorizedError('User does not exist or is not active');
+    if (!user) {
+      throw new NotAuthorizedError("User dose not exist");
+    }
+    if (user.isActive == false) {
+      throw new NotAuthorizedError("User is not active");
     }
     req.user = {
       id: user.id.toString(),
