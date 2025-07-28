@@ -83,4 +83,6 @@ router.delete(
   parentController.deletePaymentMethod
 );
 
-export { router as tutorRouter };
+router.get(routes.GET_TUTOR_PROFILE, authenticateJwt, authorizeRoles("PARENT"), parentController.getTutorProfile);
+
+  export { router as tutorRouter };

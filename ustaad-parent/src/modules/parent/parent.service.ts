@@ -12,7 +12,9 @@ import {
   TutorEducation,
   TutorExperience,
   ParentSubscription,
+  TutorSettings,
   PaymentMethod,
+  TutorSessions,
 } from "@ustaad/shared";
 import Stripe from "stripe";
 
@@ -27,6 +29,7 @@ interface UpdateProfileData {
   email?: string;
   phone?: string;
   password?: string;
+  image?: string;
 }
 
 export default class TutorService {
@@ -243,7 +246,7 @@ export default class TutorService {
         cardLast4: stripePaymentMethod.card?.last4 || "",
         cardExpMonth: stripePaymentMethod.card?.exp_month || 0,
         cardExpYear: stripePaymentMethod.card?.exp_year || 0,
-        isDefault: false, 
+        isDefault: false,
       });
 
       // If this is the first payment method, make it default
@@ -406,6 +409,54 @@ export default class TutorService {
       return { message: "Payment method deleted successfully" };
     } catch (error) {
       console.error("Error in deletePaymentMethod:", error);
+      throw error;
+    }
+  }
+  async getTutorProfile(tutorId: string) {
+    try {
+      const user = await User.findByPk(tutorId, {
+        attributes: { exclude: ["password", "isActive", "isEmailVerified", "isPhoneVerified", "deviceId", 'phone'] },
+        include: [
+          {
+            model: Tutor,
+            attributes: [
+              "subjects",
+              "about",
+              "grade",
+            ],
+          },
+          {
+            model: TutorSettings,
+            attributes: [
+              "minSubjects",
+              "maxStudentsDaily",
+              "subjectCosts",
+            ],
+          },
+          {
+            model: TutorEducation,
+            attributes: [
+              "institute",
+              "startDate",
+              "endDate",
+              "description",
+            ],
+          },
+          {
+            model: TutorExperience,
+            attributes: [
+              "company",
+              "startDate",
+              "endDate",
+              "description",
+            ],
+          },
+        ],
+      });
+
+      return user;
+    } catch (error) {
+      console.error("Error in getTutorProfile:", error);
       throw error;
     }
   }

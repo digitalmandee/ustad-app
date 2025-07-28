@@ -1,5 +1,6 @@
 import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { Tutor } from "./Tutor";
+import { User } from "./User";
 
 export interface SubjectCostSetting {
   cost: number;
@@ -40,7 +41,7 @@ export function initTutorSettingsModel(sequelize: Sequelize): typeof TutorSettin
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: "tutors",
+          model: "users",
           key: "id",
         },
         unique: true,
@@ -65,8 +66,8 @@ export function initTutorSettingsModel(sequelize: Sequelize): typeof TutorSettin
     }
   );
 
-  TutorSettings.belongsTo(Tutor, { foreignKey: "tutorId" });
-  Tutor.hasOne(TutorSettings, { foreignKey: "tutorId" });
+  TutorSettings.belongsTo(User, { foreignKey: "tutorId" });
+  User.hasOne(TutorSettings, { foreignKey: "tutorId" });
 
   return TutorSettings;
 } 

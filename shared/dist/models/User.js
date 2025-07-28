@@ -53,12 +53,10 @@ function initUserModel(sequelize) {
         city: sequelize_1.DataTypes.STRING,
         state: sequelize_1.DataTypes.STRING,
         country: sequelize_1.DataTypes.STRING,
-        // Store profilePic as TEXT to accommodate large base64 strings
-        profilePic: {
+        image: {
             type: sequelize_1.DataTypes.TEXT,
             allowNull: true,
             defaultValue: null,
-            comment: "Base64-encoded profile picture",
         },
         email: {
             type: sequelize_1.DataTypes.STRING,

@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TutorSettings = void 0;
 exports.initTutorSettingsModel = initTutorSettingsModel;
 const sequelize_1 = require("sequelize");
-const Tutor_1 = require("./Tutor");
+const User_1 = require("./User");
 class TutorSettings extends sequelize_1.Model {
 }
 exports.TutorSettings = TutorSettings;
@@ -18,7 +18,7 @@ function initTutorSettingsModel(sequelize) {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: "tutors",
+                model: "users",
                 key: "id",
             },
             unique: true,
@@ -40,7 +40,7 @@ function initTutorSettingsModel(sequelize) {
         sequelize,
         tableName: "tutor_settings",
     });
-    TutorSettings.belongsTo(Tutor_1.Tutor, { foreignKey: "tutorId" });
-    Tutor_1.Tutor.hasOne(TutorSettings, { foreignKey: "tutorId" });
+    TutorSettings.belongsTo(User_1.User, { foreignKey: "tutorId" });
+    User_1.User.hasOne(TutorSettings, { foreignKey: "tutorId" });
     return TutorSettings;
 }

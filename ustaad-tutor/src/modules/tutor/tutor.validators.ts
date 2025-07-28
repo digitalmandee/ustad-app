@@ -1,4 +1,4 @@
-import { body } from "express-validator";
+import { body, query } from "express-validator";
 import constant from "../../constant/constant";
 import { UserRole } from "../../constant/enums";
 
@@ -39,6 +39,43 @@ export const tutorLocationValidationRules = () => {
       .trim()
       .isLength({ max: 255 })
       .withMessage("address must be at most 255 characters long"),
+  ];
+};
+
+export const tutorSearchByLocationValidationRules = () => {
+  return [
+    query("latitude")
+      .notEmpty()
+      .withMessage("latitude is required")
+      .isFloat({ min: -90, max: 90 })
+      .withMessage("latitude must be a valid float between -90 and 90")
+      .toFloat(),
+
+    query("longitude")
+      .notEmpty()
+      .withMessage("longitude is required")
+      .isFloat({ min: -180, max: 180 })
+      .withMessage("longitude must be a valid float between -180 and 180")
+      .toFloat(),
+
+    query("radius")
+      .notEmpty()
+      .withMessage("radius is required")
+      .isFloat({ min: 0.1, max: 100 })
+      .withMessage("radius must be a valid float between 0.1 and 100")
+      .toFloat(),
+
+    query("limit")
+      .optional()
+      .isInt({ min: 1, max: 100 })
+      .withMessage("limit must be an integer between 1 and 100")
+      .toInt(),
+
+    query("offset")
+      .optional()
+      .isInt({ min: 0 })
+      .withMessage("offset must be a non-negative integer")
+      .toInt(),
   ];
 };
 

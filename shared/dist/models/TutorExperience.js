@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TutorExperience = void 0;
 exports.initTutorExperienceModel = initTutorExperienceModel;
 const sequelize_1 = require("sequelize");
-const Tutor_1 = require("./Tutor");
+const User_1 = require("./User");
 class TutorExperience extends sequelize_1.Model {
 }
 exports.TutorExperience = TutorExperience;
@@ -18,8 +18,8 @@ function initTutorExperienceModel(sequelize) {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: "tutors",
-                key: "userId",
+                model: "users",
+                key: "id",
             },
         },
         company: {
@@ -42,7 +42,7 @@ function initTutorExperienceModel(sequelize) {
         sequelize,
         tableName: "tutor_experiences",
     });
-    TutorExperience.belongsTo(Tutor_1.Tutor, { foreignKey: "tutorId" });
-    Tutor_1.Tutor.hasMany(TutorExperience, { foreignKey: "tutorId" });
+    TutorExperience.belongsTo(User_1.User, { foreignKey: "tutorId" });
+    User_1.User.hasMany(TutorExperience, { foreignKey: "tutorId" });
     return TutorExperience;
 }

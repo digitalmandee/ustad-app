@@ -1,5 +1,6 @@
 import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { Tutor } from "./Tutor";
+import { User } from "./User";
 
 export interface TutorLocationAttributes {
   id: string;
@@ -45,7 +46,7 @@ export function initTutorLocationModel(
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: "tutors",
+          model: "users",
           key: "id",
         },
         onDelete: "CASCADE",
@@ -80,8 +81,8 @@ export function initTutorLocationModel(
     }
   );
 
-  Tutor.hasMany(TutorLocation, { foreignKey: "tutorId", as: "locations" });
-  TutorLocation.belongsTo(Tutor, { foreignKey: "tutorId", as: "tutor" });
+  TutorLocation.belongsTo(User, { foreignKey: "tutorId", as: "tutor" });
+  User.hasMany(TutorLocation, { foreignKey: "tutorId", as: "locations" });
 
   return TutorLocation;
 }

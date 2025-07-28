@@ -19,7 +19,7 @@ interface UserAttributes {
   state?: string | null;
   country?: string | null;
   // profilePic will be stored as base64 string
-  profilePic?: string | null;
+  image?: string | null;
 
   email: string;
   isEmailVerified: boolean;
@@ -49,7 +49,7 @@ interface UserCreationAttributes
     | "city"
     | "state"
     | "country"
-    | "profilePic"
+    | "image"
     | "isEmailVerified"
     | "phone"
     | "isPhoneVerified"
@@ -77,7 +77,7 @@ export class User
   public state!: string | null;
   public country!: string | null;
   // profilePic will be stored as base64 string
-  public profilePic!: string | null;
+  public image!: string | null;
 
   public email!: string;
   public isEmailVerified!: boolean;
@@ -138,12 +138,10 @@ export function initUserModel(sequelize: Sequelize): typeof User {
       city: DataTypes.STRING,
       state: DataTypes.STRING,
       country: DataTypes.STRING,
-      // Store profilePic as TEXT to accommodate large base64 strings
-      profilePic: {
+      image: {
         type: DataTypes.TEXT,
         allowNull: true,
         defaultValue: null,
-        comment: "Base64-encoded profile picture",
       },
       email: {
         type: DataTypes.STRING,

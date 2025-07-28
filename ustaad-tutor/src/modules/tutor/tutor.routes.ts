@@ -9,7 +9,8 @@ import {
   educationValidationRules,
   tutorSettingsValidationRules,
   tutorLocationValidationRules,
-  paymentRequestValidationRules
+  paymentRequestValidationRules,
+  tutorSearchByLocationValidationRules
 } from "./tutor.validators";
 import routes from "../../routes/routes";
 import { authenticateJwt } from "../../middlewares/auth";
@@ -142,10 +143,19 @@ router.put(
 router.post(routes.ADD_CHILD_NOTE, authenticateJwt, authorizeRoles("TUTOR"), tutorController.addChildNote);
 router.post(routes.ADD_CHILD_REVIEW, authenticateJwt,authorizeRoles("TUTOR"),tutorController.addChildReview);
 
+router.post(
+  routes.TUTOR_LOCATION,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorLocationValidationRules(),
+  validateRequest,
+  tutorController.addTutorLocation
+);
+
 router.get(
   routes.TUTOR_LOCATION,
   authenticateJwt,
-  tutorLocationValidationRules(),
+  tutorSearchByLocationValidationRules(),
   validateRequest,
   authorizeRoles("TUTOR", "PARENT"),
   tutorController.findTutorsByLocation

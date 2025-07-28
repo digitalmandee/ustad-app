@@ -1,5 +1,6 @@
 import { Model, DataTypes, Sequelize } from "sequelize";
 import { Tutor } from "./Tutor";
+import { User } from "./User";
 
 export interface TutorEducationAttributes {
   id: number;
@@ -35,8 +36,8 @@ export function initTutorEducationModel(sequelize: Sequelize): typeof TutorEduca
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: "tutors",
-          key: "userId",
+          model: "users",
+          key: "id",
         },
       },
       institute: {
@@ -62,8 +63,8 @@ export function initTutorEducationModel(sequelize: Sequelize): typeof TutorEduca
     }
   );
 
-  TutorEducation.belongsTo(Tutor, { foreignKey: "tutorId" });
-  Tutor.hasMany(TutorEducation, { foreignKey: "tutorId" });
+  TutorEducation.belongsTo(User, { foreignKey: "tutorId" });
+  User.hasMany(TutorEducation, { foreignKey: "tutorId" });
 
   return TutorEducation;
 } 

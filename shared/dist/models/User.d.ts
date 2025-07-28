@@ -14,7 +14,7 @@ interface UserAttributes {
     city?: string | null;
     state?: string | null;
     country?: string | null;
-    profilePic?: string | null;
+    image?: string | null;
     email: string;
     isEmailVerified: boolean;
     phone?: string | null;
@@ -24,7 +24,7 @@ interface UserAttributes {
     createdAt?: Date;
     updatedAt?: Date;
 }
-interface UserCreationAttributes extends Optional<UserAttributes, "id" | "role" | "isActive" | "isAdminVerified" | "isOnBoard" | "password" | "cnic" | "address" | "city" | "state" | "country" | "profilePic" | "isEmailVerified" | "phone" | "isPhoneVerified" | "googleId" | "deviceId" | "createdAt" | "updatedAt"> {
+interface UserCreationAttributes extends Optional<UserAttributes, "id" | "role" | "isActive" | "isAdminVerified" | "isOnBoard" | "password" | "cnic" | "address" | "city" | "state" | "country" | "image" | "isEmailVerified" | "phone" | "isPhoneVerified" | "googleId" | "deviceId" | "createdAt" | "updatedAt"> {
 }
 export declare class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
     id: string;
@@ -39,7 +39,7 @@ export declare class User extends Model<UserAttributes, UserCreationAttributes> 
     city: string | null;
     state: string | null;
     country: string | null;
-    profilePic: string | null;
+    image: string | null;
     email: string;
     isEmailVerified: boolean;
     phone: string | null;

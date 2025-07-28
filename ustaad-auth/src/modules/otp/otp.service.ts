@@ -112,7 +112,7 @@ export class OtpServices {
         console.log(`📱 Phone OTP sent to userId: ${userId}, code: ${otpCode}`);
       }
 
-      return { userId: otpEntry.id, expiry: expiryDate };
+      return { userId: userId, expiry: expiryDate };
     } catch (err: any) {
       if (
         err instanceof UnProcessableEntityError ||
