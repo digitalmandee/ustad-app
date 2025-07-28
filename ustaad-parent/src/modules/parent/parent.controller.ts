@@ -64,13 +64,14 @@ export default class TutorController {
   editProfile = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-      const { fullName, email, phone, password } = req.body;
+      const { fullName, email, phone, password, image } = req.body;
 
       const result = await this.tutorService.updateProfile(userId, {
         fullName,
         email,
         phone,
         password,
+        image,
       });
 
       return sendSuccessResponse(
@@ -243,6 +244,30 @@ export default class TutorController {
 
       const errorMessage =
         error?.message || "Something went wrong while deleting payment method";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+  getTutorProfile = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { tutorId } = req.params;
+
+      const result = await this.tutorService.getTutorProfile(tutorId);
+
+      return sendSuccessResponse(
+        res,
+        "Tutor profile retrieved successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Get tutor profile error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while retrieving tutor profile";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };

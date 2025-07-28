@@ -458,41 +458,27 @@ export default class TutorController {
     }
   }
 
+  addTutorLocation = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const locationData = req.body;
+  
+      const location = await this.tutorService.addTutorLocation(userId, locationData);
+  
+      sendSuccessResponse(res,InfoMessages.GENERIC.ITEM_CREATED_SUCCESSFULLY("Tutor Location"),201,location);
+    } catch (e: any) {
+      throw new GenericError(e, `Error from addTutorLocation ${__filename}`);
+    }
+  };
+
   findTutorsByLocation = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { latitude, longitude, radiusKm = 5, limit = 20, offset = 0 } = req.body;
-
-      if (!latitude || !longitude) {
-        return sendErrorResponse(
-          res,
-          "Latitude and longitude are required",
-          400
-        );
-      }
-
-      const result = await this.tutorService.findTutorsByLocation(
-        parseFloat(latitude),
-        parseFloat(longitude),
-        parseFloat(radiusKm),
-        parseInt(limit),
-        parseInt(offset)
-      );
-
-      return sendSuccessResponse(
-        res,
-        "Tutors found successfully",
-        200,
-        result
-      );
-    } catch (error: any) {
-      console.error("Find tutors by location error:", error);
-
-      if (error instanceof GenericError) {
-        return sendErrorResponse(res, error.message, 400);
-      }
-
-      const errorMessage = error?.message || "Something went wrong while finding tutors";
-      return sendErrorResponse(res, errorMessage, 400);
+      const { latitude, longitude, radius, limit = 20, offset = 0 } = req.query as unknown as FindTutorsByLocationDto;
+      const results = await this.tutorService.findTutorsByLocation(latitude,longitude,radius,limit,offset);
+  
+      return sendSuccessResponse(res,InfoMessages.GENERIC.ITEM_GET_SUCCESSFULLY("Nearby Tutors"),200,results);
+    } catch (e: any) {
+      throw new GenericError(e, `Error from findTutorsByLocation ${__filename}`);
     }
   };
 

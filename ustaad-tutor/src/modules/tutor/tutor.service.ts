@@ -1,25 +1,26 @@
 import { ConflictError } from "../../errors/conflict-error";
-import { GenericError } from "../../errors/generic-error";
 import { BadRequestError } from "src/errors/bad-request-error";
-// import { User } from "../../models/User";
-// import { Tutor } from "../../models/Tutor";
-// import { TutorExperience } from "../../models/TutorExperience";
-// import { TutorEducation } from "../../models/TutorEducation";
 import { uploadFile } from "../../helper/file-upload";
 import path from "path";
 import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
 import { ITutorOnboardingDTO } from "./tutor.dto";
 import bcrypt from "bcrypt";
-// import { TutorSettings, SubjectCostSetting } from "../../models/TutorSettings";
-// import { ChildNotes } from '../../models/ChildNotes';
-// import { ChildReview } from '../../models/ChildReview';
 import { Op } from "sequelize";
 import geohash from "ngeohash";
 import { PaymentStatus } from "../../constant/enums";
 
-
-
-import { User, Tutor, Subject, TutorEducation, TutorExperience, TutorSettings, ChildNotes, ChildReview, TutorLocation, PaymentRequest } from "@ustaad/shared";
+import {
+  User,
+  Tutor,
+  Subject,
+  TutorEducation,
+  TutorExperience,
+  TutorSettings,
+  ChildNotes,
+  ChildReview,
+  TutorLocation,
+  PaymentRequest,
+} from "@ustaad/shared";
 
 interface TutorProfileData extends ITutorOnboardingDTO {
   resume: Express.Multer.File;
@@ -36,9 +37,9 @@ interface UpdateProfileData {
   email?: string;
   phone?: string;
   password?: string;
-  image?:string
-  isEmailVerified?:boolean;
-  isPhoneVerified?:boolean;
+  image?: string;
+  isEmailVerified?: boolean;
+  isPhoneVerified?: boolean;
 }
 
 interface ExperienceData {
@@ -122,52 +123,55 @@ export default class TutorService {
       if (!user) {
         throw new UnProcessableEntityError("User not found");
       }
-  
+
       let emailChanged = false;
       let phoneChanged = false;
-  
+
       if (data.email && data.email !== user.email) {
-        const existingUser = await User.findOne({ where: { email: data.email } });
+        const existingUser = await User.findOne({
+          where: { email: data.email },
+        });
         if (existingUser) {
           throw new ConflictError("Email is already taken");
         }
         emailChanged = true;
       }
-  
+
       if (data.phone && data.phone !== user.phone) {
-        const existingUser = await User.findOne({ where: { phone: data.phone } });
+        const existingUser = await User.findOne({
+          where: { phone: data.phone },
+        });
         if (existingUser) {
           throw new ConflictError("Phone number is already taken");
         }
         phoneChanged = true;
       }
-  
+
       // ✅ Reset verification flags if changed
       if (emailChanged) {
         data.isEmailVerified = false;
       }
-  
+
       if (phoneChanged) {
         data.isPhoneVerified = false;
       }
-  
+
       if (data.password) {
         data.password = await bcrypt.hash(data.password, 10);
       }
-  
+
       await user.update(data);
-  
+
       const updatedUser = await User.findByPk(userId, {
         attributes: { exclude: ["password"] },
       });
-  
+
       return updatedUser;
     } catch (error) {
       console.error("Error in updateProfile:", error);
       throw error;
     }
   }
-  
 
   async getProfile(userId: string) {
     try {
@@ -190,10 +194,6 @@ export default class TutorService {
         ],
       });
 
-      if (!user) {
-        throw new UnProcessableEntityError("User not found");
-      }
-
       return user;
     } catch (error) {
       console.error("Error in getProfile:", error);
@@ -209,7 +209,7 @@ export default class TutorService {
       }
 
       const experience = await TutorExperience.create({
-        tutorId: tutor.id,
+        tutorId: tutor.userId,
         company: data.company,
         startDate: data.startDate,
         endDate: data.endDate,
@@ -231,7 +231,7 @@ export default class TutorService {
       }
 
       const experiences = await TutorExperience.findAll({
-        where: { tutorId: tutor.id },
+        where: { tutorId: tutor.userId },
         order: [["createdAt", "DESC"]],
       });
 
@@ -254,7 +254,7 @@ export default class TutorService {
       }
 
       const experience = await TutorExperience.findOne({
-        where: { id: experienceId, tutorId: tutor.id },
+        where: { id: experienceId, tutorId: tutor.userId },
       });
 
       if (!experience) {
@@ -278,7 +278,7 @@ export default class TutorService {
       }
 
       const experience = await TutorExperience.findOne({
-        where: { id: experienceId, tutorId: tutor.id },
+        where: { id: experienceId, tutorId: tutor.userId },
       });
 
       if (!experience) {
@@ -302,7 +302,7 @@ export default class TutorService {
       }
 
       const education = await TutorEducation.create({
-        tutorId: tutor.id,
+        tutorId: tutor.userId,
         institute: data.institute,
         startDate: data.startDate,
         endDate: data.endDate,
@@ -324,7 +324,7 @@ export default class TutorService {
       }
 
       const educations = await TutorEducation.findAll({
-        where: { tutorId: tutor.id },
+        where: { tutorId: tutor.userId },
         order: [["createdAt", "DESC"]],
       });
 
@@ -347,7 +347,7 @@ export default class TutorService {
       }
 
       const education = await TutorEducation.findOne({
-        where: { id: educationId, tutorId: tutor.id },
+        where: { id: educationId, tutorId: tutor.userId },
       });
 
       if (!education) {
@@ -371,7 +371,7 @@ export default class TutorService {
       }
 
       const education = await TutorEducation.findOne({
-        where: { id: educationId, tutorId: tutor.id },
+        where: { id: educationId, tutorId: tutor.userId },
       });
 
       if (!education) {
@@ -423,7 +423,14 @@ export default class TutorService {
     return await Tutor.findOne({ where: { userId } });
   }
 
-  async setTutorSettings(tutorId: string, settings: { minSubjects: number; maxStudentsDaily: number; subjectCosts: Record<string, SubjectCostSetting> }) {
+  async setTutorSettings(
+    tutorId: string,
+    settings: {
+      minSubjects: number;
+      maxStudentsDaily: number;
+      subjectCosts: Record<string, SubjectCostSetting>;
+    }
+  ) {
     return await TutorSettings.create({ tutorId, ...settings });
   }
 
@@ -431,19 +438,38 @@ export default class TutorService {
     return await TutorSettings.findOne({ where: { tutorId } });
   }
 
-  async updateTutorSettings(tutorId: string, settings: { minSubjects: number; maxStudentsDaily: number; subjectCosts: Record<string, SubjectCostSetting> }) {
-    const existingSettings = await TutorSettings.findOne({ where: { tutorId } });
+  async updateTutorSettings(
+    tutorId: string,
+    settings: {
+      minSubjects: number;
+      maxStudentsDaily: number;
+      subjectCosts: Record<string, SubjectCostSetting>;
+    }
+  ) {
+    const existingSettings = await TutorSettings.findOne({
+      where: { tutorId },
+    });
     if (existingSettings) {
       return await existingSettings.update(settings);
     }
     return await this.setTutorSettings(tutorId, settings);
   }
 
-  async createChildNote(data: { childId: string; tutorId: string; headline: string; description: string; }) {
+  async createChildNote(data: {
+    childId: string;
+    tutorId: string;
+    headline: string;
+    description: string;
+  }) {
     return await ChildNotes.create(data);
   }
 
-  async createChildReview(data: { childId: string; tutorId: string; rating: number; review: string; }) {
+  async createChildReview(data: {
+    childId: string;
+    tutorId: string;
+    rating: number;
+    review: string;
+  }) {
     return await ChildReview.create(data);
   }
 
@@ -461,7 +487,7 @@ export default class TutorService {
       const geohashValue = geohash.encode(data.latitude, data.longitude);
 
       const location = await TutorLocation.create({
-        tutorId: tutor.id,
+        tutorId: tutor.userId,
         latitude: data.latitude,
         longitude: data.longitude,
         address: data.address,
@@ -475,43 +501,45 @@ export default class TutorService {
     }
   }
 
-  async findTutorsByLocation(parentLat: number, parentLng: number,radiusKm: number,limit = 20, offset = 0 ) {
+  async findTutorsByLocation(
+    parentLat: number,
+    parentLng: number,
+    radiusKm: number,
+    limit = 20,
+    offset = 0
+  ) {
     try {
       // Generate geohash for parent location
       const parentGeohash = geohash.encode(parentLat, parentLng);
-      
+
       // Calculate geohash precision based on radius
       // For radius ~5km, use precision 5
       // For radius ~1km, use precision 6
       // For radius ~100m, use precision 7
       const precision = radiusKm <= 1 ? 6 : radiusKm <= 5 ? 5 : 4;
       const parentGeohashPrefix = parentGeohash.substring(0, precision);
-      
+
       // Find tutors within the geohash area
       const nearbyTutors = await TutorLocation.findAll({
         where: {
           geoHash: {
-            [Op.like]: `${parentGeohashPrefix}%`
-          }
+            [Op.like]: `${parentGeohashPrefix}%`,
+          },
         },
         include: [
           {
-            model: Tutor,
-            include: [
-              {
-                model: User,
-                attributes: ['id', 'fullName', 'email', 'phone', 'image']
-              }
-            ]
-          }
+            model: User,
+            as: "tutor",
+            attributes: ["id", "fullName", "email", "phone", "image"],
+          },
         ],
         limit,
-        offset
+        offset,
       });
 
       // Filter by actual distance and sort by distance
       const tutorsWithDistance = nearbyTutors
-        .map(tutorLocation => {
+        .map((tutorLocation) => {
           const distance = this.calculateDistanceKm(
             parentLat,
             parentLng,
@@ -520,10 +548,10 @@ export default class TutorService {
           );
           return {
             ...tutorLocation.toJSON(),
-            distance
+            distance,
           };
         })
-        .filter(tutor => tutor.distance <= radiusKm)
+        .filter((tutor) => tutor.distance <= radiusKm)
         .sort((a, b) => a.distance - b.distance);
 
       return tutorsWithDistance;
@@ -533,7 +561,12 @@ export default class TutorService {
     }
   }
 
-  calculateDistanceKm(lat1: number,lon1: number,lat2: number,lon2: number): number {
+  calculateDistanceKm(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): number {
     const toRad = (val: number) => (val * Math.PI) / 180;
     const R = 6371; // Earth's radius in kilometers
     const dLat = toRad(lat2 - lat1);
@@ -559,14 +592,16 @@ export default class TutorService {
 
       // Check if tutor has sufficient balance
       if (tutor.balance < data.amount) {
-        throw new BadRequestError(`Insufficient balance. Available balance: ${tutor.balance}, Requested amount: ${data.amount}`);
+        throw new BadRequestError(
+          `Insufficient balance. Available balance: ${tutor.balance}, Requested amount: ${data.amount}`
+        );
       }
 
       // Create payment request
       const paymentRequest = await PaymentRequest.create({
         tutorId: data.tutorId,
         amount: data.amount,
-        status: PaymentStatus.PENDING
+        status: PaymentStatus.PENDING,
       });
 
       return paymentRequest;

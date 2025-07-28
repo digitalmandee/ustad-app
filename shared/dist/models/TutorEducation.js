@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TutorEducation = void 0;
 exports.initTutorEducationModel = initTutorEducationModel;
 const sequelize_1 = require("sequelize");
-const Tutor_1 = require("./Tutor");
+const User_1 = require("./User");
 class TutorEducation extends sequelize_1.Model {
 }
 exports.TutorEducation = TutorEducation;
@@ -18,8 +18,8 @@ function initTutorEducationModel(sequelize) {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: "tutors",
-                key: "userId",
+                model: "users",
+                key: "id",
             },
         },
         institute: {
@@ -42,7 +42,7 @@ function initTutorEducationModel(sequelize) {
         sequelize,
         tableName: "tutor_educations",
     });
-    TutorEducation.belongsTo(Tutor_1.Tutor, { foreignKey: "tutorId" });
-    Tutor_1.Tutor.hasMany(TutorEducation, { foreignKey: "tutorId" });
+    TutorEducation.belongsTo(User_1.User, { foreignKey: "tutorId" });
+    User_1.User.hasMany(TutorEducation, { foreignKey: "tutorId" });
     return TutorEducation;
 }

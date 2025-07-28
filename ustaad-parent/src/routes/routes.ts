@@ -5,6 +5,7 @@ const routes = {
   ADD_PARENT_CUSTOMER_ID: "/parent/customer-id",
   ADD_PARENT_SUBSCRIPTION: "/parent/subscription",
   CANCEL_PARENT_SUBSCRIPTION: "/parent/subscription/cancel",
+  GET_TUTOR_PROFILE: "/parent/tutor/:tutorId",
   
   // Payment Method routes
   PARENT_PAYMENT_METHODS: "/parent/payment-methods",

@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TutorLocation = void 0;
 exports.initTutorLocationModel = initTutorLocationModel;
 const sequelize_1 = require("sequelize");
-const Tutor_1 = require("./Tutor");
+const User_1 = require("./User");
 class TutorLocation extends sequelize_1.Model {
 }
 exports.TutorLocation = TutorLocation;
@@ -18,7 +18,7 @@ function initTutorLocationModel(sequelize) {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: "tutors",
+                model: "users",
                 key: "id",
             },
             onDelete: "CASCADE",
@@ -50,7 +50,7 @@ function initTutorLocationModel(sequelize) {
             },
         ],
     });
-    Tutor_1.Tutor.hasMany(TutorLocation, { foreignKey: "tutorId", as: "locations" });
-    TutorLocation.belongsTo(Tutor_1.Tutor, { foreignKey: "tutorId", as: "tutor" });
+    TutorLocation.belongsTo(User_1.User, { foreignKey: "tutorId", as: "tutor" });
+    User_1.User.hasMany(TutorLocation, { foreignKey: "tutorId", as: "locations" });
     return TutorLocation;
 }
