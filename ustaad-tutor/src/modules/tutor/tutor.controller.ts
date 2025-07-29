@@ -482,6 +482,42 @@ export default class TutorController {
     }
   };
 
+  getAllTutorLocations = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const locations = await this.tutorService.getAllTutorLocations(userId);
+      
+      return sendSuccessResponse(
+        res,
+        InfoMessages.GENERIC.ITEM_GET_SUCCESSFULLY("Tutor Locations"),
+        200,
+        locations
+      );
+    } catch (e: any) {
+      throw new GenericError(e, `Error from getAllTutorLocations ${__filename}`);
+    }
+  };
+
+  deleteTutorLocation = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user.id;
+      const { locationId } = req.query as any;
+
+      console.log("locationId", locationId);
+      
+      const result = await this.tutorService.deleteTutorLocation(userId, locationId);
+      
+      return sendSuccessResponse(
+        res,
+        "Location deleted successfully",
+        200,
+        result
+      );
+    } catch (e: any) {
+      throw new GenericError(e, `Error from deleteTutorLocation ${__filename}`);
+    }
+  };
+
   // Payment Request Methods
   createPaymentRequest = async (req: AuthenticatedRequest, res: Response) => {
     try {

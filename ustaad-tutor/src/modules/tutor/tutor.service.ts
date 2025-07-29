@@ -1,5 +1,6 @@
 import { ConflictError } from "../../errors/conflict-error";
 import { BadRequestError } from "src/errors/bad-request-error";
+import { NotFoundError } from "../../errors/not-found-error";
 import { uploadFile } from "../../helper/file-upload";
 import path from "path";
 import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
@@ -579,6 +580,51 @@ export default class TutorService {
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
+  }
+
+  async getAllTutorLocations(userId: string) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      const locations = await TutorLocation.findAll({
+        where: { tutorId: tutor.userId },
+        order: [["createdAt", "DESC"]],
+      });
+
+      return locations;
+    } catch (error) {
+      console.error("Error in getAllTutorLocations:", error);
+      throw error;
+    }
+  }
+
+  async deleteTutorLocation(userId: string, locationId: string) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      const location = await TutorLocation.findOne({
+        where: { 
+          id: locationId,
+          tutorId: tutor.userId 
+        },
+      });
+
+      if (!location) {
+        throw new NotFoundError("Location not found or not authorized to delete");
+      }
+
+      await location.destroy();
+      return { message: "Location deleted successfully" };
+    } catch (error) {
+      console.error("Error in deleteTutorLocation:", error);
+      throw error;
+    }
   }
 
   // Payment Request Methods
