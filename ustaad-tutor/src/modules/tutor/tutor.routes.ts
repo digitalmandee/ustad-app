@@ -143,6 +143,14 @@ router.put(
 router.post(routes.ADD_CHILD_NOTE, authenticateJwt, authorizeRoles("TUTOR"), tutorController.addChildNote);
 router.post(routes.ADD_CHILD_REVIEW, authenticateJwt,authorizeRoles("TUTOR"),tutorController.addChildReview);
 
+router.get(
+  routes.GET_TUTORS_LOCATIONS,
+  authenticateJwt,
+  tutorSearchByLocationValidationRules(),
+  validateRequest,
+  authorizeRoles("TUTOR", "PARENT"),
+  tutorController.findTutorsByLocation
+);
 router.post(
   routes.TUTOR_LOCATION,
   authenticateJwt,
@@ -152,13 +160,21 @@ router.post(
   tutorController.addTutorLocation
 );
 
+
+// Get all tutor locations
 router.get(
   routes.TUTOR_LOCATION,
   authenticateJwt,
-  tutorSearchByLocationValidationRules(),
-  validateRequest,
-  authorizeRoles("TUTOR", "PARENT"),
-  tutorController.findTutorsByLocation
+  authorizeRoles("TUTOR"),
+  tutorController.getAllTutorLocations
+);
+
+// Delete tutor location
+router.delete(
+  routes.TUTOR_LOCATION,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.deleteTutorLocation
 );
 
 // Payment Request routes
