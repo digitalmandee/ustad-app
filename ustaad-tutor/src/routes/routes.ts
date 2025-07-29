@@ -24,6 +24,7 @@ const routes = {
   ADD_CHILD_REVIEW: "/tutor/child/reviews",
 
   TUTOR_LOCATION: "/tutor/location",
+  GET_TUTORS_LOCATIONS: "/tutor/locations",
   ADD_PAYMENT_REQUEST: "/tutor/payment-request",
   GET_PAYMENT_REQUESTS: "/tutor/payment-requests",
 

@@ -46,6 +46,7 @@ export default class AuthService implements IAuthService {
       const newUser = await User.create({
         ...userCreateDTO,
         password: hashedPassword,
+        isActive: true,
       });
 
       const sanitizedUser = newUser.toJSON();
