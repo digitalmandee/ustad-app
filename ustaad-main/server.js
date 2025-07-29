@@ -35,7 +35,7 @@ app.use(
 app.use(
   "/tutor",
   createProxyMiddleware({
-    target: "http://localhost:302",
+    target: "http://localhost:303",
     changeOrigin: true,
     pathRewrite: { "^/tutor": "/api/v1/tutor" },
     onError(err, req, res) {
@@ -69,7 +69,7 @@ app.use(
 app.use(
   "/chat",
   createProxyMiddleware({
-    target: "http://localhost:303",
+    target: "http://localhost:305",
     changeOrigin: true,
     pathRewrite: { "^/chat": "/api/v1/chat" },
     onError(err, req, res) {

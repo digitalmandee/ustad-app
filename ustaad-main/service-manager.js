@@ -145,8 +145,8 @@ class ServiceManager {
     const servicesToStart = [
       { name: 'ustaad-auth', port: 300 },
       { name: 'ustaad-parent', port: 301 },
-      { name: 'ustaad-tutor', port: 302 },
-      { name: 'ustaad-chat', port: 303 }
+      { name: 'ustaad-tutor', port: 303 },
+      { name: 'ustaad-chat', port: 305 }
     ];
 
     const startPromises = servicesToStart.map(service => {
