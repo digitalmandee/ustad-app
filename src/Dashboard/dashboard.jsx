@@ -18,6 +18,7 @@ import {
     TextField,
     TableContainer,
     TableCell,
+    Checkbox,
     TableHead,
     TableRow,
     TableBody,
@@ -25,6 +26,18 @@ import {
     Avatar,
     IconButton
 } from "@mui/material"
+import {
+    Search as SearchIcon,
+    Close as CloseIcon,
+    FilterList as FilterIcon,
+    Add as AddIcon,
+    ArrowBack as ArrowBackIcon,
+    Update as UpdateIcon,
+    ContentCopy as ContentCopyIcon,
+    ArrowUpward as ArrowUpwardIcon,
+    ArrowDownward as ArrowDownwardIcon,
+    UnfoldMore as UnfoldMoreIcon,
+} from "@mui/icons-material";
 import fileicon from "../assets/file.png";
 import editicon from "../assets/edit.png";
 import DateRangeIcon from '@mui/icons-material/DateRange';
@@ -57,13 +70,15 @@ const jobData = [
 ]
 
 const Dashboard = () => {
+    const [selected, setSelected] = useState([])
     const [timeFilter, setTimeFilter] = useState("Last 7 Days")
     const [weekFilter, setWeekFilter] = useState("Week")
     const [searchQuery, setSearchQuery] = useState("")
     const [jobTitleFilter, setJobTitleFilter] = useState("All Job Titles")
     const [statusFilter, setStatusFilter] = useState("All Status")
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" })
 
-    const employees = [
+    const tableData = [
         {
             id: 1,
             name: "Rudra Pratap",
@@ -179,8 +194,6 @@ const Dashboard = () => {
                     <Typography sx={{ fontWeight: 600, fontSize: '24px', color: '#101219' }}>
                         {value.toLocaleString()}
                     </Typography>
-
-                    {/* Right: Change indicator and "Last year" */}
                     <Box display="flex" alignItems="center" gap={0.5}>
                         {isUp ? (
                             <ArrowDropUpIcon sx={{ color: changeColor, fontSize: 20 }} />
@@ -201,6 +214,70 @@ const Dashboard = () => {
         );
     };
 
+    const handleSelectAll = (event) => {
+        if (event.target.checked) {
+            setSelected(tableData.map((row) => row.id))
+        } else {
+            setSelected([])
+        }
+    }
+
+    const handleSelectRow = (id) => {
+        const selectedIndex = selected.indexOf(id)
+        let newSelected = []
+
+        if (selectedIndex === -1) {
+            newSelected = newSelected.concat(selected, id)
+        } else if (selectedIndex === 0) {
+            newSelected = newSelected.concat(selected.slice(1))
+        } else if (selectedIndex === selected.length - 1) {
+            newSelected = newSelected.concat(selected.slice(0, -1))
+        } else if (selectedIndex > 0) {
+            newSelected = newSelected.concat(selected.slice(0, selectedIndex), selected.slice(selectedIndex + 1))
+        }
+
+        setSelected(newSelected)
+    }
+
+    const isSelected = (id) => selected.indexOf(id) !== -1
+
+    const getInitials = (name) => {
+        return name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase()
+    }
+
+    const getAvatarColor = (name) => {
+        const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F"]
+        const index = name.length % colors.length
+        return colors[index]
+    }
+
+    const handleSort = (key) => {
+        let direction = "asc"
+        if (sortConfig.key === key && sortConfig.direction === "asc") {
+            direction = "desc"
+        }
+        setSortConfig({ key, direction })
+    }
+
+    const getSortIcon = (columnKey) => {
+        if (sortConfig.key === columnKey) {
+            return sortConfig.direction === "asc" ? (
+                <ArrowUpwardIcon style={{ fontSize: "16px", marginLeft: "4px" }} />
+            ) : (
+                <ArrowDownwardIcon style={{ fontSize: "16px", marginLeft: "4px" }} />
+            )
+        }
+        return <UnfoldMoreIcon style={{ fontSize: "16px", marginLeft: "4px", color: "#ccc" }} />
+    }
+
+    const handleCopy = (text) => {
+        navigator.clipboard.writeText(text)
+    }
+
     return (
         <>
             <SideNav />
@@ -213,16 +290,15 @@ const Dashboard = () => {
                 <Box sx={{ flexGrow: 1, py: 2, bgcolor: "#FFFFFF" }}>
                     {/* Header */}
                     <Box sx={{ mb: 3 }}>
-                        {/* Top Left: Title + Chip */}
                         <Box sx={{ display: "flex", alignItems: "center", gap: 2, px: 3, mb: 1.5 }}>
                             <Typography sx={{ fontWeight: 600, fontSize: '18px' }}>
                                 Overview
                             </Typography>
-                            <Chip label="Updated" size="medium" sx={{ borderRadius: '8px', bgcolor: "#FFFFFF", color: "#4D5874", border: '1px solid #E0E3EB' }} />
+                            <Chip label="Updated" size="medium" sx={{ cursor: 'pointer', borderRadius: '8px', bgcolor: "#FFFFFF", color: "#4D5874", border: '1px solid #E0E3EB' }} />
                         </Box>
                         <Divider sx={{ mb: 2, color: "#F3F5F7" }} />
                         <Box sx={{ px: 3, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 2 }}>
-                            {/* Left Side: Today + Dropdown */}
+
                             <Box
                                 sx={{
                                     display: "flex",
@@ -232,17 +308,13 @@ const Dashboard = () => {
                                     overflow: "hidden",
                                 }}
                             >
-                                {/* "Today" label */}
+
                                 <Box sx={{ px: 2, py: 0.8 }}>
                                     <Typography sx={{ fontWeight: 500, fontSize: '14px', color: '#4D5874' }}>
                                         Today
                                     </Typography>
                                 </Box>
-
-                                {/* Vertical divider */}
                                 <Divider orientation="vertical" flexItem sx={{ bgcolor: "#E0E3EB" }} />
-
-                                {/* Dropdown */}
                                 <DateRangeIcon style={{
                                     width: 20,
                                     height: 20,
@@ -294,7 +366,6 @@ const Dashboard = () => {
                     <Box
                         sx={{
                             display: 'flex',
-                            // flexWrap: 'wrap',
                             gap: 2,
                             px: 3,
                             mb: 3,
@@ -390,8 +461,6 @@ const Dashboard = () => {
                             <Grid item xs={12} md={3} sx={{
                                 width: '33.1%'
                             }}>
-                                {/* <Grid container spacing={2}> */}
-                                {/* Total Users Progress */}
                                 <Grid item xs={12}>
                                     <Card
                                         elevation={0}
@@ -516,7 +585,7 @@ const Dashboard = () => {
                                                             <Pie
                                                                 data={jobData}
                                                                 cx="50%"
-                                                                cy="100%" // position bottom for semi-circle
+                                                                cy="100%"
                                                                 innerRadius={30}
                                                                 outerRadius={50}
                                                                 startAngle={180}
@@ -578,18 +647,16 @@ const Dashboard = () => {
                     <Box sx={{ mx: 3, p: 3, mt: 2, border: "1px solid #E0E3EB", borderRadius: '12px' }}>
                         {/* Header */}
                         <Box sx={{ mb: 3 }}>
-                            {/* Heading and Controls Row */}
                             <Box
                                 sx={{
                                     display: "flex",
                                     justifyContent: "space-between",
                                     alignItems: "center",
-                                    flexWrap: "wrap", // allows wrapping on small screens
+                                    flexWrap: "wrap",
                                     gap: 2,
                                     mb: 3,
                                 }}
                             >
-                                {/* Heading */}
                                 <Typography sx={{ fontWeight: 600, fontSize: '16px', color: '#101219', minWidth: 100 }}>
                                     Employee
                                 </Typography>
@@ -629,7 +696,7 @@ const Dashboard = () => {
                                             '& .MuiOutlinedInput-root': {
                                                 height: 32,
                                                 fontSize: 14,
-                                                color:'#4D5874'
+                                                color: '#4D5874'
                                             },
                                             '& .MuiSelect-select': {
                                                 display: 'flex',
@@ -655,7 +722,7 @@ const Dashboard = () => {
                                         '& .MuiOutlinedInput-root': {
                                             height: 32,
                                             fontSize: 14,
-                                            color:'#4D5874'
+                                            color: '#4D5874'
                                         },
                                         '& .MuiSelect-select': {
                                             display: 'flex',
@@ -688,8 +755,8 @@ const Dashboard = () => {
                                         startIcon={<FileDownload />}
                                         sx={{
                                             height: 32,
-                                            borderRadius: 1, // 8px if you want it consistent with other fields
-                                            px: 2, // horizontal padding
+                                            borderRadius: 1,
+                                            px: 2,
                                             borderColor: "#ddd",
                                             color: "#4D5874",
                                             textTransform: "none",
@@ -709,65 +776,228 @@ const Dashboard = () => {
                         {/* Table */}
                         <TableContainer component={Paper} sx={{ boxShadow: "none" }}>
                             <Table>
-                                <TableHead sx={{ bgcolor: "#F9F9FB" }}>
-                                    <TableRow>
-                                        <TableCell sx={{ fontWeight: 400, fontSize:14, color: "#4D5874", py: 2 }}>People</TableCell>
-                                        <TableCell sx={{ fontWeight: 400, fontSize:14, color: "#4D5874", py: 2 }}>Email ID</TableCell>
-                                        <TableCell sx={{ fontWeight: 400, fontSize:14, color: "#4D5874", py: 2 }}>Job Title</TableCell>
-                                        <TableCell sx={{ fontWeight: 400, fontSize:14, color: "#4D5874", py: 2 }}>Status</TableCell>
-                                        <TableCell sx={{ fontWeight: 400, fontSize:14, color: "#4D5874", py: 2 }}>Actions</TableCell>
+                                <TableHead>
+                                    <TableRow sx={{ height: 32, backgroundColor: "#F9F9FB" }}>
+                                        <TableCell padding="checkbox" sx={{ py: 0, height: 32 }}>
+                                            <Checkbox
+                                                indeterminate={selected.length > 0 && selected.length < tableData.length}
+                                                checked={tableData.length > 0 && selected.length === tableData.length}
+                                                onChange={handleSelectAll}
+                                                size="small"
+                                                sx={{ p: 0.5 }}
+                                            />
+                                        </TableCell>
+
+                                        {[
+                                            { label: "People", key: "clientId" },
+                                            { label: "Email ID", key: "name" },
+                                            { label: "Job Title", key: "price" },
+                                            { label: "Status", key: "address" },
+                                            { label: "Action", key: "date" },
+                                        ].map(({ label, key }) => (
+                                            <TableCell
+                                                key={key}
+                                                sx={{
+                                                    fontSize: "14px",
+                                                    fontWeight: 500,
+                                                    color: "#4D5874",
+                                                    cursor: "pointer",
+                                                    py: 0,
+                                                    height: 32,
+                                                }}
+                                                onClick={() => handleSort(key)}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        justifyContent: "space-between",
+                                                        alignItems: "center",
+                                                        width: "100%",
+                                                    }}
+                                                >
+                                                    <span>{label}</span>
+                                                    {getSortIcon(key)}
+                                                </Box>
+                                            </TableCell>
+                                        ))}
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {employees.map((employee) => (
-                                        <TableRow key={employee.id}>
-                                            <TableCell sx={{ py: 2 }}>
-                                                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                                                    <Avatar src={employee.avatar} sx={{ width: 40, height: 40 }} />
-                                                    <Typography sx={{ fontWeight: 400, fontSize:14, color:'#101219' }}>
-                                                        {employee.name}
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell sx={{ py: 2 }}>
-                                                <Typography sx={{fontWeight: 400, fontSize:14, color:'#101219'}}>
-                                                    {employee.email}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell sx={{ py: 2 }}>
-                                                <Typography sx={{fontWeight: 400, fontSize:14, color:'#101219'}}>{employee.jobTitle}</Typography>
-                                            </TableCell>
-                                            <TableCell sx={{ py: 2 }}>
-                                                <Chip
-                                                    label={
-                                                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                                                            <span style={{ fontSize: "8px" }}>{getStatusIcon(employee.status)}</span>
-                                                            {employee.status}
-                                                        </Box>
-                                                    }
-                                                    size="small"
-                                                    sx={{
-                                                        ...getStatusColor(employee.status),
-                                                        fontWeight: 500,
-                                                        fontSize: "11px",
-                                                        height: "24px",
+                                    {tableData.map((row, index) => {
+                                        const isItemSelected = isSelected(row.id)
+                                        return (
+                                            <TableRow
+                                                key={row.id}
+                                                hover
+                                                onClick={() => handleSelectRow(row.id)}
+                                                selected={isItemSelected}
+                                                style={{
+                                                    cursor: "pointer",
+                                                    height: 48,
+                                                    backgroundColor: index % 2 === 0 ? "white" : "#fafafa",
+                                                    borderBottom: "1px solid #e0e0e0",
+                                                }}
+                                            >
+                                                <TableCell padding="checkbox"
+                                                    style={{
+                                                        borderTop: "none",
+                                                        borderLeft: "none",
+                                                        borderRight: "none",
+                                                        borderBottom: "1px solid #e0e0e0",
+                                                        py: 0,
+                                                        height: 48,
+                                                    }}>
+                                                    <Checkbox checked={isItemSelected} size="small" />
+                                                </TableCell>
+                                                <TableCell style={{
+                                                    borderTop: "none",
+                                                    borderLeft: "none",
+                                                    borderRight: "none",
+                                                    borderBottom: "1px solid #e0e0e0", py: 0,
+                                                    height: 48,
+                                                }}>
+                                                    <div className="d-flex align-items-center justify-content-between">
+                                                        <div className="d-flex align-items-center">
+                                                            <Avatar
+                                                                style={{
+                                                                    width: "32px",
+                                                                    height: "32px",
+                                                                    backgroundColor: getAvatarColor(row.name),
+                                                                    fontSize: "12px",
+                                                                    marginRight: "12px",
+                                                                }}
+                                                            >
+                                                                {getInitials(row.name)}
+                                                            </Avatar>
+                                                            <span style={{ fontWeight: 400, fontSize: "16px", color: "#101219" }}>{row.name}</span>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell style={{
+                                                    fontSize: "16px", color: "#101219", fontWeight: 400, borderTop: "none",
+                                                    borderLeft: "none",
+                                                    borderRight: "none",
+                                                    borderBottom: "1px solid #e0e0e0", py: 0,
+                                                    height: 48,
+                                                }}>
+                                                    <div className="d-flex align-items-center justify-content-between">
+                                                        {row.email}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell style={{
+                                                    fontSize: "16px", color: "#101219", fontWeight: 400, borderTop: "none",
+                                                    borderLeft: "none",
+                                                    borderRight: "none",
+                                                    borderBottom: "1px solid #e0e0e0", py: 0,
+                                                    height: 48,
+                                                }}>
+                                                    <div className="d-flex align-items-center justify-content-between">
+                                                        {row.jobTitle}
+                                                    </div>
+                                                </TableCell>
+
+                                                <TableCell
+                                                    style={{
+                                                        fontSize: "16px",
+                                                        fontWeight: 400,
+                                                        borderTop: "none",
+                                                        borderLeft: "none",
+                                                        borderRight: "none",
+                                                        borderBottom: "1px solid #e0e0e0",
+                                                        height: 48,
+                                                        paddingTop: 0,
+                                                        paddingBottom: 0,
                                                     }}
-                                                />
-                                            </TableCell>
-                                            <TableCell sx={{ py: 2 }}>
-                                                <Box sx={{ display: "flex", gap: 1 }}>
-                                                    {/* <IconButton size="small" sx={{ color: "#666" }}>
-                                                        <Visibility fontSize="small" />
-                                                    </IconButton> */}
-                                                    <img src={fileicon} alt="" style={{width:20, height:20}}/>
-                                                    {/* <IconButton size="small" sx={{ color: "#666" }}>
-                                                        <Edit fontSize="small" />
-                                                    </IconButton> */}
-                                                    <img src={editicon} alt="" style={{width:20, height:20}}/>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
+                                                >
+                                                    <div className="d-flex align-items-center justify-content-between">
+                                                        <div
+                                                            className="d-flex align-items-center px-2 py-1"
+                                                            style={{
+                                                                border: "1px solid",
+                                                                borderRadius: "999px",
+                                                                fontSize: "12px",
+                                                                fontWeight: 600,
+                                                                textTransform: "uppercase",
+                                                                width: "fit-content",
+                                                                gap: "6px",
+                                                                color:
+                                                                    row.status === "ACTIVE"
+                                                                        ? "#38BC5C"
+                                                                        : row.status === "PROBATION"
+                                                                            ? "#1E9CBC"
+                                                                            : row.status === "RESIGN"
+                                                                                ? "#F31616"
+                                                                                : row.status === "ON BOARDING"
+                                                                                    ? "#A35F00"
+                                                                                    : "#6B7280",
+                                                                borderColor:
+                                                                    row.status === "ACTIVE"
+                                                                        ? "#38BC5C"
+                                                                        : row.status === "PROBATION"
+                                                                            ? "#1E9CBC"
+                                                                            : row.status === "RESIGN"
+                                                                                ? "#F31616"
+                                                                                : row.status === "ON BOARDING"
+                                                                                    ? "#A35F00"
+                                                                                    : "#D1D5DB",
+                                                                backgroundColor: "#fff",
+                                                            }}
+                                                        >
+                                                            <span
+                                                                style={{
+                                                                    width: "8px",
+                                                                    height: "8px",
+                                                                    borderRadius: "50%",
+                                                                    backgroundColor:
+                                                                        row.status === "active"
+                                                                            ? "#38BC5C"
+                                                                            : row.status === "probation"
+                                                                                ? "#1E9CBC"
+                                                                                : row.status === "resign"
+                                                                                    ? "#F31616"
+                                                                                    : row.status === "on boarding"
+                                                                                        ? "#A35F00"
+                                                                                        : "#9CA3AF",
+                                                                    display: "inline-block",
+                                                                }}
+                                                            ></span>
+                                                            {row.status}
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell
+                                                    style={{
+                                                        fontSize: "16px",
+                                                        color: "#101219",
+                                                        fontWeight: 400,
+                                                        borderTop: "none",
+                                                        borderLeft: "none",
+                                                        borderRight: "none",
+                                                        borderBottom: "1px solid #e0e0e0",
+                                                        height: 48,
+                                                        paddingTop: 0,
+                                                        paddingBottom: 0,
+                                                    }}
+                                                >
+                                                    <div className="d-flex align-items-center justify-content-between">
+                                                        {row.address}
+                                                        <div className="d-flex align-items-center gap-3">
+                                                            <img
+                                                                src={fileicon}
+                                                                alt="file"
+                                                                style={{ width: 20, height: 20, cursor: "pointer" }}
+                                                            />
+                                                            <img
+                                                                src={editicon}
+                                                                alt="edit"
+                                                                style={{ width: 20, height: 20, cursor: "pointer" }}
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
                                 </TableBody>
                             </Table>
                         </TableContainer>
