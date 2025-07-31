@@ -34,6 +34,7 @@ import {
 import "bootstrap/dist/css/bootstrap.min.css"
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import { CiWallet } from "react-icons/ci";
 
 const drawerWidth = 260;
 
@@ -510,7 +511,7 @@ const TutorsProfile = () => {
                     </TableContainer>
                 )
 
-                case 3:
+            case 3:
                 return (
                     <TableContainer component={Paper} style={{ boxShadow: "none", border: "1px solid #E0E3EB", borderRadius: '8px' }}>
                         <Table style={{ border: "1px solid #e0e0e0" }}>
@@ -617,7 +618,7 @@ const TutorsProfile = () => {
                                 <h4 style={{ margin: 0, fontWeight: 600, fontSize: "20px", color: "#101219" }}>PA-112324</h4>
                             </div>
 
-                            {/* Profile Card */}
+
                             <div
                                 style={{
                                     backgroundColor: "#EEFBFD",
@@ -628,9 +629,7 @@ const TutorsProfile = () => {
                                 }}
                             >
                                 <div className="row align-items-start">
-                                    {/* Left Column */}
                                     <div className="col-md-8">
-                                        {/* Profile Picture and Name */}
                                         <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
                                             <div style={{ position: "relative" }}>
                                                 <Avatar src="/placeholder.svg?height=60&width=60" style={{ width: 60, height: 60 }} />
@@ -656,8 +655,6 @@ const TutorsProfile = () => {
                                                 <h5 style={{ margin: 0, fontWeight: 500, color: "#121217", fontSize: "24px" }}>Ahamad Saeed</h5>
                                             </div>
                                         </div>
-
-                                        {/* Status Below */}
                                         <div style={{ display: "flex", alignItems: "center", gap: "2rem", marginTop: "10px" }}>
                                             <span style={{ fontSize: "18px", fontWeight: 500, color: "#121217" }}>Tutor Status</span>
                                             <Chip
@@ -675,9 +672,25 @@ const TutorsProfile = () => {
                                             />
                                         </div>
                                     </div>
-
-                                    {/* Right Column - Edit Button */}
                                     <div className="col-md-4 d-flex justify-content-end align-items-start">
+                                        {activeTab === 0 && (
+                                            <Button
+                                                variant="contained"
+                                                startIcon={
+                                                    <CiWallet style={{ color: 'white', fontWeight: 900, fontSize: '20px' }} />
+                                                }
+                                                style={{
+                                                    marginRight: '2rem',
+                                                    backgroundColor: "#121217",
+                                                    borderRadius: "8px",
+                                                    color: "white",
+                                                    textTransform: "none",
+                                                    fontSize: "14px",
+                                                }}
+                                            >
+                                                Rs 1928
+                                            </Button>
+                                        )}
                                         <Button
                                             variant="contained"
                                             startIcon={<EditIcon />}
