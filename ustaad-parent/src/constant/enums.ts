@@ -32,3 +32,11 @@ export enum OtpPurpose {
   LOGIN = "login",
   PASSWORD_RESET = "password_reset",
 }
+
+
+
+export enum OfferStatus {
+  PENDING = 'PENDING',
+  ACCEPTED = 'ACCEPTED',
+  REJECTED = 'REJECTED',
+}

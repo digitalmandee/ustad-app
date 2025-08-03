@@ -1,3 +1,5 @@
+import { OfferStatus } from "src/constant/enums";
+
 const routes = {
   PARENT_ONBOARDING: "/parent/onboarding",
   PARENT_Profile_EDIT: "/parent/profile/edit",
@@ -21,6 +23,10 @@ const routes = {
   CHILD_GET_ONE: "/parent/child/:id",
   CHILD_GET_NOTES: "/parent/child/notes/:childId",
   CHILD_GET_REVIEWS: "/parent/child/reviews/:childId",
+
+
+  // offer
+  OFFER_UPDATE_STATUS: '/parent/offer/:status/:offerId',
 };
 
 export default routes;

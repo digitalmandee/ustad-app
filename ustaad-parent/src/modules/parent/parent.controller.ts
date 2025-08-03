@@ -5,10 +5,9 @@ import InfoMessages from "../../constant/messages";
 import TutorService from "./parent.service";
 import { AuthenticatedRequest } from "../../middlewares/auth";
 // import { User } from "../../models/User";
-import { IsOnBaord } from "../../constant/enums";
+import { IsOnBaord, OfferStatus } from "../../constant/enums";
 
 import { User } from "@ustaad/shared";
-
 
 export default class TutorController {
   private tutorService: TutorService;
@@ -122,7 +121,10 @@ export default class TutorController {
       const { id: userId } = req.user;
       const { customerId } = req.body;
 
-      const result = await this.tutorService.updateCustomerId(userId, customerId);
+      const result = await this.tutorService.updateCustomerId(
+        userId,
+        customerId
+      );
 
       return sendSuccessResponse(
         res,
@@ -143,13 +145,15 @@ export default class TutorController {
     }
   };
 
-
   createPaymentMethod = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
       const { paymentMethodId } = req.body;
 
-      const result = await this.tutorService.createPaymentMethod(userId, paymentMethodId);
+      const result = await this.tutorService.createPaymentMethod(
+        userId,
+        paymentMethodId
+      );
 
       return sendSuccessResponse(
         res,
@@ -190,18 +194,22 @@ export default class TutorController {
       }
 
       const errorMessage =
-        error?.message || "Something went wrong while retrieving payment methods";
+        error?.message ||
+        "Something went wrong while retrieving payment methods";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
-
 
   updatePaymentMethod = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
       const { isDefault, paymentMethodId } = req.body;
 
-      const result = await this.tutorService.updatePaymentMethod(userId, paymentMethodId, isDefault);
+      const result = await this.tutorService.updatePaymentMethod(
+        userId,
+        paymentMethodId,
+        isDefault
+      );
 
       return sendSuccessResponse(
         res,
@@ -227,7 +235,10 @@ export default class TutorController {
       const { id: userId } = req.user;
       const { paymentMethodId } = req.body;
 
-      const result = await this.tutorService.deletePaymentMethod(userId, paymentMethodId);
+      const result = await this.tutorService.deletePaymentMethod(
+        userId,
+        paymentMethodId
+      );
 
       return sendSuccessResponse(
         res,
@@ -268,6 +279,33 @@ export default class TutorController {
 
       const errorMessage =
         error?.message || "Something went wrong while retrieving tutor profile";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+  updateOffer = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { status, offerId } = req.params;
+      if (!status || status === undefined) {
+        return sendErrorResponse(res, " offer status is required", 400);
+      }
+      if (!offerId || offerId === undefined) {
+        return sendErrorResponse(res, "Offer ID is required", 400);
+      }
+      const result = await this.tutorService.updateOffer(offerId, status);
+
+      return sendSuccessResponse(
+        res,
+        "Offer updated successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while updating offer";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
