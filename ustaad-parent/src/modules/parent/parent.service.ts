@@ -15,8 +15,10 @@ import {
   TutorSettings,
   PaymentMethod,
   TutorSessions,
+  Offer,
 } from "@ustaad/shared";
 import Stripe from "stripe";
+import { OfferStatus } from "src/constant/enums";
 
 interface ParentProfileData {
   userId: string;
@@ -458,6 +460,32 @@ export default class TutorService {
     } catch (error) {
       console.error("Error in getTutorProfile:", error);
       throw error;
+    }
+  }
+
+
+  async updateOffer(offerId: string, status: string) {
+    try {
+      const offer = await Offer.findByPk(offerId);
+      if (!offer) {
+        throw new UnProcessableEntityError("Offer not found");
+      }
+
+      // Validate status
+      if (!Object.values(OfferStatus).includes(status as OfferStatus)) {
+        throw new UnProcessableEntityError("Invalid offer status");
+      }
+
+      // Update offer status
+      offer.status = status as OfferStatus;
+      await offer.save();
+
+      return offer;
+    } catch (error :any) {
+      if(error instanceof UnProcessableEntityError){
+        throw error;
+      }
+      throw new GenericError(error, "Failed to update offer status");
     }
   }
 }

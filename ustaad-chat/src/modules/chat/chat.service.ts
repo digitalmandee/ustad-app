@@ -19,6 +19,7 @@ import {
   MessageStatus,
   MessageType,
   OfferStatus,
+  UserRole,
 } from '../../constant/enums';
 // import { Conversation } from '../../models/conversation.model';
 import { ForbiddenError } from '../../errors/forbidden-error';
@@ -38,8 +39,7 @@ interface MessageMetadata {
 
 @Service()
 export default class ChatService {
-  async createMessage(senderId: string, messageData: ICreateMessageDto) {
-    console.log('helllo');
+  async createMessage(senderId: string, messageData: ICreateMessageDto, role:string) {
     const transaction: Transaction = await sequelize.transaction();
     try {
       // Verify user is participant of the conversation
@@ -74,6 +74,9 @@ export default class ChatService {
       );
 
       if (messageData.type === MessageType.OFFER) {
+        if( role !== UserRole.TUTOR) {
+          throw new ForbiddenError('Only tutors can create offers');
+        }
         if (!messageData.offer) {
           throw new BadRequestError('Offer data is required for message type OFFER');
         }
@@ -88,6 +91,8 @@ export default class ChatService {
             amountMonthly: offerData.amountMonthly,
             subject: offerData.subject,
             startDate: offerData.startDate,
+            startTime: offerData.startTime,
+            endTime: offerData.endTime,
             description: offerData.description || null,
             status: OfferStatus.PENDING, // Default or as needed
           },
@@ -108,7 +113,6 @@ export default class ChatService {
       return this.formatMessageResponse(message);
     } catch (err: any) {
       await transaction.rollback();
-      console.log(err, 'err');
       if (err instanceof ForbiddenError || err instanceof BadRequestError) {
         throw err;
       }

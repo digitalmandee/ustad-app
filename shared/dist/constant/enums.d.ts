@@ -1,9 +1,7 @@
 export declare enum UserRole {
     ADMIN = "ADMIN",
     PARENT = "PARENT",
-    TUTOR = "TUTOR",
-    TEACHER = "TEACHER",
-    STUDENT = "STUDENT"
+    TUTOR = "TUTOR"
 }
 export declare enum IsOnBaord {
     REQUIRED = "required",

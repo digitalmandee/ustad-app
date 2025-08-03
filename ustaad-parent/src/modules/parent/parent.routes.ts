@@ -83,6 +83,15 @@ router.delete(
   parentController.deletePaymentMethod
 );
 
+
+router.patch(
+  routes.OFFER_UPDATE_STATUS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  validateRequest,
+  parentController.updateOffer
+)
+
 router.get(routes.GET_TUTOR_PROFILE, authenticateJwt, authorizeRoles("PARENT"), parentController.getTutorProfile);
 
   export { router as tutorRouter };

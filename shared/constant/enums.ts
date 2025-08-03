@@ -2,8 +2,6 @@ export enum UserRole {
   ADMIN = 'ADMIN',
   PARENT = 'PARENT',
   TUTOR = 'TUTOR',
-  TEACHER = 'TEACHER',
-  STUDENT = 'STUDENT'
 }
 
 // is on board

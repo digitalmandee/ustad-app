@@ -14,8 +14,9 @@ export default class ChatController {
   createMessage = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const senderId = req.user.id;
+      const role=req.user.role;
       const messageData = req.body;
-      let user = await this.chatService.createMessage(senderId, messageData);
+      let user = await this.chatService.createMessage(senderId, messageData,role);
       sendSuccessResponse(
         res,
         InfoMessages.GENERIC.ITEM_CREATED_SUCCESSFULLY('message'),
@@ -159,10 +160,11 @@ export default class ChatController {
 
   handleSendMessage = async (socket: Socket, data: ICreateMessageDto) => {
     const senderId = socket.data.user.user.id;
+    const role = socket.data.user.user.role;
     console.log(senderId, 'sender id', data, 'data');
 
     try {
-      const savedMessage = await this.chatService.createMessage(senderId, data);
+      const savedMessage = await this.chatService.createMessage(senderId, data,role);
       socket.to(data.conversationId).emit('newMessage', savedMessage);
       socket.emit('newMessage', savedMessage);
     } catch (err) {

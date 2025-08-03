@@ -6,8 +6,6 @@ var UserRole;
     UserRole["ADMIN"] = "ADMIN";
     UserRole["PARENT"] = "PARENT";
     UserRole["TUTOR"] = "TUTOR";
-    UserRole["TEACHER"] = "TEACHER";
-    UserRole["STUDENT"] = "STUDENT";
 })(UserRole || (exports.UserRole = UserRole = {}));
 // is on board
 var IsOnBaord;
