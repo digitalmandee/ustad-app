@@ -43,7 +43,7 @@ function initTutorSessionsDetailModel(sequelize) {
         status: {
             type: sequelize_1.DataTypes.ENUM(...Object.values(enums_1.TutorSessionStatus)),
             allowNull: false,
-            defaultValue: enums_1.TutorSessionStatus.RUNNING,
+            defaultValue: enums_1.TutorSessionStatus.CREATED,
         },
     }, {
         sequelize,

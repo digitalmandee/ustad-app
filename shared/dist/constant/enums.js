@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.PaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
+exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
 var UserRole;
 (function (UserRole) {
     UserRole["ADMIN"] = "ADMIN";
@@ -48,13 +48,16 @@ var OfferStatus;
     OfferStatus["PENDING"] = "PENDING";
     OfferStatus["ACCEPTED"] = "ACCEPTED";
     OfferStatus["REJECTED"] = "REJECTED";
+    OfferStatus["CANCELLED"] = "CANCELLED";
 })(OfferStatus || (exports.OfferStatus = OfferStatus = {}));
-var PaymentStatus;
-(function (PaymentStatus) {
-    PaymentStatus["PENDING"] = "PENDING";
-    PaymentStatus["CONFIRMED"] = "CONFIRMED";
-    PaymentStatus["REJECTED"] = "REJECTED";
-})(PaymentStatus || (exports.PaymentStatus = PaymentStatus = {}));
+var TutorPaymentStatus;
+(function (TutorPaymentStatus) {
+    TutorPaymentStatus["PENDING"] = "PENDING";
+    TutorPaymentStatus["REQUESTED"] = "REQUESTED";
+    TutorPaymentStatus["PAID"] = "PAID";
+    TutorPaymentStatus["IN_REVIEW"] = "IN_REVIEW";
+    TutorPaymentStatus["REJECTED"] = "REJECTED";
+})(TutorPaymentStatus || (exports.TutorPaymentStatus = TutorPaymentStatus = {}));
 // OTP types
 var OtpType;
 (function (OtpType) {
@@ -78,10 +81,9 @@ var OtpPurpose;
 })(OtpPurpose || (exports.OtpPurpose = OtpPurpose = {}));
 var TutorSessionStatus;
 (function (TutorSessionStatus) {
-    TutorSessionStatus["RUNNING"] = "RUNNING";
+    TutorSessionStatus["CREATED"] = "CREATED";
     TutorSessionStatus["TUTOR_HOLIDAY"] = "TUTOR_HOLIDAY";
     TutorSessionStatus["PUBLIC_HOLIDAY"] = "PUBLIC_HOLIDAY";
-    TutorSessionStatus["COMPLETED"] = "COMPLETED";
     TutorSessionStatus["CANCELLED_BY_PARENT"] = "CANCELLED_BY_PARENT";
     TutorSessionStatus["CANCELLED_BY_TUTOR"] = "CANCELLED_BY_TUTOR";
 })(TutorSessionStatus || (exports.TutorSessionStatus = TutorSessionStatus = {}));
