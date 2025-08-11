@@ -16,7 +16,6 @@ import { initTutorLocationModel, TutorLocation } from "./TutorLocations";
 import { initParentSubscriptionModel, ParentSubscription } from "./ParentSubscription";
 import { initParentTransactionModel, ParentTransaction } from "./ParentTransaction";
 import { initTutorSessionsModel, TutorSessions } from "./TutorSessions";
-import { initPaymentRequestModel, PaymentRequest } from "./PaymentRequest";
 import { initPaymentMethodModel, PaymentMethod } from "./PaymentMethod";
 
 // Chat models
@@ -25,6 +24,7 @@ import { initConversationParticipantModel, ConversationParticipant } from "./Con
 import { initMessageModel, Message } from "./Message";
 import { initOfferModel, Offer } from "./Offer";
 import { initTutorSessionsDetailModel, TutorSessionsDetail } from "./TutorSessionsDetail";
+import { initTutorTransactionModel, TutorTransaction } from "./TutorTransaction";
 
 export function initAllModels(sequelize: Sequelize) {
   initUserModel(sequelize);
@@ -42,16 +42,20 @@ export function initAllModels(sequelize: Sequelize) {
   initTutorLocationModel(sequelize);
   initParentSubscriptionModel(sequelize);
   initParentTransactionModel(sequelize);
-  initTutorSessionsModel(sequelize);
-  initTutorSessionsDetailModel(sequelize);
-  initPaymentRequestModel(sequelize);
-  initPaymentMethodModel(sequelize);
+  initTutorTransactionModel(sequelize);
   
-  // Initialize chat models
+
+
   initConversationModel(sequelize);
   initConversationParticipantModel(sequelize);
   initMessageModel(sequelize);
   initOfferModel(sequelize);
+  
+  initTutorSessionsModel(sequelize);
+  initTutorSessionsDetailModel(sequelize);
+  initPaymentMethodModel(sequelize);
+  
+  // Initialize remaining chat models
 }
 
 export {
@@ -72,8 +76,8 @@ export {
   ParentTransaction,
   TutorSessions,
   TutorSessionsDetail,
-  PaymentRequest,
   PaymentMethod,
+  TutorTransaction,
   // Chat models
   Conversation,
   ConversationParticipant,

@@ -10,7 +10,7 @@ export interface TutorSessionsAttributes {
   parentId: string;
   childName: string;
   startTime: string;
-  offerId: string;
+  offerId?: string; // Made optional to match nullable field
   endTime?: string;
   daysOfWeek: string[]; // Array of days like ["mon", "tue", "fri"] or ["mon-fri"]
   price: number; // Price per session in cents (e.g., 2500 for $25.00)
@@ -32,7 +32,7 @@ export class TutorSessions
   public parentId!: string;
   public childName!: string;
   public startTime!: string;
-  public offerId!: string;
+  public offerId?: string; // Made optional to match nullable field
   public endTime?: string;
   public daysOfWeek!: string[];
   public price!: number;
@@ -69,7 +69,7 @@ export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessio
       },
       offerId: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true, // Changed to true temporarily to handle existing data
         references: {
           model: "offers",
           key: "id",
