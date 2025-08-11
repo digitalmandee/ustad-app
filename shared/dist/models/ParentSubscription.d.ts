@@ -4,11 +4,12 @@ export interface ParentSubscriptionAttributes {
     parentId: string;
     tutorId: string;
     childId: string;
+    offerId: string;
     stripeSubscriptionId: string;
     status: string;
     planType: string;
     startDate: Date;
-    endDate: Date;
+    endDate?: Date;
     amount: number;
     createdAt?: Date;
     updatedAt?: Date;
@@ -19,11 +20,12 @@ export declare class ParentSubscription extends Model<ParentSubscriptionAttribut
     parentId: string;
     tutorId: string;
     childId: string;
+    offerId: string;
     stripeSubscriptionId: string;
     status: string;
     planType: string;
     startDate: Date;
-    endDate: Date;
+    endDate?: Date;
     amount: number;
     readonly createdAt: Date;
     readonly updatedAt: Date;

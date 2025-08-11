@@ -91,6 +91,10 @@ function initOfferModel(sequelize) {
             type: sequelize_1.DataTypes.DATE,
             defaultValue: sequelize_1.DataTypes.NOW,
         },
+        daysOfWeek: {
+            type: sequelize_1.DataTypes.ARRAY(sequelize_1.DataTypes.STRING),
+            allowNull: false,
+        },
     }, {
         sequelize,
         tableName: 'offers',

@@ -1,15 +1,23 @@
-import { UnProcessableEntityError } from '../../errors/unprocessable-entity.error';
-import { ConflictError } from '../../errors/conflict-error';
-import { GenericError } from '../../errors/generic-error';
-import { ISignUpCreateDTO, ISignInCreateDTO, IVerifyEmailOtpDTO } from './auth.dto';
+import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
+import { ConflictError } from "../../errors/conflict-error";
+import { GenericError } from "../../errors/generic-error";
+import {
+  ISignUpCreateDTO,
+  ISignInCreateDTO,
+  IVerifyEmailOtpDTO,
+} from "./auth.dto";
 import { User, Otp } from "@ustaad/shared";
-import { comparePassword, generateOtp, hashPassword } from '../../helper/generic'; // should have hashPassword
-import jwt from 'jsonwebtoken';
-import { Op } from 'sequelize';
-import { NotAuthorizedError } from '../../errors/not-authorized-error';
-import { OtpPurpose, OtpStatus, OtpType } from '../../constant/enums';
-import { OtpServices } from '../otp/otp.service';
-import { BadRequestError } from '../../errors/bad-request-error';
+import {
+  comparePassword,
+  generateOtp,
+  hashPassword,
+} from "../../helper/generic"; // should have hashPassword
+import jwt from "jsonwebtoken";
+import { Op } from "sequelize";
+import { NotAuthorizedError } from "../../errors/not-authorized-error";
+import { OtpPurpose, OtpStatus, OtpType } from "../../constant/enums";
+import { OtpServices } from "../otp/otp.service";
+import { BadRequestError } from "../../errors/bad-request-error";
 
 export interface IAuthService {
   signUp: (userCreateDTO: ISignUpCreateDTO) => Promise<any>;
@@ -31,13 +39,19 @@ export default class AuthService implements IAuthService {
 
       if (existingUser) {
         if (existingUser.email === userCreateDTO.email) {
-          throw new ConflictError('This email is already registered. Please login instead.');
+          throw new ConflictError(
+            "This email is already registered. Please login instead."
+          );
         }
         if (existingUser.phone === userCreateDTO.phone) {
-          throw new ConflictError('This phone is already registered. Please login instead.');
+          throw new ConflictError(
+            "This phone is already registered. Please login instead."
+          );
         }
         if (existingUser.cnic === userCreateDTO.cnic) {
-          throw new ConflictError('This CNIC is already registered. Please login instead.');
+          throw new ConflictError(
+            "This CNIC is already registered. Please login instead."
+          );
         }
       }
 
@@ -58,21 +72,34 @@ export default class AuthService implements IAuthService {
         throw err;
       }
 
-      throw new GenericError(err, 'Unable to process sign-up request [usrcrt2]');
+      throw new GenericError(
+        err,
+        "Unable to process sign-up request [usrcrt2]"
+      );
     }
   }
 
-  public async signIn(userSignInDTO: ISignInCreateDTO, deviceId: string): Promise<any> {
+  public async signIn(
+    userSignInDTO: ISignInCreateDTO,
+    deviceId: string
+  ): Promise<any> {
     try {
-      const user = await User.findOne({ where: { email: userSignInDTO.email } });
+      const user = await User.findOne({
+        where: { email: userSignInDTO.email },
+      });
 
       if (!user) {
-        throw new UnProcessableEntityError('User not registered with provided email or phone.');
+        throw new UnProcessableEntityError(
+          "User not registered with provided email or phone."
+        );
       }
 
-      const isPasswordMatch = await comparePassword(userSignInDTO.password, user.password);
+      const isPasswordMatch = await comparePassword(
+        userSignInDTO.password,
+        user.password
+      );
       if (!isPasswordMatch) {
-        throw new UnProcessableEntityError('Invalid credentials');
+        throw new UnProcessableEntityError("Invalid credentials");
       }
 
       // Save deviceId against user in db
@@ -89,7 +116,7 @@ export default class AuthService implements IAuthService {
           },
         },
         process.env.JWT_SECRET!,
-        { expiresIn: '1h' }
+        { expiresIn: "1h" }
       );
 
       const sanitizedUser = user.toJSON();
@@ -99,7 +126,10 @@ export default class AuthService implements IAuthService {
       return { ...sanitizedUser, token };
     } catch (err: any) {
       if (err instanceof UnProcessableEntityError) throw err;
-      throw new GenericError(err, 'Unable to process sign-in request [usrcrt2]');
+      throw new GenericError(
+        err,
+        "Unable to process sign-in request [usrcrt2]"
+      );
     }
   }
 
@@ -192,7 +222,7 @@ export default class AuthService implements IAuthService {
       const user = await User.findOne({ where: { email } });
 
       if (!user) {
-        throw new NotAuthorizedError('user not registered');
+        throw new NotAuthorizedError("user not registered");
       }
 
       const hashedPassword = await hashPassword(newPassword);
@@ -209,7 +239,7 @@ export default class AuthService implements IAuthService {
         throw err;
       }
 
-      throw new GenericError(err, 'Unable to change password ');
+      throw new GenericError(err, "Unable to change password ");
     }
   }
 
@@ -217,7 +247,7 @@ export default class AuthService implements IAuthService {
     try {
       const user = await User.findOne({ where: { email } });
       if (!user) {
-        throw new NotAuthorizedError('user not registered');
+        throw new NotAuthorizedError("user not registered");
       }
       // Send OTP for password reset
       const otpService = new OtpServices();
@@ -231,7 +261,7 @@ export default class AuthService implements IAuthService {
       if (err instanceof NotAuthorizedError) {
         throw err;
       }
-      throw new GenericError(err, 'Unable to send password reset OTP');
+      throw new GenericError(err, "Unable to send password reset OTP");
     }
   }
 
@@ -245,7 +275,7 @@ export default class AuthService implements IAuthService {
     try {
       const user = await User.findOne({ where: { id: userId } });
       if (!user) {
-        throw new NotAuthorizedError('user not registered');
+        throw new NotAuthorizedError("user not registered");
       }
 
       const now = new Date();
@@ -260,16 +290,16 @@ export default class AuthService implements IAuthService {
             [Op.gt]: now, // Not expired
           },
         },
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       if (!otpEntry) {
-        throw new BadRequestError('OTP invalid or expired');
+        throw new BadRequestError("OTP invalid or expired");
       }
 
       // Check OTP code
       if (otpEntry.otp !== otp) {
-        throw new BadRequestError('Invalid OTP code');
+        throw new BadRequestError("Invalid OTP code");
       }
 
       // Mark OTP as used
@@ -289,7 +319,7 @@ export default class AuthService implements IAuthService {
       ) {
         throw err;
       }
-      throw new GenericError(err, 'Invalid or expired OTP');
+      throw new GenericError(err, "Invalid or expired OTP");
     }
   }
 }
