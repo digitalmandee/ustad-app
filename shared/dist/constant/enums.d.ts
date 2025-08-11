@@ -2,8 +2,7 @@ export declare enum UserRole {
     ADMIN = "ADMIN",
     PARENT = "PARENT",
     TUTOR = "TUTOR",
-    TEACHER = "TEACHER",
-    STUDENT = "STUDENT"
+    SUPER_ADMIN = "SUPER_ADMIN"
 }
 export declare enum IsOnBaord {
     REQUIRED = "required",
@@ -59,4 +58,12 @@ export declare enum OtpPurpose {
     PHONE_VERIFICATION = "phone_verification",
     LOGIN = "login",
     PASSWORD_RESET = "password_reset"
+}
+export declare enum TutorSessionStatus {
+    PENDING = "PENDING",
+    TUTOR_HOLIDAY = "TUTOR_HOLIDAY",
+    PUBLIC_HOLIDAY = "PUBLIC_HOLIDAY",
+    COMPLETED = "COMPLETED",
+    CANCELLED_BY_PARENT = "CANCELLED_BY_PARENT",
+    CANCELLED_BY_TUTOR = "CANCELLED_BY_TUTOR"
 }

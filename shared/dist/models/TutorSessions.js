@@ -3,9 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TutorSessions = void 0;
 exports.initTutorSessionsModel = initTutorSessionsModel;
 const sequelize_1 = require("sequelize");
-const Tutor_1 = require("./Tutor");
-const Parent_1 = require("./Parent");
-const Child_1 = require("./Child");
+const User_1 = require("./User");
 class TutorSessions extends sequelize_1.Model {
 }
 exports.TutorSessions = TutorSessions;
@@ -20,7 +18,7 @@ function initTutorSessionsModel(sequelize) {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: "tutors",
+                model: "users",
                 key: "id",
             },
         },
@@ -28,30 +26,21 @@ function initTutorSessionsModel(sequelize) {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: "parents",
+                model: "users",
                 key: "id",
             },
         },
-        childId: {
-            type: sequelize_1.DataTypes.UUID,
-            allowNull: false,
-            references: {
-                model: "children",
-                key: "id",
-            },
-        },
-        startedAt: {
-            type: sequelize_1.DataTypes.DATE,
+        childName: {
+            type: sequelize_1.DataTypes.STRING,
             allowNull: false,
         },
-        endedAt: {
-            type: sequelize_1.DataTypes.DATE,
+        startTime: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: false,
+        },
+        endTime: {
+            type: sequelize_1.DataTypes.STRING,
             allowNull: true,
-        },
-        duration: {
-            type: sequelize_1.DataTypes.INTEGER,
-            allowNull: false,
-            comment: "Duration in minutes (e.g., 60 for 1 hour, 120 for 2 hours)",
         },
         daysOfWeek: {
             type: sequelize_1.DataTypes.ARRAY(sequelize_1.DataTypes.STRING),
@@ -67,15 +56,23 @@ function initTutorSessionsModel(sequelize) {
             type: sequelize_1.DataTypes.JSON,
             allowNull: true,
         },
+        status: {
+            type: sequelize_1.DataTypes.ENUM('active', 'cancelled'),
+            allowNull: false,
+            defaultValue: 'active',
+        },
+        month: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: false,
+            comment: "Month in yyyy-mm-dd format",
+        },
     }, {
         sequelize,
         tableName: "tutorSessions",
     });
-    TutorSessions.belongsTo(Tutor_1.Tutor, { foreignKey: "tutorId" });
-    Tutor_1.Tutor.hasMany(TutorSessions, { foreignKey: "tutorId" });
-    TutorSessions.belongsTo(Parent_1.Parent, { foreignKey: "parentId" });
-    Parent_1.Parent.hasMany(TutorSessions, { foreignKey: "parentId" });
-    TutorSessions.belongsTo(Child_1.Child, { foreignKey: "childId" });
-    Child_1.Child.hasMany(TutorSessions, { foreignKey: "childId" });
+    TutorSessions.belongsTo(User_1.User, { foreignKey: "tutorId" });
+    User_1.User.hasMany(TutorSessions, { foreignKey: "tutorId" });
+    TutorSessions.belongsTo(User_1.User, { foreignKey: "parentId" });
+    User_1.User.hasMany(TutorSessions, { foreignKey: "parentId" });
     return TutorSessions;
 }

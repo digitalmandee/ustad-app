@@ -3,7 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Offer = void 0;
 exports.initOfferModel = initOfferModel;
 const sequelize_1 = require("sequelize");
-const enums_1 = require("../constant/enums");
 const Conversation_1 = require("./Conversation");
 const User_1 = require("./User");
 const Message_1 = require("./Message");
@@ -67,14 +66,22 @@ function initOfferModel(sequelize) {
             type: sequelize_1.DataTypes.DATEONLY,
             allowNull: false,
         },
+        startTime: {
+            type: sequelize_1.DataTypes.TIME,
+            allowNull: false,
+        },
+        endTime: {
+            type: sequelize_1.DataTypes.TIME,
+            allowNull: false,
+        },
         description: {
             type: sequelize_1.DataTypes.TEXT,
             allowNull: true,
         },
         status: {
-            type: sequelize_1.DataTypes.ENUM(...Object.values(enums_1.OfferStatus)),
+            type: sequelize_1.DataTypes.ENUM('PENDING', 'ACCEPTED', 'REJECTED'),
             allowNull: false,
-            defaultValue: enums_1.OfferStatus.PENDING,
+            defaultValue: 'PENDING',
         },
         createdAt: {
             type: sequelize_1.DataTypes.DATE,
@@ -83,6 +90,10 @@ function initOfferModel(sequelize) {
         updatedAt: {
             type: sequelize_1.DataTypes.DATE,
             defaultValue: sequelize_1.DataTypes.NOW,
+        },
+        daysOfWeek: {
+            type: sequelize_1.DataTypes.ARRAY(sequelize_1.DataTypes.STRING),
+            allowNull: false,
         },
     }, {
         sequelize,

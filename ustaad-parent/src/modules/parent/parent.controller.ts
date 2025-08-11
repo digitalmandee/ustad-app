@@ -2,19 +2,21 @@ import { Request, Response } from "express";
 import { GenericError } from "../../errors/generic-error";
 import { sendSuccessResponse, sendErrorResponse } from "../../helper/response";
 import InfoMessages from "../../constant/messages";
-import TutorService from "./parent.service";
+import ParentService from "./parent.service";
 import { AuthenticatedRequest } from "../../middlewares/auth";
 // import { User } from "../../models/User";
-import { IsOnBaord } from "../../constant/enums";
+import { IsOnBaord, OfferStatus } from "../../constant/enums";
+import Stripe from "stripe";
 
 import { User } from "@ustaad/shared";
 
-
-export default class TutorController {
-  private tutorService: TutorService;
+export default class ParentController {
+  private parentService: ParentService;
+  private stripeWebhookSecret: string;
 
   constructor() {
-    this.tutorService = new TutorService();
+    this.parentService = new ParentService();
+    this.stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
   }
 
   onboardParent = async (req: AuthenticatedRequest, res: Response) => {
@@ -31,7 +33,7 @@ export default class TutorController {
         );
       }
 
-      const result = await this.tutorService.createParentProfile({
+      const result = await this.parentService.createParentProfile({
         userId,
         idFront: files.idFront[0],
         idBack: files.idBack[0],
@@ -66,7 +68,7 @@ export default class TutorController {
       const { id: userId } = req.user;
       const { fullName, email, phone, password, image } = req.body;
 
-      const result = await this.tutorService.updateProfile(userId, {
+      const result = await this.parentService.updateProfile(userId, {
         fullName,
         email,
         phone,
@@ -96,7 +98,7 @@ export default class TutorController {
   getProfile = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-      const result = await this.tutorService.getProfile(userId);
+      const result = await this.parentService.getProfile(userId);
 
       return sendSuccessResponse(
         res,
@@ -122,7 +124,10 @@ export default class TutorController {
       const { id: userId } = req.user;
       const { customerId } = req.body;
 
-      const result = await this.tutorService.updateCustomerId(userId, customerId);
+      const result = await this.parentService.updateCustomerId(
+        userId,
+        customerId
+      );
 
       return sendSuccessResponse(
         res,
@@ -143,13 +148,15 @@ export default class TutorController {
     }
   };
 
-
   createPaymentMethod = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
       const { paymentMethodId } = req.body;
 
-      const result = await this.tutorService.createPaymentMethod(userId, paymentMethodId);
+      const result = await this.parentService.createPaymentMethod(
+        userId,
+        paymentMethodId
+      );
 
       return sendSuccessResponse(
         res,
@@ -174,7 +181,7 @@ export default class TutorController {
     try {
       const { id: userId } = req.user;
 
-      const result = await this.tutorService.getPaymentMethods(userId);
+      const result = await this.parentService.getPaymentMethods(userId);
 
       return sendSuccessResponse(
         res,
@@ -190,18 +197,22 @@ export default class TutorController {
       }
 
       const errorMessage =
-        error?.message || "Something went wrong while retrieving payment methods";
+        error?.message ||
+        "Something went wrong while retrieving payment methods";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
-
 
   updatePaymentMethod = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
       const { isDefault, paymentMethodId } = req.body;
 
-      const result = await this.tutorService.updatePaymentMethod(userId, paymentMethodId, isDefault);
+      const result = await this.parentService.updatePaymentMethod(
+        userId,
+        paymentMethodId,
+        isDefault
+      );
 
       return sendSuccessResponse(
         res,
@@ -227,7 +238,10 @@ export default class TutorController {
       const { id: userId } = req.user;
       const { paymentMethodId } = req.body;
 
-      const result = await this.tutorService.deletePaymentMethod(userId, paymentMethodId);
+      const result = await this.parentService.deletePaymentMethod(
+        userId,
+        paymentMethodId
+      );
 
       return sendSuccessResponse(
         res,
@@ -251,7 +265,7 @@ export default class TutorController {
     try {
       const { tutorId } = req.params;
 
-      const result = await this.tutorService.getTutorProfile(tutorId);
+      const result = await this.parentService.getTutorProfile(tutorId);
 
       return sendSuccessResponse(
         res,
@@ -268,6 +282,149 @@ export default class TutorController {
 
       const errorMessage =
         error?.message || "Something went wrong while retrieving tutor profile";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+  updateOffer = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { status, offerId } = req.params;
+      if (!status || status === undefined) {
+        return sendErrorResponse(res, " offer status is required", 400);
+      }
+      if (!offerId || offerId === undefined) {
+        return sendErrorResponse(res, "Offer ID is required", 400);
+      }
+      const result = await this.parentService.updateOffer(
+        offerId,
+        status,
+        userId
+      );
+
+      return sendSuccessResponse(
+        res,
+        "Offer updated successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while updating offer";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  handleStripeWebhook = async (req: Request, res: Response) => {
+    try {
+      const sig = req.headers["stripe-signature"] as string;
+
+      if (!sig) {
+        return sendErrorResponse(res, "Missing Stripe signature", 400);
+      }
+
+      if (!this.stripeWebhookSecret) {
+        return sendErrorResponse(
+          res,
+          "Stripe webhook secret not configured",
+          400
+        );
+      }
+
+      const stripe = this.parentService.getStripeInstance();
+      if (!stripe) {
+        return sendErrorResponse(res, "Stripe not configured", 400);
+      }
+
+      let event: Stripe.Event;
+
+      try {
+        event = stripe.webhooks.constructEvent(
+          req.body,
+          sig,
+          this.stripeWebhookSecret
+        );
+      } catch (err: any) {
+        console.error("Webhook signature verification failed:", err.message);
+        return sendErrorResponse(res, "Invalid signature", 400);
+      }
+
+      // Process the event
+      await this.parentService.handleStripeWebhook(event);
+
+      return sendSuccessResponse(res, "Webhook processed successfully", 200, {
+        received: true,
+      });
+    } catch (error: any) {
+      console.error("Webhook processing error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while processing webhook";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  cancelSubscription = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { subscriptionId } = req.params;
+
+      if (!subscriptionId) {
+        return sendErrorResponse(res, "Subscription ID is required", 400);
+      }
+
+      const result = await this.parentService.cancelSubscription(
+        userId,
+        subscriptionId
+      );
+
+      return sendSuccessResponse(
+        res,
+        "Subscription cancelled successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Cancel subscription error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while cancelling subscription";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  getAllSubscriptions = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+
+      const result = await this.parentService.getAllSubscriptions(userId);
+
+      return sendSuccessResponse(
+        res,
+        "Subscriptions retrieved successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Get subscriptions error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while retrieving subscriptions";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };

@@ -1,13 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.PaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
+exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.PaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
 var UserRole;
 (function (UserRole) {
     UserRole["ADMIN"] = "ADMIN";
     UserRole["PARENT"] = "PARENT";
     UserRole["TUTOR"] = "TUTOR";
-    UserRole["TEACHER"] = "TEACHER";
-    UserRole["STUDENT"] = "STUDENT";
+    UserRole["SUPER_ADMIN"] = "SUPER_ADMIN";
 })(UserRole || (exports.UserRole = UserRole = {}));
 // is on board
 var IsOnBaord;
@@ -77,3 +76,12 @@ var OtpPurpose;
     OtpPurpose["LOGIN"] = "login";
     OtpPurpose["PASSWORD_RESET"] = "password_reset";
 })(OtpPurpose || (exports.OtpPurpose = OtpPurpose = {}));
+var TutorSessionStatus;
+(function (TutorSessionStatus) {
+    TutorSessionStatus["PENDING"] = "PENDING";
+    TutorSessionStatus["TUTOR_HOLIDAY"] = "TUTOR_HOLIDAY";
+    TutorSessionStatus["PUBLIC_HOLIDAY"] = "PUBLIC_HOLIDAY";
+    TutorSessionStatus["COMPLETED"] = "COMPLETED";
+    TutorSessionStatus["CANCELLED_BY_PARENT"] = "CANCELLED_BY_PARENT";
+    TutorSessionStatus["CANCELLED_BY_TUTOR"] = "CANCELLED_BY_TUTOR";
+})(TutorSessionStatus || (exports.TutorSessionStatus = TutorSessionStatus = {}));

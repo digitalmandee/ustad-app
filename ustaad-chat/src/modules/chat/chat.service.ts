@@ -19,6 +19,7 @@ import {
   MessageStatus,
   MessageType,
   OfferStatus,
+  UserRole,
 } from '../../constant/enums';
 // import { Conversation } from '../../models/conversation.model';
 import { ForbiddenError } from '../../errors/forbidden-error';
@@ -29,7 +30,14 @@ import { BadRequestError } from '../../errors/bad-request-error';
 import { Transaction } from 'sequelize';
 // import { User } from '../../models/user.model';
 
-import { User, Conversation, Offer, Message, ConversationParticipant, sequelize } from "@ustaad/shared";
+import {
+  User,
+  Conversation,
+  Offer,
+  Message,
+  ConversationParticipant,
+  sequelize,
+} from '@ustaad/shared';
 
 interface MessageMetadata {
   offer?: object;
@@ -38,8 +46,7 @@ interface MessageMetadata {
 
 @Service()
 export default class ChatService {
-  async createMessage(senderId: string, messageData: ICreateMessageDto) {
-    console.log('helllo');
+  async createMessage(senderId: string, messageData: ICreateMessageDto, role: string) {
     const transaction: Transaction = await sequelize.transaction();
     try {
       // Verify user is participant of the conversation
@@ -74,6 +81,9 @@ export default class ChatService {
       );
 
       if (messageData.type === MessageType.OFFER) {
+        if (role !== UserRole.TUTOR) {
+          throw new ForbiddenError('Only tutors can create offers');
+        }
         if (!messageData.offer) {
           throw new BadRequestError('Offer data is required for message type OFFER');
         }
@@ -88,8 +98,11 @@ export default class ChatService {
             amountMonthly: offerData.amountMonthly,
             subject: offerData.subject,
             startDate: offerData.startDate,
+            startTime: offerData.startTime,
+            endTime: offerData.endTime,
             description: offerData.description || null,
             status: OfferStatus.PENDING, // Default or as needed
+            daysOfWeek: offerData.daysOfWeek,
           },
           { transaction }
         );
@@ -104,11 +117,13 @@ export default class ChatService {
         (message.metadata as MessageMetadata).offer = savedOfferdata;
       }
       
+
+
+
       await transaction.commit();
       return this.formatMessageResponse(message);
     } catch (err: any) {
       await transaction.rollback();
-      console.log(err, 'err');
       if (err instanceof ForbiddenError || err instanceof BadRequestError) {
         throw err;
       }
@@ -169,7 +184,7 @@ export default class ChatService {
       });
 
       const messages = rows.map((message) => this.formatMessageResponse(message));
-      console.log(messages,"mewssages")
+      console.log(messages, 'mewssages');
 
       return {
         messages,
@@ -246,73 +261,84 @@ export default class ChatService {
     );
   }
 
-async getMissedMessages(userId: string, lastSeenAt: string | Date): Promise<IMessageResponseDto[]> {
-  try {
-    const userConversations = await ConversationParticipant.findAll({ where: { userId, isActive: true }, attributes: ['conversationId']});
-    const conversationIds = userConversations.map((c) => c.conversationId);
-    if (conversationIds.length === 0) {
-      return [];
-    }
-
-    const messages = await Message.findAll({
-      where: {conversationId: {[Op.in]: conversationIds},createdAt: {[Op.gt]: new Date(lastSeenAt)}},
-      include: [{model: User,as: 'sender',attributes: ['id', 'name']}, { model: Offer, as: 'offer', required: false }],
-      order: [['createdAt', 'ASC']],
-    });
-
-    return messages.map((message) => this.formatMessageResponse(message));
-  } catch (err: any) {
-    console.log(err, 'err');
-    if (err instanceof ForbiddenError || err instanceof BadRequestError) {
-      throw err;
-    }
-    throw new GenericError(err, 'Unable to fetch missed messages');
-  }
-}
-
-async markAsReadS( userId: string,Id: string){
-const conversationId=Id
-  const lastReadAt=new Date()
-  try {
-    const [updatedRows] = await ConversationParticipant.update(
-      { lastReadAt: lastReadAt },
-      {
-        where: {
-          conversationId,
-          userId,
-        },
+  async getMissedMessages(
+    userId: string,
+    lastSeenAt: string | Date
+  ): Promise<IMessageResponseDto[]> {
+    try {
+      const userConversations = await ConversationParticipant.findAll({
+        where: { userId, isActive: true },
+        attributes: ['conversationId'],
+      });
+      const conversationIds = userConversations.map((c) => c.conversationId);
+      if (conversationIds.length === 0) {
+        return [];
       }
-    );
 
-    // If no rows were updated, that means no matching participant was found
-    if (updatedRows === 0) {
-      throw new BadRequestError('Invalid conversation or user. Participant not found.');
+      const messages = await Message.findAll({
+        where: {
+          conversationId: { [Op.in]: conversationIds },
+          createdAt: { [Op.gt]: new Date(lastSeenAt) },
+        },
+        include: [
+          { model: User, as: 'sender', attributes: ['id', 'name'] },
+          { model: Offer, as: 'offer', required: false },
+        ],
+        order: [['createdAt', 'ASC']],
+      });
+
+      return messages.map((message) => this.formatMessageResponse(message));
+    } catch (err: any) {
+      console.log(err, 'err');
+      if (err instanceof ForbiddenError || err instanceof BadRequestError) {
+        throw err;
+      }
+      throw new GenericError(err, 'Unable to fetch missed messages');
     }
-    return lastReadAt
-  } catch (err: any) {
-    console.log(err, 'err');
-
-    if ( err instanceof BadRequestError) {
-      throw err;
-    }
-
-    throw new GenericError(err, 'Unable to mark conversation as read');
   }
-}
 
+  async markAsReadS(userId: string, Id: string) {
+    const conversationId = Id;
+    const lastReadAt = new Date();
+    try {
+      const [updatedRows] = await ConversationParticipant.update(
+        { lastReadAt: lastReadAt },
+        {
+          where: {
+            conversationId,
+            userId,
+          },
+        }
+      );
+
+      // If no rows were updated, that means no matching participant was found
+      if (updatedRows === 0) {
+        throw new BadRequestError('Invalid conversation or user. Participant not found.');
+      }
+      return lastReadAt;
+    } catch (err: any) {
+      console.log(err, 'err');
+
+      if (err instanceof BadRequestError) {
+        throw err;
+      }
+
+      throw new GenericError(err, 'Unable to mark conversation as read');
+    }
+  }
 
   // ///////////     conversation
 
   async createConversation(createdBy: string, conversationData: CreateConversationDto) {
     try {
       const { participantIds, ...data } = conversationData;
-      console.log(participantIds,"participantIds")
+      console.log(participantIds, 'participantIds');
 
       // For direct conversations, ensure only 2 participants
       if (data.type === ConversationType.DIRECT && participantIds.length !== 1) {
         throw new BadRequestError('Direct conversations must have exactly 2 participants');
       }
-      console.log("hello2 participantIds")
+      console.log('hello2 participantIds');
 
       // Check if direct conversation already exists
       if (data.type === ConversationType.DIRECT) {
@@ -321,7 +347,7 @@ const conversationId=Id
           participantIds[0]
         );
         if (existingConversation) {
-          return this.formatConversationResponse(existingConversation,createdBy);
+          return this.formatConversationResponse(existingConversation, createdBy);
         }
       }
 
@@ -349,9 +375,9 @@ const conversationId=Id
       );
 
       await Promise.all(participantPromises);
-      console.log("hello participantIds")
+      console.log('hello participantIds');
 
-      return this.formatConversationResponse(conversation,createdBy);
+      return this.formatConversationResponse(conversation, createdBy);
     } catch (err: any) {
       if (err instanceof BadRequestError) {
         throw err;
@@ -385,7 +411,9 @@ const conversationId=Id
       const conversations = participantRecords.map((p) => p.get('conversation') as Conversation);
       console.log('hello3', conversations, participantRecords);
 
-      return Promise.all(conversations.map((conv) => this.formatConversationResponse(conv,userId)));
+      return Promise.all(
+        conversations.map((conv) => this.formatConversationResponse(conv, userId))
+      );
     } catch (err: any) {
       console.log(err);
       // if (err instanceof BadRequestError ){
@@ -413,7 +441,17 @@ const conversationId=Id
       throw new Error('Conversation not found');
     }
 
-    return this.formatConversationResponse(conversation,userId);
+    const participant2 = await ConversationParticipant.findOne({
+      where: {
+        conversationId,
+        role: 'member',
+        isActive: true,
+      },
+    });
+
+    const participant2Ids = participant2.userId;
+
+    return this.formatConversationResponse(conversation, userId);
   }
 
   //   async updateConversation(
@@ -518,7 +556,7 @@ const conversationId=Id
   }
 
   private async findDirectConversation(user1Id: string, user2Id: string) {
-    console.log(user1Id,user2Id,"users")
+    console.log(user1Id, user2Id, 'users');
     try {
       const conversations = await Conversation.findAll({
         where: {
@@ -538,21 +576,18 @@ const conversationId=Id
       });
 
       for (const conversation of conversations) {
-        const participants = conversation.get(
-          'participants'
-        ) as ConversationParticipant[];
+        const participants = conversation.get('participants') as ConversationParticipant[];
 
-        console.log("hello3",participants)
+        console.log('hello3', participants);
         if (participants.length === 2) {
-        console.log("hello5",participants)
+          console.log('hello5', participants);
 
           const userIds = participants.map((p) => p.userId);
           if (userIds.includes(user1Id) && userIds.includes(user2Id)) {
             return conversation;
           }
         }
-        console.log("hello4",participants)
-
+        console.log('hello4', participants);
       }
       return null;
     } catch (err: any) {
@@ -563,70 +598,72 @@ const conversationId=Id
     }
   }
 
-private async formatConversationResponse(conversation: Conversation, currentUserId: string) {
-  const participantCount = await ConversationParticipant.count({
-    where: {
-      conversationId: conversation.id,
-      isActive: true,
-    },
-  });
-
-  const currentParticipant = await ConversationParticipant.findOne({
-    where: {
-      conversationId: conversation.id,
-      userId: currentUserId,
-    },
-  });
-
-  // Get the other participant (for direct chat)
-  let conversationName = conversation.name;
-  if (conversation.type === 'DIRECT' && participantCount === 2) {
-    console.log("helooooooooo n n n")
-    const otherParticipant = await ConversationParticipant.findOne({
+  private async formatConversationResponse(conversation: Conversation, currentUserId: string) {
+    const participantCount = await ConversationParticipant.count({
       where: {
         conversationId: conversation.id,
-        userId: { [Op.ne]: currentUserId },
         isActive: true,
       },
-      include: [{ model: User, attributes: ['fullName'] }],
     });
 
-    if (otherParticipant && (otherParticipant as any).User) {
-      conversationName = (otherParticipant as any).User.fullName;
-      console.log(otherParticipant,conversationName,"hj")
+    const currentParticipant = await ConversationParticipant.findOne({
+      where: {
+        conversationId: conversation.id,
+        userId: currentUserId,
+      },
+    });
+
+    // Get the other participant (for direct chat)
+    let conversationName = conversation.name;
+    let participantId = null;
+    if (conversation.type === 'DIRECT' && participantCount === 2) {
+      console.log('helooooooooo n n n');
+      const otherParticipant = await ConversationParticipant.findOne({
+        where: {
+          conversationId: conversation.id,
+          userId: { [Op.ne]: currentUserId },
+          isActive: true,
+        },
+        include: [{ model: User, attributes: ['fullName', 'id'] }],
+      });
+
+      if (otherParticipant && (otherParticipant as any).User) {
+        conversationName = (otherParticipant as any).User.fullName;
+        participantId = (otherParticipant as any).User.id;
+        console.log(otherParticipant, conversationName, 'hj');
+      }
     }
+
+    const lastMessage = await Message.findOne({
+      where: {
+        conversationId: conversation.id,
+      },
+      order: [['createdAt', 'DESC']],
+    });
+
+    return {
+      id: conversation.id,
+      name: conversationName,
+      description: conversation.description,
+      type: conversation.type,
+      status: conversation.status,
+      createdBy: conversation.createdBy,
+      lastMessageAt: conversation.lastMessageAt,
+      lastReadAt: currentParticipant?.lastReadAt || null,
+      isPrivate: conversation.isPrivate,
+      maxParticipants: conversation.maxParticipants,
+      participantCount,
+      participantId,
+      lastMessage: lastMessage
+        ? {
+            id: lastMessage.id,
+            content: lastMessage.content,
+            senderName: 'Unknown', // Ideally you join the User model for this too
+            createdAt: lastMessage.createdAt,
+          }
+        : undefined,
+      createdAt: conversation.createdAt,
+      updatedAt: conversation.updatedAt,
+    };
   }
-
-  const lastMessage = await Message.findOne({
-    where: {
-      conversationId: conversation.id,
-    },
-    order: [['createdAt', 'DESC']],
-  });
-
-  return {
-    id: conversation.id,
-    name: conversationName,
-    description: conversation.description,
-    type: conversation.type,
-    status: conversation.status,
-    createdBy: conversation.createdBy,
-    lastMessageAt: conversation.lastMessageAt,
-    lastReadAt: currentParticipant?.lastReadAt || null,
-    isPrivate: conversation.isPrivate,
-    maxParticipants: conversation.maxParticipants,
-    participantCount,
-    lastMessage: lastMessage
-      ? {
-          id: lastMessage.id,
-          content: lastMessage.content,
-          senderName: 'Unknown', // Ideally you join the User model for this too
-          createdAt: lastMessage.createdAt,
-        }
-      : undefined,
-    createdAt: conversation.createdAt,
-    updatedAt: conversation.updatedAt,
-  };
-}
-
 }

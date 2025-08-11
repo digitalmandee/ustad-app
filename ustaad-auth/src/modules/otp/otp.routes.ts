@@ -22,5 +22,16 @@ router.post(
   emailController.verifyOtp
 );
 
+router.post(
+  '/auth/resend-otp',
+  otpValidator(),
+  validateRequest,
+  emailController.resendOtp
+);
 
-export { router as emailRouter };
+router.get(
+  '/auth/sms-service-status',
+  emailController.checkSmsService
+);
+
+export default router;

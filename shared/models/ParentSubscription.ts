@@ -1,16 +1,19 @@
 import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { Parent } from "./Parent";
+import { User } from "./User";
+import { Offer } from "./Offer";
 
 export interface ParentSubscriptionAttributes {
   id: string;
   parentId: string;
   tutorId: string;
   childId: string;
+  offerId: string; // Added offerId
   stripeSubscriptionId: string;
   status: string; // 'active', 'cancelled', 'expired'
   planType: string; // 'monthly', 'yearly', etc.
   startDate: Date;
-  endDate: Date;
+  endDate?: Date;
   amount: number;
   createdAt?: Date;
   updatedAt?: Date;
@@ -26,11 +29,12 @@ export class ParentSubscription
   public parentId!: string;
   public tutorId!: string;
   public childId!: string;
+  public offerId!: string; // Added offerId
   public stripeSubscriptionId!: string;
   public status!: string;
   public planType!: string;
   public startDate!: Date;
-  public endDate!: Date;
+  public endDate?: Date;
   public amount!: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date; 
@@ -68,12 +72,20 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
           key: "id",
         },
       },
+      offerId: { // Added offerId
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+          model: "offers",
+          key: "id",
+        },
+      },
       stripeSubscriptionId: {
         type: DataTypes.STRING,
         allowNull: false,
       },
       status: {
-        type: DataTypes.ENUM('active', 'cancelled', 'expired'),
+        type: DataTypes.ENUM('active', 'cancelled', 'expired', 'created'),
         allowNull: false,
         defaultValue: 'active',
       },
@@ -87,7 +99,7 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
       },
       endDate: {
         type: DataTypes.DATE,
-        allowNull: false,
+        allowNull: true,
       },
       amount: {
         type: DataTypes.DECIMAL(10, 2),
@@ -99,6 +111,7 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
       tableName: "parent_subscriptions",
     }
   );
+
 
   return ParentSubscription;
 } 
