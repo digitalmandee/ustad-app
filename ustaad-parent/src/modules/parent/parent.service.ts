@@ -15,8 +15,12 @@ import {
   TutorSettings,
   PaymentMethod,
   TutorSessions,
+  Offer,
+  ParentTransaction,
 } from "@ustaad/shared";
 import Stripe from "stripe";
+import { OfferStatus } from "src/constant/enums";
+import { log } from "console";
 
 interface ParentProfileData {
   userId: string;
@@ -32,7 +36,7 @@ interface UpdateProfileData {
   image?: string;
 }
 
-export default class TutorService {
+export default class ParentService {
   private stripe: Stripe | null = null;
 
   constructor() {
@@ -41,6 +45,10 @@ export default class TutorService {
         apiVersion: "2025-06-30.basil",
       });
     }
+  }
+
+  getStripeInstance(): Stripe | null {
+    return this.stripe;
   }
 
   async createParentProfile(data: ParentProfileData) {
@@ -415,41 +423,32 @@ export default class TutorService {
   async getTutorProfile(tutorId: string) {
     try {
       const user = await User.findByPk(tutorId, {
-        attributes: { exclude: ["password", "isActive", "isEmailVerified", "isPhoneVerified", "deviceId", 'phone'] },
+        attributes: {
+          exclude: [
+            "password",
+            "isActive",
+            "isEmailVerified",
+            "isPhoneVerified",
+            "deviceId",
+            "phone",
+          ],
+        },
         include: [
           {
             model: Tutor,
-            attributes: [
-              "subjects",
-              "about",
-              "grade",
-            ],
+            attributes: ["subjects", "about", "grade"],
           },
           {
             model: TutorSettings,
-            attributes: [
-              "minSubjects",
-              "maxStudentsDaily",
-              "subjectCosts",
-            ],
+            attributes: ["minSubjects", "maxStudentsDaily", "subjectCosts"],
           },
           {
             model: TutorEducation,
-            attributes: [
-              "institute",
-              "startDate",
-              "endDate",
-              "description",
-            ],
+            attributes: ["institute", "startDate", "endDate", "description"],
           },
           {
             model: TutorExperience,
-            attributes: [
-              "company",
-              "startDate",
-              "endDate",
-              "description",
-            ],
+            attributes: ["company", "startDate", "endDate", "description"],
           },
         ],
       });
@@ -457,6 +456,354 @@ export default class TutorService {
       return user;
     } catch (error) {
       console.error("Error in getTutorProfile:", error);
+      throw error;
+    }
+  }
+
+  async updateOffer(offerId: string, status: string, userId: string) {
+    try {
+      const offer = await Offer.findByPk(offerId);
+      if (!offer) {
+        throw new UnProcessableEntityError("Offer not found");
+      }
+      if (offer.status !== OfferStatus.PENDING) {
+        throw new UnProcessableEntityError(
+          "Offer is already accepted or rejected"
+        );
+      }
+      if (offer.receiverId !== userId) {
+        throw new UnProcessableEntityError(
+          "You are not authorized to update this offer"
+        );
+      }
+
+      // Validate status
+      if (!Object.values(OfferStatus).includes(status as OfferStatus)) {
+        throw new UnProcessableEntityError("Invalid offer status");
+      }
+
+      const parent = await Parent.findOne({
+        where: { userId: offer.receiverId },
+      });
+
+      if (!parent.customerId) {
+        throw new UnProcessableEntityError(
+          "Parent is not registered with stripe"
+        );
+      }
+
+      const stripeCustomer = await this.stripe?.customers.retrieve(
+        parent.customerId
+      );
+      if (!stripeCustomer) {
+        throw new UnProcessableEntityError(
+          "Parent is not registered with stripe"
+        );
+      }
+
+      const paymentMethod = await PaymentMethod.findOne({
+        where: { parentId: parent.userId, isDefault: true },
+      });
+
+      const stripePaymentMethod = await this.stripe?.paymentMethods.retrieve(
+        paymentMethod.stripePaymentMethodId
+      );
+
+      if (!stripePaymentMethod) {
+        throw new UnProcessableEntityError(
+          "Parent does not have a payment method"
+        );
+      }
+
+      // const stripeSubscription = await this.stripe?.subscriptions.list({
+      //   customer: parent.customerId,
+      // });
+      // // console.log("stripeSubscription", stripeSubscription);
+      // if (!stripeSubscription) {
+      //   throw new UnProcessableEntityError(
+      //     "Parent is not registered with stripe"
+      //   );
+      // }
+
+      const parentSubscription = await ParentSubscription.findOne({
+        where: { offerId: offerId },
+      });
+      if (parentSubscription) {
+        throw new UnProcessableEntityError(
+          "Parent already has a subscription against this offer"
+        );
+      }
+
+      // Create a product
+      const product = await this.stripe?.products.create({
+        name: `Ustaad Subscription for ${offer.id}`,
+        metadata: {
+          offerId: offerId,
+        },
+      });
+
+      // Create a monthly price
+      const price = await this.stripe?.prices.create({
+        unit_amount: Math.round(offer.amountMonthly * 100),
+        currency: "pkr",
+        recurring: { interval: "month" },
+        product: product.id,
+        metadata: {
+          offerId: offerId,
+        },
+      });
+
+      // Create a subscription
+      const subscription = await this.stripe?.subscriptions.create({
+        customer: parent.customerId,
+        items: [{ price: price.id }],
+        default_payment_method: paymentMethod.stripePaymentMethodId,
+        metadata: {
+          offerId: offerId,
+        },
+      });
+
+      if (!subscription) {
+        throw new UnProcessableEntityError("Failed to create subscription");
+      }
+
+      // Create a parent subscription
+      await ParentSubscription.create({
+        offerId: offerId,
+        parentId: parent.userId,
+        tutorId: offer.senderId,
+        childId: offer.receiverId,
+        stripeSubscriptionId: subscription.id,
+        status: "created",
+        planType: "monthly",
+        startDate: new Date(),
+        amount: offer.amountMonthly,
+      });
+
+      // Update offer status
+      offer.status = OfferStatus.ACCEPTED;
+      await offer.save();
+
+      return offer;
+    } catch (error: any) {
+      console.log(error);
+
+      if (error instanceof UnProcessableEntityError) {
+        throw error;
+      }
+      throw new GenericError(error, "Failed to update offer status");
+    }
+  }
+
+  async handleStripeWebhook(event: Stripe.Event) {
+    try {
+      switch (event.type) {
+        case "invoice.created":
+          await this.handleInvoiceCreated(event.data.object as Stripe.Invoice);
+          break;
+
+        case "invoice.paid":
+          await this.handleInvoicePaymentSucceeded(
+            event.data.object as Stripe.Invoice
+          );
+          break;
+        default:
+          console.log(`Unhandled event type: ${event.type}`);
+      }
+    } catch (error) {
+      console.error("Error processing Stripe webhook:", error);
+      throw error;
+    }
+  }
+
+  private async handleInvoiceCreated(invoice: any) {
+    console.log(
+      "hello invoice payment succeeded",
+      invoice.id,
+      invoice.status,
+      invoice.customer,
+      invoice.amount_paid
+    );
+    console.log(
+      "hello invoice payment succeeded",
+      invoice?.subscription,
+      invoice?.subscription_details?.metadata?.offerId
+    );
+
+    const offer = await Offer.findOne({
+      where: {
+        id: invoice?.subscription_details?.metadata?.offerId,
+        status: OfferStatus.ACCEPTED,
+      },
+    });
+
+    if (offer) {
+      const parentSubscription = await ParentSubscription.findOne({
+        where: { offerId: offer.id },
+      });
+      if (parentSubscription) {
+        parentSubscription.status = "active";
+        await parentSubscription.save();
+      }
+
+      const subscription = await ParentSubscription.findOne({
+        where: { stripeSubscriptionId: invoice?.subscription },
+      });
+
+      const parent = await Parent.findOne({
+        where: { customerId: invoice?.customer },
+      });
+
+      if (parent) {
+        const parentTransaction = await ParentTransaction.create({
+          invoiceId: invoice.id,
+          parentId: parent?.userId,
+          childName: offer.childName,
+          subscriptionId: subscription?.id,
+          amount: invoice?.amount_paid / 100,
+          status: "created",
+        });
+      }
+    }
+  }
+
+  private async handleInvoicePaymentSucceeded(invoice: any) {
+    console.log("Invoice payment succeeded:", invoice.id);
+
+    console.log("invoice", invoice?.subscription_details?.metadata?.offerId);
+
+    const offerId = invoice?.subscription_details?.metadata?.offerId;
+    const parentTransaction = await ParentTransaction.findOne({
+      where: { invoiceId: invoice.id, status: "created" },
+    });
+
+    console.log("offerId", offerId);
+    // console.log(parentTransaction);
+
+    const offer = await Offer.findOne({
+      where: { id: offerId },
+    });
+
+    console.log(offer);
+
+    console.log("we herere 2", parentTransaction);
+    if (parentTransaction && offer) {
+      console.log("we herere 3");
+      parentTransaction.status = "paid";
+      await parentTransaction.save();
+
+      console.log("paid added");
+
+      const tutorSession = await TutorSessions.create({
+        tutorId: offer?.senderId,
+        parentId: parentTransaction.parentId,
+        childName: offer?.childName,
+        startTime: offer?.startTime,
+        endTime: offer?.endTime,
+        daysOfWeek: ["mon", "tue", "wed", "thu", "fri"],
+        month: new Date().toISOString().split("T")[0],
+        price: parentTransaction.amount,
+        status: "active",
+      });
+
+      console.log("tutorsession created");
+    }
+  }
+
+  async cancelSubscription(userId: string, subscriptionId: string) {
+    if (!this.stripe) {
+      throw new Error(
+        "Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable."
+      );
+    }
+
+    try {
+      const parent = await Parent.findOne({
+        where: { userId },
+      });
+
+      if (!parent) {
+        throw new UnProcessableEntityError("Parent profile not found");
+      }
+
+      const subscription = await ParentSubscription.findOne({
+        where: {
+          id: subscriptionId,
+          parentId: parent.userId,
+        },
+        include: [
+          {
+            model: Offer,
+            attributes: ["id", "status"],
+          },
+        ],
+      });
+
+      if (!subscription) {
+        throw new UnProcessableEntityError("Subscription not found");
+      }
+
+      if (subscription.status === "cancelled") {
+        throw new ConflictError("Subscription is already cancelled");
+      }
+
+      // Cancel subscription in Stripe
+      await this.stripe.subscriptions.update(
+        subscription.stripeSubscriptionId,
+        {
+          cancel_at_period_end: true,
+        }
+      );
+
+      // Update subscription status in database
+      await subscription.update({
+        status: "cancelled",
+        endDate: new Date(),
+      });
+
+      return {
+        message: "Subscription cancelled successfully",
+        subscription: {
+          id: subscription.id,
+          status: subscription.status,
+          endDate: subscription.endDate,
+        },
+      };
+    } catch (error) {
+      console.error("Error in cancelSubscription:", error);
+      throw error;
+    }
+  }
+
+  async getAllSubscriptions(userId: string) {
+    try {
+      const parent = await Parent.findOne({
+        where: { userId },
+      });
+
+      if (!parent) {
+        throw new UnProcessableEntityError("Parent profile not found");
+      }
+
+      if (!parent.customerId) {
+        throw new UnProcessableEntityError(
+          "Parent does not have a Stripe customer ID"
+        );
+      }
+      console.log("parent", parent.customerId);
+
+      const stripeSubscriptions = await this.stripe.subscriptions.list({
+        customer: parent.customerId,
+        status: "active",
+        expand: ["data.default_payment_method"],
+        limit: 100,
+      });
+
+      // console.log("stripeSubscriptions", stripeSubscriptions);
+
+      return stripeSubscriptions.data;
+    } catch (error) {
+      console.error("Error in getAllSubscriptions (from stripe):", error);
       throw error;
     }
   }

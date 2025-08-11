@@ -11,15 +11,23 @@ import config from '../config';
 
 import { tutorRouter } from '../modules/parent/parent.routes';
 import { childRouter } from '../modules/child/child.routes';
+import cronRouter from '../modules/cron/cron.routes';
+import ParentController from '../modules/parent/parent.controller';
 
 export default ({ app }: { app: express.Application }) => {
   // It shows the real origin IP in the heroku or Cloudwatch logs
   app.enable('trust proxy');
   // Set security HTTP headers
   app.use(helmet());
+
+
+
+  app.use('/api/v1/parent/webhook/stripe', express.raw({ type: 'application/json' }),  (req, res) => new ParentController().handleStripeWebhook(req, res) );
   // Body parser, reading data from body into req.body
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+  
+  // Special handling for Stripe webhooks - raw body for signature verification
 
   // Prevent parameter pollution
   app.use(
@@ -61,6 +69,7 @@ export default ({ app }: { app: express.Application }) => {
   // Load all API routes
   app.use(config.api.prefix, tutorRouter);
   app.use(config.api.prefix, childRouter);
+  app.use(config.api.prefix + '/cron', cronRouter);
 
   app.all('*', async (req, res) => {
     throw new NotFoundError(null);

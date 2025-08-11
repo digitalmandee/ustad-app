@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.PaymentMethod = exports.PaymentRequest = exports.TutorSessions = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
+exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.PaymentMethod = exports.PaymentRequest = exports.TutorSessionsDetail = exports.TutorSessions = exports.ParentTransaction = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
 exports.initAllModels = initAllModels;
 const Child_1 = require("./Child");
 Object.defineProperty(exports, "Child", { enumerable: true, get: function () { return Child_1.Child; } });
@@ -30,6 +30,8 @@ const TutorLocations_1 = require("./TutorLocations");
 Object.defineProperty(exports, "TutorLocation", { enumerable: true, get: function () { return TutorLocations_1.TutorLocation; } });
 const ParentSubscription_1 = require("./ParentSubscription");
 Object.defineProperty(exports, "ParentSubscription", { enumerable: true, get: function () { return ParentSubscription_1.ParentSubscription; } });
+const ParentTransaction_1 = require("./ParentTransaction");
+Object.defineProperty(exports, "ParentTransaction", { enumerable: true, get: function () { return ParentTransaction_1.ParentTransaction; } });
 const TutorSessions_1 = require("./TutorSessions");
 Object.defineProperty(exports, "TutorSessions", { enumerable: true, get: function () { return TutorSessions_1.TutorSessions; } });
 const PaymentRequest_1 = require("./PaymentRequest");
@@ -45,6 +47,8 @@ const Message_1 = require("./Message");
 Object.defineProperty(exports, "Message", { enumerable: true, get: function () { return Message_1.Message; } });
 const Offer_1 = require("./Offer");
 Object.defineProperty(exports, "Offer", { enumerable: true, get: function () { return Offer_1.Offer; } });
+const TutorSessionsDetail_1 = require("./TutorSessionsDetail");
+Object.defineProperty(exports, "TutorSessionsDetail", { enumerable: true, get: function () { return TutorSessionsDetail_1.TutorSessionsDetail; } });
 function initAllModels(sequelize) {
     (0, User_1.initUserModel)(sequelize);
     (0, Otp_1.initOtpModel)(sequelize);
@@ -60,7 +64,9 @@ function initAllModels(sequelize) {
     (0, TutorSettings_1.initTutorSettingsModel)(sequelize);
     (0, TutorLocations_1.initTutorLocationModel)(sequelize);
     (0, ParentSubscription_1.initParentSubscriptionModel)(sequelize);
+    (0, ParentTransaction_1.initParentTransactionModel)(sequelize);
     (0, TutorSessions_1.initTutorSessionsModel)(sequelize);
+    (0, TutorSessionsDetail_1.initTutorSessionsDetailModel)(sequelize);
     (0, PaymentRequest_1.initPaymentRequestModel)(sequelize);
     (0, PaymentMethod_1.initPaymentMethodModel)(sequelize);
     // Initialize chat models

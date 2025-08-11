@@ -74,13 +74,16 @@ export class ChildController {
     res: Response
   ): Promise<void> => {
     try {
-      const data = req.body as DeleteChildDto;
+      const {id} = req.params;
       const userId = req.user.id;
-      await this.childService.deleteChild(data, userId);
+
+      console.log('data', id);
+      
+      await this.childService.deleteChild(id, userId);
 
       return sendSuccessResponse(
         res,
-        InfoMessages.GENERIC.ITEM_DELETE_SUCCESSFULLY("Child", data.id),
+        InfoMessages.GENERIC.ITEM_DELETE_SUCCESSFULLY("Child", id),
         200
       );
     } catch (error: any) {

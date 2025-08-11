@@ -37,12 +37,20 @@ function initParentSubscriptionModel(sequelize) {
                 key: "id",
             },
         },
+        offerId: {
+            type: sequelize_1.DataTypes.UUID,
+            allowNull: false,
+            references: {
+                model: "offers",
+                key: "id",
+            },
+        },
         stripeSubscriptionId: {
             type: sequelize_1.DataTypes.STRING,
             allowNull: false,
         },
         status: {
-            type: sequelize_1.DataTypes.ENUM('active', 'cancelled', 'expired'),
+            type: sequelize_1.DataTypes.ENUM('active', 'cancelled', 'expired', 'created'),
             allowNull: false,
             defaultValue: 'active',
         },
@@ -56,7 +64,7 @@ function initParentSubscriptionModel(sequelize) {
         },
         endDate: {
             type: sequelize_1.DataTypes.DATE,
-            allowNull: false,
+            allowNull: true,
         },
         amount: {
             type: sequelize_1.DataTypes.DECIMAL(10, 2),

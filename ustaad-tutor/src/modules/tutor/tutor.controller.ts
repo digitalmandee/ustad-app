@@ -598,4 +598,46 @@ export default class TutorController {
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
+
+  getTutorSessions = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const sessions = await this.tutorService.getTutorSessions(userId);
+      return sendSuccessResponse(res, "Tutor sessions retrieved successfully", 200, sessions);
+    } catch (error: any) {
+      return sendErrorResponse(res, error.message || "Failed to retrieve tutor sessions", 400);
+    }
+  };
+
+  addTutorSession = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const session = await this.tutorService.addTutorSession(userId, req.body);
+      return sendSuccessResponse(res, "Tutor session added successfully", 200, session);
+    } catch (error: any) {
+      return sendErrorResponse(res, error.message || "Failed to add tutor session", 400);
+    }
+  };
+
+  deleteTutorSession = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { sessionId } = req.params;
+      await this.tutorService.deleteTutorSession(userId, sessionId);
+      return sendSuccessResponse(res, "Tutor session deleted successfully", 200);
+    } catch (error: any) {
+      return sendErrorResponse(res, error.message || "Failed to delete tutor session", 400);
+    }
+  };
+
+  editTutorSession = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { sessionId } = req.params;
+      const session = await this.tutorService.editTutorSession(userId, sessionId, req.body);
+      return sendSuccessResponse(res, "Tutor session updated successfully", 200, session);
+    } catch (error: any) {
+      return sendErrorResponse(res, error.message || "Failed to update tutor session", 400);
+    }
+  };
 }

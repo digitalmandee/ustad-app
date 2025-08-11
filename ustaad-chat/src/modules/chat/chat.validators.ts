@@ -110,6 +110,25 @@ export const createMessageValidator = ()=>{
       .bail()
       .isISO8601().toDate().withMessage('offer.startDate must be a valid date'),
 
+    body('offer.startTime')
+      .if(body('type').equals('OFFER'))
+      .exists().withMessage('offer.startTime is required')
+      .bail()
+      .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('offer.startTime must be a valid time in HH:MM format'),
+
+    body('offer.endTime')
+      .if(body('type').equals('OFFER'))
+      .exists().withMessage('offer.endTime is required')
+      .bail()
+      .matches(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).withMessage('offer.endTime must be a valid time in HH:MM format')
+      .custom((endTime, { req }) => {
+        const startTime = req.body.offer?.startTime;
+        if (startTime && endTime <= startTime) {
+          throw new Error('endTime must be after startTime');
+        }
+        return true;
+      }),
+
     body('offer.description')
       .if(body('type').equals('OFFER'))
       .optional()

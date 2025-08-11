@@ -14,7 +14,7 @@ export const otpValidator = () => {
 
     body('type')
       .exists().withMessage(constant.VALIDATION.KEY_MISSING('type'))
-      .bail().isIn(Object.values(OtpType)).withMessage('Invalid type'),
+      .bail().isIn(Object.values(OtpType)).withMessage('Invalid type. Must be email or phone'),
   ];
 };
 
@@ -30,7 +30,7 @@ export const otpVerifyValidator = () => {
 
     body('type')
       .exists().withMessage(constant.VALIDATION.KEY_MISSING('type'))
-      .bail().isIn(Object.values(OtpType)).withMessage('Invalid type'),
+      .bail().isIn(Object.values(OtpType)).withMessage('Invalid type. Must be email or phone'),
 
     body('otp')
     .exists().withMessage(constant.VALIDATION.KEY_MISSING('otp'))

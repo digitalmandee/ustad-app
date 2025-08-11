@@ -21,6 +21,8 @@ import {
   ChildReview,
   TutorLocation,
   PaymentRequest,
+  TutorSessions,
+  TutorSessionsDetail,
 } from "@ustaad/shared";
 
 interface TutorProfileData extends ITutorOnboardingDTO {
@@ -676,5 +678,33 @@ export default class TutorService {
       console.error("Error in getPaymentRequests:", error);
       throw error;
     }
+  }
+
+  // Tutor Sessions Methods 
+  async getTutorSessions(userId: string) {
+    const sessions = await TutorSessions.findAll({
+      where: { tutorId: userId },
+      include: [
+        {
+          model: User,
+          as: 'parent', 
+          attributes: ['id', 'fullName'] 
+        }
+      ]
+    });
+  
+    return sessions;
+  }
+
+  async addTutorSession(userId: string, data: TutorSessionsDetail) {
+    return await TutorSessionsDetail.create({ tutorId: userId, ...data });
+  }
+
+  async deleteTutorSession(userId: string, sessionId: string) {
+    return await TutorSessionsDetail.destroy({ where: { id: sessionId, tutorId: userId } });
+  }
+
+  async editTutorSession(userId: string, sessionId: string, data: TutorSessionsDetail) {
+    return await TutorSessionsDetail.update({ ...data }, { where: { id: sessionId, tutorId: userId } });
   }
 }

@@ -15,6 +15,10 @@ const routes = {
   SET_TUTOR_SUBJECT_SETTINGS: "/tutor/subject/settings",
   GET_TUTOR_SUBJECT_SETTINGS: "/tutor/subject/settings",
   UPDATE_TUTOR_SUBJECT_SETTINGS: "/tutor/subject/settings",
+  GET_TUTOR_SESSIONS: "/tutor/sessions",
+  ADD_TUTOR_SESSION: "/tutor/sessions",
+  DELETE_TUTOR_SESSION: "/tutor/sessions",
+  EDIT_TUTOR_SESSION: "/tutor/sessions",
   
   
   

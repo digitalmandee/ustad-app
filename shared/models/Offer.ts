@@ -4,7 +4,7 @@ import { Conversation } from './Conversation';
 import { User } from './User';
 import { Message } from './Message';
 
-export interface OfferAttributes {
+interface OfferAttributes {
   id: string;
   conversationId: string;
   senderId: string;
@@ -14,16 +14,19 @@ export interface OfferAttributes {
   amountMonthly: number;
   subject: string;
   startDate: Date;
+  startTime: string;
+  endTime: string;
   description?: string;
   status: OfferStatus;
+  daysOfWeek: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-export type OfferCreationAttributes = Optional<
+interface OfferCreationAttributes extends Optional<
   OfferAttributes,
   'id' | 'description' | 'status' | 'createdAt' | 'updatedAt'
->;
+> {}
 
 export class Offer extends Model<OfferAttributes, OfferCreationAttributes>
   implements OfferAttributes {
@@ -36,8 +39,11 @@ export class Offer extends Model<OfferAttributes, OfferCreationAttributes>
   public amountMonthly!: number;
   public subject!: string;
   public startDate!: Date;
+  public startTime!: string;
+  public endTime!: string;
   public description!: string;
   public status!: OfferStatus;
+  public daysOfWeek!: string[];
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -100,14 +106,22 @@ export function initOfferModel(sequelize: Sequelize): typeof Offer {
         type: DataTypes.DATEONLY,
         allowNull: false,
       },
+      startTime: {
+        type: DataTypes.TIME,
+        allowNull: false,
+      },
+      endTime: {
+        type: DataTypes.TIME,
+        allowNull: false,
+      },
       description: {
         type: DataTypes.TEXT,
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM(...Object.values(OfferStatus)),
+        type: DataTypes.ENUM('PENDING', 'ACCEPTED', 'REJECTED'),
         allowNull: false,
-        defaultValue: OfferStatus.PENDING,
+        defaultValue: 'PENDING',
       },
       createdAt: {
         type: DataTypes.DATE,
@@ -116,6 +130,10 @@ export function initOfferModel(sequelize: Sequelize): typeof Offer {
       updatedAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
+      },
+      daysOfWeek: {
+        type: DataTypes.ARRAY(DataTypes.STRING),
+        allowNull: false,
       },
     },
     {
@@ -134,4 +152,4 @@ export function initOfferModel(sequelize: Sequelize): typeof Offer {
   Message.hasOne(Offer, { foreignKey: 'messageId', as: 'offer' });
 
   return Offer;
-} 
+}

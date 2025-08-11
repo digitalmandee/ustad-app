@@ -83,6 +83,36 @@ router.delete(
   parentController.deletePaymentMethod
 );
 
+
+router.patch(
+  routes.OFFER_UPDATE_STATUS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  validateRequest,
+  parentController.updateOffer
+)
+
 router.get(routes.GET_TUTOR_PROFILE, authenticateJwt, authorizeRoles("PARENT"), parentController.getTutorProfile);
+
+// Subscription routes
+router.get(
+  routes.GET_ALL_SUBSCRIPTIONS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.getAllSubscriptions
+);
+
+router.patch(
+  routes.CANCEL_PARENT_SUBSCRIPTION,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.cancelSubscription
+);
+
+// Stripe webhook route (no authentication required for webhooks)
+// router.post(
+//   routes.STRIPE_WEBHOOK,
+//   parentController.handleStripeWebhook
+// );
 
   export { router as tutorRouter };

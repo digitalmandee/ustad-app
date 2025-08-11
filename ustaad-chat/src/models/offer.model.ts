@@ -14,6 +14,8 @@ interface OfferAttributes {
   amountMonthly: number;
   subject: string;
   startDate: Date;
+  startTime: string;
+  endTime: string;
   description?: string;
   status: OfferStatus;
   createdAt?: Date;
@@ -36,6 +38,8 @@ export class Offer extends Model<OfferAttributes, OfferCreationAttributes>
   public amountMonthly!: number;
   public subject!: string;
   public startDate!: Date;
+  public startTime!: string;
+  public endTime!: string;
   public description!: string;
   public status!: OfferStatus;
   public readonly createdAt!: Date;
@@ -98,6 +102,14 @@ export function initOfferModel(sequelize: Sequelize): typeof Offer {
       },
       startDate: {
         type: DataTypes.DATEONLY,
+        allowNull: false,
+      },
+      startTime: {
+        type: DataTypes.TIME,
+        allowNull: false,
+      },
+      endTime: {
+        type: DataTypes.TIME,
         allowNull: false,
       },
       description: {

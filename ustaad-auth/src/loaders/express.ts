@@ -9,7 +9,7 @@ import { NotFoundError } from '../errors';
 import { errorHandler } from '../middlewares';
 import config from '../config';
 import { authRouter } from '../modules/auth/auth.routes';
-import { emailRouter } from '../modules/otp/otp.routes';
+import  emailRouter  from '../modules/otp/otp.routes';
 
 export default ({ app }: { app: express.Application }) => {
   // It shows the real origin IP in the heroku or Cloudwatch logs

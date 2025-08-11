@@ -15,6 +15,7 @@ import { IOtpSendDTO, IOtpVerifyDTO } from './otp.dto';
 import { addMinutes } from 'date-fns';
 import { OtpPurpose, OtpStatus } from '../../constant/enums';
 import { Op } from 'sequelize';
+import { smsService } from '../sms/sms.service';
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY!;
 const FROM_EMAIL = process.env.FROM_EMAIL!;
@@ -46,37 +47,32 @@ export class OtpServices {
     }
   }
 
-  public async sendEmailByTemplate<T extends EmailTemplates>(
+  /**
+   * Sends an email using predefined templates
+   */
+  public async sendEmailByTemplate(
     to: string,
-    template: T,
+    templateName: EmailTemplates,
     params: any
   ): Promise<void> {
-    const templateFn = templates[template];
-
-    if (!templateFn) {
-      throw new BadRequestError(`No template found for type "${template}"`);
-    }
-    if (!to) {
-      throw new BadRequestError(`receipentent email is required`);
-    }
-    if (!params) {
-      throw new BadRequestError(`Sunject/html is required`);
+    const template = templates[templateName];
+    if (!template) {
+      throw new BadRequestError(`Email template "${templateName}" not found`);
     }
 
-    try {
-      const { subject, html } = templateFn(params);
-      await this.sendEmail(to, subject, html);
-    } catch (error: any) {
-      throw new GenericError(error, `Failed to send email template "${template}" [email002]`);
-    }
+    const { subject, html } = template(params);
+    await this.sendEmail(to, subject, html);
   }
 
+  /**
+   * Sends OTP via email or SMS based on the type
+   */
   public async sendOtp(dto: IOtpSendDTO) {
     const { userId, type, purpose } = dto;
 
     try {
       if (type !== 'email' && type !== 'phone') {
-        throw new UnProcessableEntityError('Invalid OTP type');
+        throw new UnProcessableEntityError('Invalid OTP type. Must be email or phone');
       }
 
       const user = await User.findByPk(userId);
@@ -84,12 +80,16 @@ export class OtpServices {
         throw new NotAuthorizedError('User not found');
       }
 
+      // Validate user has the required contact method
       if (type === 'email' && !user.email) {
         throw new NotAuthorizedError('User email not registered');
       }
 
-      // const otpCode = generateOtp(4);
-      const otpCode = "1234";
+      if (type === 'phone' && !user.phone) {
+        throw new NotAuthorizedError('User phone number not registered');
+      }
+
+      const otpCode = generateOtp(4);
       const expiryDate = addMinutes(new Date(), 10);
 
       const otpEntry = await Otp.create({
@@ -101,6 +101,7 @@ export class OtpServices {
         expiry: expiryDate,
       });
 
+      // Send OTP based on type
       if (type === 'email') {
         // await this.sendEmailByTemplate(user.email, 'otp', {
         //   name: user.fullName || 'User',
@@ -108,8 +109,9 @@ export class OtpServices {
         //   expiryMinutes: 10,
         // });
       } else if (type === 'phone') {
-        // Implement phone OTP logic (SMS service integration)
-        console.log(`📱 Phone OTP sent to userId: ${userId}, code: ${otpCode}`);
+        // Send SMS OTP using VeevoTech service
+        const formattedPhone = smsService.formatPhoneNumber(user.phone);
+        await smsService.sendOtpSms(formattedPhone, otpCode, 10);
       }
 
       return { userId: userId, expiry: expiryDate };
@@ -127,6 +129,9 @@ export class OtpServices {
     }
   }
 
+  /**
+   * Verifies OTP for email and phone types
+   */
   public async verifyOtp(dto: IOtpVerifyDTO) {
     const { userId, otp: enteredOtp, type, purpose } = dto;
 
@@ -157,6 +162,7 @@ export class OtpServices {
       const user = await User.findByPk(userId);
       if (!user) throw new BadRequestError('User not found');
 
+      // Update user verification status based on purpose
       if (purpose === OtpPurpose.EMAIL_VERIFICATION) {
         user.isEmailVerified = true;
       }
@@ -165,6 +171,7 @@ export class OtpServices {
         user.isPhoneVerified = true;
       }
 
+      // Mark OTP as used
       otpEntry.status = OtpStatus.USED;
       otpEntry.usedAt = now;
       await otpEntry.save();
@@ -183,6 +190,49 @@ export class OtpServices {
 
       throw new GenericError(err, 'Failed to verify OTP');
     }
+  }
+
+  /**
+   * Resends OTP for the specified type (email or phone)
+   */
+  public async resendOtp(dto: IOtpSendDTO) {
+    const { userId, type, purpose } = dto;
+
+    try {
+      // Invalidate any existing active OTPs for this user and type
+      await Otp.update(
+        { status: OtpStatus.EXPIRED },
+        {
+          where: {
+            userId,
+            type,
+            purpose,
+            status: OtpStatus.ACTIVE,
+          },
+        }
+      );
+
+      // Send new OTP
+      return await this.sendOtp(dto);
+    } catch (err: any) {
+      if (
+        err instanceof UnProcessableEntityError ||
+        err instanceof GenericError ||
+        err instanceof BadRequestError ||
+        err instanceof NotAuthorizedError
+      ) {
+        throw err;
+      }
+
+      throw new GenericError(err, 'Unable to resend OTP');
+    }
+  }
+
+  /**
+   * Checks if SMS service is available
+   */
+  public isSmsServiceAvailable(): boolean {
+    return smsService.isServiceAvailable();
   }
 }
 

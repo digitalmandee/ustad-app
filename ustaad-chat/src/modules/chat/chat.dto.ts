@@ -15,7 +15,10 @@ export interface OfferData {
   amountMonthly: number;
   subject: string;
   startDate: Date;
+  startTime: string;
+  endTime: string;
   description?: string;
+  daysOfWeek: string[];
 }
 export interface IUpdateMessageDto {
   content?: string;
