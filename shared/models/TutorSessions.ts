@@ -1,21 +1,22 @@
 import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { Tutor } from "./Tutor";
 import { Parent } from "./Parent";
-import { Child } from "./Child";
+import { User } from "./User";
 
 export interface TutorSessionsAttributes {
   id: string;
   tutorId: string;
   parentId: string;
-  childId: string;
-  startedAt: Date;
-  endedAt?: Date;
-  duration: number; // Duration in minutes (e.g., 60 for 1 hour, 120 for 2 hours)
+  childName: string;
+  startTime: string;
+  endTime?: string;
   daysOfWeek: string[]; // Array of days like ["mon", "tue", "fri"] or ["mon-fri"]
   price: number; // Price per session in cents (e.g., 2500 for $25.00)
   meta?: object;
+  status: 'active' | 'cancelled';
   createdAt?: Date;
   updatedAt?: Date;
+  month: string; // yyyy-mm-dd format
 }
 
 export type TutorSessionsCreationAttributes = Optional<TutorSessionsAttributes, "id">;
@@ -27,15 +28,16 @@ export class TutorSessions
   public id!: string;
   public tutorId!: string;
   public parentId!: string;
-  public childId!: string;
-  public startedAt!: Date;
-  public endedAt?: Date;
-  public duration!: number;
+  public childName!: string;
+  public startTime!: string;
+  public endTime?: string;
   public daysOfWeek!: string[];
   public price!: number;
   public meta?: object;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+  public status!: 'active' | 'cancelled';
+  public month!: string; // yyyy-mm-dd format
 }
 
 export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessions {
@@ -50,7 +52,7 @@ export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessio
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: "tutors",
+          model: "users",
           key: "id",
         },
       },
@@ -58,30 +60,21 @@ export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessio
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: "parents",
+          model: "users",
           key: "id",
         },
       },
-      childId: {
-        type: DataTypes.UUID,
-        allowNull: false,
-        references: {
-          model: "children",
-          key: "id",
-        },
-      },
-      startedAt: {
-        type: DataTypes.DATE,
+      childName: {
+        type: DataTypes.STRING,
         allowNull: false,
       },
-      endedAt: {
-        type: DataTypes.DATE,
+      startTime: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      endTime: {
+        type: DataTypes.STRING,
         allowNull: true,
-      },
-      duration: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        comment: "Duration in minutes (e.g., 60 for 1 hour, 120 for 2 hours)",
       },
       daysOfWeek: {
         type: DataTypes.ARRAY(DataTypes.STRING),
@@ -97,6 +90,16 @@ export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessio
         type: DataTypes.JSON,
         allowNull: true,
       },
+      status: {
+        type: DataTypes.ENUM('active', 'cancelled'),
+        allowNull: false,
+        defaultValue: 'active',
+      },
+      month: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        comment: "Month in yyyy-mm-dd format",
+      },
     },
     {
       sequelize,
@@ -104,14 +107,11 @@ export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessio
     }
   );
 
-  TutorSessions.belongsTo(Tutor, { foreignKey: "tutorId" });
-  Tutor.hasMany(TutorSessions, { foreignKey: "tutorId" });
+  TutorSessions.belongsTo(User, { foreignKey: "tutorId" });
+  User.hasMany(TutorSessions, { foreignKey: "tutorId" });
 
-  TutorSessions.belongsTo(Parent, { foreignKey: "parentId" });
-  Parent.hasMany(TutorSessions, { foreignKey: "parentId" });
-
-  TutorSessions.belongsTo(Child, { foreignKey: "childId" });
-  Child.hasMany(TutorSessions, { foreignKey: "childId" });
+  TutorSessions.belongsTo(User, { foreignKey: "parentId" });
+  User.hasMany(TutorSessions, { foreignKey: "parentId" });
 
   return TutorSessions;
 } 

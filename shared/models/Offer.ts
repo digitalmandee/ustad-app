@@ -18,6 +18,7 @@ interface OfferAttributes {
   endTime: string;
   description?: string;
   status: OfferStatus;
+  daysOfWeek: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -42,6 +43,7 @@ export class Offer extends Model<OfferAttributes, OfferCreationAttributes>
   public endTime!: string;
   public description!: string;
   public status!: OfferStatus;
+  public daysOfWeek!: string[];
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -128,6 +130,10 @@ export function initOfferModel(sequelize: Sequelize): typeof Offer {
       updatedAt: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
+      },
+      daysOfWeek: {
+        type: DataTypes.ARRAY(DataTypes.STRING),
+        allowNull: false,
       },
     },
     {

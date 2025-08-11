@@ -6,7 +6,8 @@ const routes = {
   PARENT_Profile: "/parent/profile",
   ADD_PARENT_CUSTOMER_ID: "/parent/customer-id",
   ADD_PARENT_SUBSCRIPTION: "/parent/subscription",
-  CANCEL_PARENT_SUBSCRIPTION: "/parent/subscription/cancel",
+  CANCEL_PARENT_SUBSCRIPTION: "/parent/subscription/cancel/:subscriptionId",
+  GET_ALL_SUBSCRIPTIONS: "/parent/subscriptions",
   GET_TUTOR_PROFILE: "/parent/tutor/:tutorId",
   
   // Payment Method routes
@@ -27,6 +28,9 @@ const routes = {
 
   // offer
   OFFER_UPDATE_STATUS: '/parent/offer/:status/:offerId',
+  
+  // webhook
+  STRIPE_WEBHOOK: '/parent/webhook/stripe',
 };
 
 export default routes;

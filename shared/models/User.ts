@@ -188,5 +188,6 @@ export function initUserModel(sequelize: Sequelize): typeof User {
     }
   );
 
+
   return User;
 }

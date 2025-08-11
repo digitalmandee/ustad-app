@@ -18,6 +18,7 @@ export interface OfferData {
   startTime: string;
   endTime: string;
   description?: string;
+  daysOfWeek: string[];
 }
 export interface IUpdateMessageDto {
   content?: string;
