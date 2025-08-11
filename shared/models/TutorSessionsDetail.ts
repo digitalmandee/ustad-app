@@ -6,6 +6,7 @@ import { User } from "./User";
 export interface TutorSessionsDetailAttributes {
   id?: string;
   tutorId: string;
+  parentId: string;
   sessionId: string;
   status: TutorSessionStatus;
   createdAt?: Date;
@@ -20,6 +21,7 @@ export class TutorSessionsDetail
 {
   public id!: string;
   public tutorId!: string;
+  public parentId!: string;
   public sessionId!: string;
   public status!: TutorSessionStatus;
   public readonly createdAt!: Date;
@@ -42,6 +44,14 @@ export function initTutorSessionsDetailModel(sequelize: Sequelize): typeof Tutor
           key: "id",
         },
       },
+      parentId: {
+        type: DataTypes.UUID,
+        allowNull: false,
+        references: {
+          model: "users",
+          key: "id",
+        },
+      },
       sessionId: {
         type: DataTypes.UUID,
         allowNull: false,
@@ -53,7 +63,7 @@ export function initTutorSessionsDetailModel(sequelize: Sequelize): typeof Tutor
       status: {
         type: DataTypes.ENUM(...Object.values(TutorSessionStatus)),
         allowNull: false,
-        defaultValue: TutorSessionStatus.PENDING,
+        defaultValue: TutorSessionStatus.RUNNING,
       },
     },
     {
@@ -64,8 +74,13 @@ export function initTutorSessionsDetailModel(sequelize: Sequelize): typeof Tutor
 
   TutorSessionsDetail.belongsTo(TutorSessions, { foreignKey: "sessionId" });
   TutorSessions.hasMany(TutorSessionsDetail, { foreignKey: "sessionId" });
+
+
   TutorSessionsDetail.belongsTo(User, { foreignKey: "tutorId" });
   User.hasMany(TutorSessionsDetail, { foreignKey: "tutorId" });
+
+  TutorSessionsDetail.belongsTo(User, { foreignKey: "parentId" });
+  User.hasMany(TutorSessionsDetail, { foreignKey: "parentId" });
 
   return TutorSessionsDetail;
 } 

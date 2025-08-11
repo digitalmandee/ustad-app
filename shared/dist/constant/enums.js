@@ -78,7 +78,7 @@ var OtpPurpose;
 })(OtpPurpose || (exports.OtpPurpose = OtpPurpose = {}));
 var TutorSessionStatus;
 (function (TutorSessionStatus) {
-    TutorSessionStatus["PENDING"] = "PENDING";
+    TutorSessionStatus["RUNNING"] = "RUNNING";
     TutorSessionStatus["TUTOR_HOLIDAY"] = "TUTOR_HOLIDAY";
     TutorSessionStatus["PUBLIC_HOLIDAY"] = "PUBLIC_HOLIDAY";
     TutorSessionStatus["COMPLETED"] = "COMPLETED";

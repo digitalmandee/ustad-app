@@ -24,6 +24,7 @@ import {
   TutorSessions,
   TutorSessionsDetail,
 } from "@ustaad/shared";
+import { TutorSessionStatus } from "@ustaad/shared/dist/constant/enums";
 
 interface TutorProfileData extends ITutorOnboardingDTO {
   resume: Express.Multer.File;
@@ -611,14 +612,16 @@ export default class TutorService {
       }
 
       const location = await TutorLocation.findOne({
-        where: { 
+        where: {
           id: locationId,
-          tutorId: tutor.userId 
+          tutorId: tutor.userId,
         },
       });
 
       if (!location) {
-        throw new NotFoundError("Location not found or not authorized to delete");
+        throw new NotFoundError(
+          "Location not found or not authorized to delete"
+        );
       }
 
       await location.destroy();
@@ -680,20 +683,32 @@ export default class TutorService {
     }
   }
 
-  // Tutor Sessions Methods 
+  // Tutor Sessions Methods
   async getTutorSessions(userId: string) {
     const sessions = await TutorSessions.findAll({
       where: { tutorId: userId },
       include: [
         {
           model: User,
-          as: 'parent', 
-          attributes: ['id', 'fullName'] 
-        }
-      ]
+          attributes: ["id", "fullName"],
+        },
+      ],
     });
-  
+
     return sessions;
+  }
+  async getTutorSession(userId: string) {
+    const session = await TutorSessionsDetail.findAll({
+      where: { tutorId: userId },
+      include: [
+        {
+          model: User,
+          attributes: ["id", "fullName"],
+        },
+      ],
+    });
+
+    return session;
   }
 
   async addTutorSession(userId: string, data: TutorSessionsDetail) {
@@ -701,10 +716,33 @@ export default class TutorService {
   }
 
   async deleteTutorSession(userId: string, sessionId: string) {
-    return await TutorSessionsDetail.destroy({ where: { id: sessionId, tutorId: userId } });
+    return await TutorSessionsDetail.destroy({
+      where: { id: sessionId, tutorId: userId },
+    });
   }
 
-  async editTutorSession(userId: string, sessionId: string, data: TutorSessionsDetail) {
-    return await TutorSessionsDetail.update({ ...data }, { where: { id: sessionId, tutorId: userId } });
+  async editTutorSession(
+    userId: string,
+    sessionId: string,
+    data: TutorSessionsDetail
+  ) {
+    const session = await TutorSessionsDetail.findOne({
+      where: {
+        id: sessionId,
+        tutorId: userId,
+        status: TutorSessionStatus.RUNNING,
+      },
+    });
+
+    if (!session) {
+      throw new NotFoundError("Session not found");
+    }
+
+    await session.update({ ...data });
+
+    return await TutorSessionsDetail.update(
+      { ...data },
+      { where: { id: sessionId, tutorId: userId } }
+    );
   }
 }

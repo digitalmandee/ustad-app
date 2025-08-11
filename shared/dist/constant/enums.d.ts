@@ -60,7 +60,7 @@ export declare enum OtpPurpose {
     PASSWORD_RESET = "password_reset"
 }
 export declare enum TutorSessionStatus {
-    PENDING = "PENDING",
+    RUNNING = "RUNNING",
     TUTOR_HOLIDAY = "TUTOR_HOLIDAY",
     PUBLIC_HOLIDAY = "PUBLIC_HOLIDAY",
     COMPLETED = "COMPLETED",

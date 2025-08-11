@@ -24,6 +24,14 @@ function initTutorSessionsDetailModel(sequelize) {
                 key: "id",
             },
         },
+        parentId: {
+            type: sequelize_1.DataTypes.UUID,
+            allowNull: false,
+            references: {
+                model: "users",
+                key: "id",
+            },
+        },
         sessionId: {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
@@ -35,7 +43,7 @@ function initTutorSessionsDetailModel(sequelize) {
         status: {
             type: sequelize_1.DataTypes.ENUM(...Object.values(enums_1.TutorSessionStatus)),
             allowNull: false,
-            defaultValue: enums_1.TutorSessionStatus.PENDING,
+            defaultValue: enums_1.TutorSessionStatus.RUNNING,
         },
     }, {
         sequelize,
@@ -45,5 +53,7 @@ function initTutorSessionsDetailModel(sequelize) {
     TutorSessions_1.TutorSessions.hasMany(TutorSessionsDetail, { foreignKey: "sessionId" });
     TutorSessionsDetail.belongsTo(User_1.User, { foreignKey: "tutorId" });
     User_1.User.hasMany(TutorSessionsDetail, { foreignKey: "tutorId" });
+    TutorSessionsDetail.belongsTo(User_1.User, { foreignKey: "parentId" });
+    User_1.User.hasMany(TutorSessionsDetail, { foreignKey: "parentId" });
     return TutorSessionsDetail;
 }

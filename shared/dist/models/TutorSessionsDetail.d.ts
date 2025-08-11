@@ -3,6 +3,7 @@ import { TutorSessionStatus } from "../constant/enums";
 export interface TutorSessionsDetailAttributes {
     id?: string;
     tutorId: string;
+    parentId: string;
     sessionId: string;
     status: TutorSessionStatus;
     createdAt?: Date;
@@ -12,6 +13,7 @@ export type TutorSessionsDetailCreationAttributes = Optional<TutorSessionsDetail
 export declare class TutorSessionsDetail extends Model<TutorSessionsDetailAttributes, TutorSessionsDetailCreationAttributes> implements TutorSessionsDetailAttributes {
     id: string;
     tutorId: string;
+    parentId: string;
     sessionId: string;
     status: TutorSessionStatus;
     readonly createdAt: Date;
