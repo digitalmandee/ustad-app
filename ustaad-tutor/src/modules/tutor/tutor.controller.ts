@@ -522,7 +522,7 @@ export default class TutorController {
   createPaymentRequest = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-      const { amount } = req.body;
+      const { amount, txnId } = req.body;
 
       if (!amount || amount <= 0) {
         return sendErrorResponse(
@@ -544,7 +544,8 @@ export default class TutorController {
 
       const result = await this.tutorService.createPaymentRequest({
         tutorId: tutor.id,
-        amount: parseFloat(amount)
+        amount: parseFloat(amount),
+        txnId: txnId,
       });
 
       return sendSuccessResponse(

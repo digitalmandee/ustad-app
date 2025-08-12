@@ -40,16 +40,18 @@ export function initAllModels(sequelize: Sequelize) {
   initTutorExperienceModel(sequelize);
   initTutorSettingsModel(sequelize);
   initTutorLocationModel(sequelize);
-  initParentSubscriptionModel(sequelize);
-  initParentTransactionModel(sequelize);
-  initTutorTransactionModel(sequelize);
   
-
-
+  // Initialize chat models first since Offer depends on them
   initConversationModel(sequelize);
   initConversationParticipantModel(sequelize);
   initMessageModel(sequelize);
+  
+  // Initialize Offer after Conversation and Message since Offer has associations with them
   initOfferModel(sequelize);
+  
+  initParentSubscriptionModel(sequelize);
+  initParentTransactionModel(sequelize);
+  initTutorTransactionModel(sequelize);
   
   initTutorSessionsModel(sequelize);
   initTutorSessionsDetailModel(sequelize);

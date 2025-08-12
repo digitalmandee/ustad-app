@@ -63,13 +63,15 @@ function initAllModels(sequelize) {
     (0, TutorExperience_1.initTutorExperienceModel)(sequelize);
     (0, TutorSettings_1.initTutorSettingsModel)(sequelize);
     (0, TutorLocations_1.initTutorLocationModel)(sequelize);
-    (0, ParentSubscription_1.initParentSubscriptionModel)(sequelize);
-    (0, ParentTransaction_1.initParentTransactionModel)(sequelize);
-    (0, TutorTransaction_1.initTutorTransactionModel)(sequelize);
+    // Initialize chat models first since Offer depends on them
     (0, Conversation_1.initConversationModel)(sequelize);
     (0, ConversationParticipant_1.initConversationParticipantModel)(sequelize);
     (0, Message_1.initMessageModel)(sequelize);
+    // Initialize Offer after Conversation and Message since Offer has associations with them
     (0, Offer_1.initOfferModel)(sequelize);
+    (0, ParentSubscription_1.initParentSubscriptionModel)(sequelize);
+    (0, ParentTransaction_1.initParentTransactionModel)(sequelize);
+    (0, TutorTransaction_1.initTutorTransactionModel)(sequelize);
     (0, TutorSessions_1.initTutorSessionsModel)(sequelize);
     (0, TutorSessionsDetail_1.initTutorSessionsDetailModel)(sequelize);
     (0, PaymentMethod_1.initPaymentMethodModel)(sequelize);

@@ -20,11 +20,14 @@ import {
   ChildNotes,
   ChildReview,
   TutorLocation,
-  PaymentRequest,
   TutorSessions,
   TutorSessionsDetail,
+  TutorTransaction,
 } from "@ustaad/shared";
-import { TutorSessionStatus } from "@ustaad/shared/dist/constant/enums";
+import {
+  TutorPaymentStatus,
+  TutorSessionStatus,
+} from "@ustaad/shared/dist/constant/enums";
 
 interface TutorProfileData extends ITutorOnboardingDTO {
   resume: Express.Multer.File;
@@ -62,6 +65,7 @@ interface EducationData {
 
 interface PaymentRequestData {
   tutorId: string;
+  txnId: string;
   amount: number;
 }
 
@@ -649,10 +653,29 @@ export default class TutorService {
       }
 
       // Create payment request
-      const paymentRequest = await PaymentRequest.create({
-        tutorId: data.tutorId,
-        amount: data.amount,
-        status: PaymentStatus.PENDING,
+      const paymentRequest = await TutorTransaction.findOne({
+        where: {
+          id: data.txnId,
+          tutorId: data.tutorId,
+        },
+      });
+
+      if (!paymentRequest) {
+        throw new UnProcessableEntityError("Payment request not found");
+      }
+
+      if (paymentRequest.status === TutorPaymentStatus.REQUESTED) {
+        throw new UnProcessableEntityError(
+          "Payment request is already requested"
+        );
+      }
+
+      if (paymentRequest.status === TutorPaymentStatus.PAID) {
+        throw new UnProcessableEntityError("Payment request is already paid");
+      }
+
+      await paymentRequest.update({
+        status: TutorPaymentStatus.REQUESTED,
       });
 
       return paymentRequest;
@@ -664,19 +687,18 @@ export default class TutorService {
 
   async getPaymentRequests(tutorId: string) {
     try {
-      // Check if tutor exists
       const tutor = await Tutor.findByPk(tutorId);
       if (!tutor) {
         throw new UnProcessableEntityError("Tutor not found");
       }
 
       // Get all payment requests for the tutor
-      const paymentRequests = await PaymentRequest.findAll({
+      const paymentRequests = await TutorTransaction.findAll({
         where: { tutorId },
         order: [["createdAt", "DESC"]],
       });
 
-      return paymentRequests;
+      return { paymentRequests, balance: tutor.balance };
     } catch (error) {
       console.error("Error in getPaymentRequests:", error);
       throw error;
@@ -712,6 +734,18 @@ export default class TutorService {
   }
 
   async addTutorSession(userId: string, data: TutorSessionsDetail) {
+    const session = await TutorSessions.findOne({
+      where: { id: data.sessionId, tutorId: userId, parentId: data.parentId },
+    });
+
+    if (!session) {
+      throw new UnProcessableEntityError("Tutor session not found");
+    }
+
+    if (session.id !== data.sessionId) {
+      throw new UnProcessableEntityError("Tutor session already exists");
+    }
+
     return await TutorSessionsDetail.create({ tutorId: userId, ...data });
   }
 
@@ -730,7 +764,7 @@ export default class TutorService {
       where: {
         id: sessionId,
         tutorId: userId,
-        status: TutorSessionStatus.RUNNING,
+        status: TutorSessionStatus.CREATED,
       },
     });
 
