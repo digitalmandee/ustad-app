@@ -573,7 +573,6 @@ export default class ParentService {
         offerId: offerId,
         parentId: parent.userId,
         tutorId: offer.senderId,
-        childId: offer.receiverId,
         stripeSubscriptionId: subscription.id,
         status: "created",
         planType: "monthly",
