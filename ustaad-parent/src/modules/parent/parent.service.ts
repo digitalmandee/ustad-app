@@ -17,6 +17,7 @@ import {
   TutorSessions,
   Offer,
   ParentTransaction,
+  Child,
 } from "@ustaad/shared";
 import Stripe from "stripe";
 import { OfferStatus } from "src/constant/enums";
@@ -572,7 +573,6 @@ export default class ParentService {
         offerId: offerId,
         parentId: parent.userId,
         tutorId: offer.senderId,
-        childId: offer.receiverId,
         stripeSubscriptionId: subscription.id,
         status: "created",
         planType: "monthly",
@@ -602,9 +602,9 @@ export default class ParentService {
           await this.handleInvoiceCreated(event.data.object as Stripe.Invoice);
           break;
 
-        case "invoice.paid":
-          await this.handleInvoicePaymentSucceeded(
-            event.data.object as Stripe.Invoice
+        case "customer.subscription.deleted":
+          await this.handleSubscriptionDeleted(
+            event.data.object as Stripe.Subscription
           );
           break;
         default:
@@ -637,77 +637,49 @@ export default class ParentService {
       },
     });
 
-    if (offer) {
-      const parentSubscription = await ParentSubscription.findOne({
-        where: { offerId: offer.id },
-      });
-      if (parentSubscription) {
-        parentSubscription.status = "active";
-        await parentSubscription.save();
-      }
+    if (!offer) {
+      console.log("offer not found");
+      return;
+    }
+    const parentSubscription = await ParentSubscription.findOne({
+      where: { offerId: offer.id },
+    });
+    if (parentSubscription) {
+      parentSubscription.status = "active";
+      await parentSubscription.save();
+    }
 
-      const subscription = await ParentSubscription.findOne({
-        where: { stripeSubscriptionId: invoice?.subscription },
-      });
+    const subscription = await ParentSubscription.findOne({
+      where: { stripeSubscriptionId: invoice?.subscription },
+    });
 
-      const parent = await Parent.findOne({
-        where: { customerId: invoice?.customer },
-      });
+    const parent = await Parent.findOne({
+      where: { customerId: invoice?.customer },
+    });
 
-      if (parent) {
-        const parentTransaction = await ParentTransaction.create({
-          invoiceId: invoice.id,
-          parentId: parent?.userId,
-          childName: offer.childName,
-          subscriptionId: subscription?.id,
-          amount: invoice?.amount_paid / 100,
-          status: "created",
-        });
-      }
+    const tx = await ParentTransaction.findOne({
+      where: { invoiceId: invoice.id, status: "created" },
+    });
+    if (tx) {
+      return;
+    }
+
+    if (parent) {
+      const parentTransaction = await ParentTransaction.create({
+        invoiceId: invoice.id,
+        parentId: parent?.userId,
+        childName: offer.childName,
+        subscriptionId: subscription?.id,
+        amount: invoice?.amount_paid / 100,
+        status: "created",
+      });
     }
   }
 
-  private async handleInvoicePaymentSucceeded(invoice: any) {
-    console.log("Invoice payment succeeded:", invoice.id);
+  private async handleSubscriptionDeleted(subscription: any) {
+    console.log("subscription", subscription);
 
-    console.log("invoice", invoice?.subscription_details?.metadata?.offerId);
-
-    const offerId = invoice?.subscription_details?.metadata?.offerId;
-    const parentTransaction = await ParentTransaction.findOne({
-      where: { invoiceId: invoice.id, status: "created" },
-    });
-
-    console.log("offerId", offerId);
-    // console.log(parentTransaction);
-
-    const offer = await Offer.findOne({
-      where: { id: offerId },
-    });
-
-    console.log(offer);
-
-    console.log("we herere 2", parentTransaction);
-    if (parentTransaction && offer) {
-      console.log("we herere 3");
-      parentTransaction.status = "paid";
-      await parentTransaction.save();
-
-      console.log("paid added");
-
-      const tutorSession = await TutorSessions.create({
-        tutorId: offer?.senderId,
-        parentId: parentTransaction.parentId,
-        childName: offer?.childName,
-        startTime: offer?.startTime,
-        endTime: offer?.endTime,
-        daysOfWeek: ["mon", "tue", "wed", "thu", "fri"],
-        month: new Date().toISOString().split("T")[0],
-        price: parentTransaction.amount,
-        status: "active",
-      });
-
-      console.log("tutorsession created");
-    }
+    // console.log("Subscription deleted:", subscription.id);
   }
 
   async cancelSubscription(userId: string, subscriptionId: string) {
@@ -731,12 +703,6 @@ export default class ParentService {
           id: subscriptionId,
           parentId: parent.userId,
         },
-        include: [
-          {
-            model: Offer,
-            attributes: ["id", "status"],
-          },
-        ],
       });
 
       if (!subscription) {
@@ -748,12 +714,14 @@ export default class ParentService {
       }
 
       // Cancel subscription in Stripe
-      await this.stripe.subscriptions.update(
+      const stripeSubscription = await this.stripe.subscriptions.update(
         subscription.stripeSubscriptionId,
         {
           cancel_at_period_end: true,
         }
       );
+
+      console.log("stripeSubscription", stripeSubscription);
 
       // Update subscription status in database
       await subscription.update({
@@ -790,20 +758,94 @@ export default class ParentService {
           "Parent does not have a Stripe customer ID"
         );
       }
-      console.log("parent", parent.customerId);
 
+      // Get all ParentSubscription records for this parent
+      const dbSubscriptions = await ParentSubscription.findAll({
+        where: { parentId: parent.userId },
+        order: [['createdAt', 'DESC']],
+      });
+
+      if (!dbSubscriptions || dbSubscriptions.length === 0) {
+        return [];
+      }
+
+      // Get all Stripe subscriptions for this customer
       const stripeSubscriptions = await this.stripe.subscriptions.list({
         customer: parent.customerId,
-        status: "active",
-        expand: ["data.default_payment_method"],
+        status: "all",
+        expand: ["data.default_payment_method", "data.plan.product"],
         limit: 100,
       });
 
-      // console.log("stripeSubscriptions", stripeSubscriptions);
+      // Map Stripe subscriptions by id for quick lookup
+      const stripeSubsMap = new Map();
+      for (const sub of stripeSubscriptions.data) {
+        stripeSubsMap.set(sub.id, sub);
+      }
 
-      return stripeSubscriptions.data;
+      // Prepare result array
+      const result = [];
+
+      for (const dbSub of dbSubscriptions) {
+        const stripeSub = stripeSubsMap.get(dbSub.stripeSubscriptionId);
+        if (!stripeSub) continue;
+
+        // Get created date
+        const createdDate = dbSub.createdAt || (stripeSub.created ? new Date(stripeSub.created * 1000) : null);
+
+        // Get card details
+        let cardDetail = null;
+        if (
+          stripeSub.default_payment_method &&
+          stripeSub.default_payment_method.card
+        ) {
+          const card = stripeSub.default_payment_method.card;
+          cardDetail = {
+            brand: card.brand,
+            last4: card.last4,
+            exp_month: card.exp_month,
+            exp_year: card.exp_year,
+          };
+        }
+
+        // Get plan amount
+        let planAmount = null;
+        if (stripeSub.plan && stripeSub.plan.amount) {
+          planAmount = stripeSub.plan.amount / 100; // Stripe stores in cents
+        }
+
+        // Get offerId from plan.metadata
+        let offerId = null;
+        if (stripeSub.plan && stripeSub.plan.metadata && stripeSub.plan.metadata.offerId) {
+          offerId = stripeSub.plan.metadata.offerId;
+        }
+
+        // Get childName from Offer if offerId exists
+        let childName = null;
+        if (offerId) {
+          const offer = await Offer.findOne({
+            where: { id: offerId },
+          });
+          if (offer && offer.childName) {
+            childName = offer.childName;
+          }
+        }
+
+        result.push({
+          tutorId: dbSub.tutorId,
+          subscriptionId: dbSub.id,
+          createdDate,
+          cardDetail,
+          planAmount,
+          offerId,
+          childName,
+          status: dbSub.status,
+        });
+      }
+
+      return result;
     } catch (error) {
-      console.error("Error in getAllSubscriptions (from stripe):", error);
+      console.error("Error in getAllSubscriptions:", error);
       throw error;
     }
   }

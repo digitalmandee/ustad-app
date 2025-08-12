@@ -2,6 +2,7 @@ import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { Tutor } from "./Tutor";
 import { Parent } from "./Parent";
 import { User } from "./User";
+import { Offer } from "./Offer";
 
 export interface TutorSessionsAttributes {
   id: string;
@@ -9,6 +10,7 @@ export interface TutorSessionsAttributes {
   parentId: string;
   childName: string;
   startTime: string;
+  offerId?: string; // Made optional to match nullable field
   endTime?: string;
   daysOfWeek: string[]; // Array of days like ["mon", "tue", "fri"] or ["mon-fri"]
   price: number; // Price per session in cents (e.g., 2500 for $25.00)
@@ -30,6 +32,7 @@ export class TutorSessions
   public parentId!: string;
   public childName!: string;
   public startTime!: string;
+  public offerId?: string; // Made optional to match nullable field
   public endTime?: string;
   public daysOfWeek!: string[];
   public price!: number;
@@ -61,6 +64,14 @@ export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessio
         allowNull: false,
         references: {
           model: "users",
+          key: "id",
+        },
+      },
+      offerId: {
+        type: DataTypes.UUID,
+        allowNull: true, // Changed to true temporarily to handle existing data
+        references: {
+          model: "offers",
           key: "id",
         },
       },
@@ -112,6 +123,9 @@ export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessio
 
   TutorSessions.belongsTo(User, { foreignKey: "parentId" });
   User.hasMany(TutorSessions, { foreignKey: "parentId" });
+
+  TutorSessions.belongsTo(Offer, { foreignKey: "offerId" });
+  Offer.hasMany(TutorSessions, { foreignKey: "offerId" });
 
   return TutorSessions;
 } 

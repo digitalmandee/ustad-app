@@ -44,10 +44,13 @@ export enum OfferStatus {
   PENDING = 'PENDING',
   ACCEPTED = 'ACCEPTED',
   REJECTED = 'REJECTED',
+  CANCELLED = 'CANCELLED',
 }
-export enum PaymentStatus {
+export enum TutorPaymentStatus {
   PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
+  REQUESTED = 'REQUESTED',
+  PAID = 'PAID',
+  IN_REVIEW = 'IN_REVIEW',
   REJECTED = 'REJECTED',
 }
 
@@ -72,10 +75,9 @@ export enum OtpPurpose {
   PASSWORD_RESET = 'password_reset',
 }
 export enum TutorSessionStatus {
-  PENDING = 'PENDING',
+  CREATED = 'CREATED',
   TUTOR_HOLIDAY = 'TUTOR_HOLIDAY',
   PUBLIC_HOLIDAY = 'PUBLIC_HOLIDAY',
-  COMPLETED = 'COMPLETED',
   CANCELLED_BY_PARENT = 'CANCELLED_BY_PARENT',
   CANCELLED_BY_TUTOR = 'CANCELLED_BY_TUTOR',
 }

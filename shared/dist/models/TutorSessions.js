@@ -4,6 +4,7 @@ exports.TutorSessions = void 0;
 exports.initTutorSessionsModel = initTutorSessionsModel;
 const sequelize_1 = require("sequelize");
 const User_1 = require("./User");
+const Offer_1 = require("./Offer");
 class TutorSessions extends sequelize_1.Model {
 }
 exports.TutorSessions = TutorSessions;
@@ -27,6 +28,14 @@ function initTutorSessionsModel(sequelize) {
             allowNull: false,
             references: {
                 model: "users",
+                key: "id",
+            },
+        },
+        offerId: {
+            type: sequelize_1.DataTypes.UUID,
+            allowNull: true, // Changed to true temporarily to handle existing data
+            references: {
+                model: "offers",
                 key: "id",
             },
         },
@@ -74,5 +83,7 @@ function initTutorSessionsModel(sequelize) {
     User_1.User.hasMany(TutorSessions, { foreignKey: "tutorId" });
     TutorSessions.belongsTo(User_1.User, { foreignKey: "parentId" });
     User_1.User.hasMany(TutorSessions, { foreignKey: "parentId" });
+    TutorSessions.belongsTo(Offer_1.Offer, { foreignKey: "offerId" });
+    Offer_1.Offer.hasMany(TutorSessions, { foreignKey: "offerId" });
     return TutorSessions;
 }

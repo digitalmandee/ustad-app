@@ -3,7 +3,6 @@ export interface ParentSubscriptionAttributes {
     id: string;
     parentId: string;
     tutorId: string;
-    childId: string;
     offerId: string;
     stripeSubscriptionId: string;
     status: string;
@@ -19,7 +18,6 @@ export declare class ParentSubscription extends Model<ParentSubscriptionAttribut
     id: string;
     parentId: string;
     tutorId: string;
-    childId: string;
     offerId: string;
     stripeSubscriptionId: string;
     status: string;

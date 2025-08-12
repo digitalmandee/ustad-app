@@ -102,7 +102,7 @@ router.get(
   parentController.getAllSubscriptions
 );
 
-router.patch(
+router.post(
   routes.CANCEL_PARENT_SUBSCRIPTION,
   authenticateJwt,
   authorizeRoles("PARENT"),

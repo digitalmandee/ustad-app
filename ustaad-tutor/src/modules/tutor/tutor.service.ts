@@ -20,10 +20,14 @@ import {
   ChildNotes,
   ChildReview,
   TutorLocation,
-  PaymentRequest,
   TutorSessions,
   TutorSessionsDetail,
+  TutorTransaction,
 } from "@ustaad/shared";
+import {
+  TutorPaymentStatus,
+  TutorSessionStatus,
+} from "@ustaad/shared/dist/constant/enums";
 
 interface TutorProfileData extends ITutorOnboardingDTO {
   resume: Express.Multer.File;
@@ -61,6 +65,7 @@ interface EducationData {
 
 interface PaymentRequestData {
   tutorId: string;
+  txnId: string;
   amount: number;
 }
 
@@ -611,14 +616,16 @@ export default class TutorService {
       }
 
       const location = await TutorLocation.findOne({
-        where: { 
+        where: {
           id: locationId,
-          tutorId: tutor.userId 
+          tutorId: tutor.userId,
         },
       });
 
       if (!location) {
-        throw new NotFoundError("Location not found or not authorized to delete");
+        throw new NotFoundError(
+          "Location not found or not authorized to delete"
+        );
       }
 
       await location.destroy();
@@ -646,10 +653,29 @@ export default class TutorService {
       }
 
       // Create payment request
-      const paymentRequest = await PaymentRequest.create({
-        tutorId: data.tutorId,
-        amount: data.amount,
-        status: PaymentStatus.PENDING,
+      const paymentRequest = await TutorTransaction.findOne({
+        where: {
+          id: data.txnId,
+          tutorId: data.tutorId,
+        },
+      });
+
+      if (!paymentRequest) {
+        throw new UnProcessableEntityError("Payment request not found");
+      }
+
+      if (paymentRequest.status === TutorPaymentStatus.REQUESTED) {
+        throw new UnProcessableEntityError(
+          "Payment request is already requested"
+        );
+      }
+
+      if (paymentRequest.status === TutorPaymentStatus.PAID) {
+        throw new UnProcessableEntityError("Payment request is already paid");
+      }
+
+      await paymentRequest.update({
+        status: TutorPaymentStatus.REQUESTED,
       });
 
       return paymentRequest;
@@ -661,50 +687,96 @@ export default class TutorService {
 
   async getPaymentRequests(tutorId: string) {
     try {
-      // Check if tutor exists
       const tutor = await Tutor.findByPk(tutorId);
       if (!tutor) {
         throw new UnProcessableEntityError("Tutor not found");
       }
 
       // Get all payment requests for the tutor
-      const paymentRequests = await PaymentRequest.findAll({
+      const paymentRequests = await TutorTransaction.findAll({
         where: { tutorId },
         order: [["createdAt", "DESC"]],
       });
 
-      return paymentRequests;
+      return { paymentRequests, balance: tutor.balance };
     } catch (error) {
       console.error("Error in getPaymentRequests:", error);
       throw error;
     }
   }
 
-  // Tutor Sessions Methods 
+  // Tutor Sessions Methods
   async getTutorSessions(userId: string) {
     const sessions = await TutorSessions.findAll({
       where: { tutorId: userId },
       include: [
         {
           model: User,
-          as: 'parent', 
-          attributes: ['id', 'fullName'] 
-        }
-      ]
+          attributes: ["id", "fullName"],
+        },
+      ],
     });
-  
+
     return sessions;
+  }
+  async getTutorSession(userId: string) {
+    const session = await TutorSessionsDetail.findAll({
+      where: { tutorId: userId },
+      include: [
+        {
+          model: User,
+          attributes: ["id", "fullName"],
+        },
+      ],
+    });
+
+    return session;
   }
 
   async addTutorSession(userId: string, data: TutorSessionsDetail) {
+    const session = await TutorSessions.findOne({
+      where: { id: data.sessionId, tutorId: userId, parentId: data.parentId },
+    });
+
+    if (!session) {
+      throw new UnProcessableEntityError("Tutor session not found");
+    }
+
+    if (session.id !== data.sessionId) {
+      throw new UnProcessableEntityError("Tutor session already exists");
+    }
+
     return await TutorSessionsDetail.create({ tutorId: userId, ...data });
   }
 
   async deleteTutorSession(userId: string, sessionId: string) {
-    return await TutorSessionsDetail.destroy({ where: { id: sessionId, tutorId: userId } });
+    return await TutorSessionsDetail.destroy({
+      where: { id: sessionId, tutorId: userId },
+    });
   }
 
-  async editTutorSession(userId: string, sessionId: string, data: TutorSessionsDetail) {
-    return await TutorSessionsDetail.update({ ...data }, { where: { id: sessionId, tutorId: userId } });
+  async editTutorSession(
+    userId: string,
+    sessionId: string,
+    data: TutorSessionsDetail
+  ) {
+    const session = await TutorSessionsDetail.findOne({
+      where: {
+        id: sessionId,
+        tutorId: userId,
+        status: TutorSessionStatus.CREATED,
+      },
+    });
+
+    if (!session) {
+      throw new NotFoundError("Session not found");
+    }
+
+    await session.update({ ...data });
+
+    return await TutorSessionsDetail.update(
+      { ...data },
+      { where: { id: sessionId, tutorId: userId } }
+    );
   }
 }

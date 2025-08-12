@@ -47,7 +47,7 @@ export async function authenticateJwt(
     }
 
     const user = await User.findByPk(decoded.user.id);
-    console.log(user, "usre");
+    // console.log(user, "usre");
 
     if (!user) {
       throw new NotAuthorizedError("User dose not exist");

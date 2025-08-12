@@ -5,6 +5,7 @@ export interface TutorSessionsAttributes {
     parentId: string;
     childName: string;
     startTime: string;
+    offerId?: string;
     endTime?: string;
     daysOfWeek: string[];
     price: number;
@@ -21,6 +22,7 @@ export declare class TutorSessions extends Model<TutorSessionsAttributes, TutorS
     parentId: string;
     childName: string;
     startTime: string;
+    offerId?: string;
     endTime?: string;
     daysOfWeek: string[];
     price: number;
