@@ -6,8 +6,8 @@ export default async () => {
     
     const cronService = new CronService();
     
-    // Start the payment verification cron job
-    cronService.startPaymentVerificationCron();
+    // Start both cron jobs
+    cronService.startAllCronJobs();
     
     // Store the cron service instance globally for potential management
     (global as any).cronService = cronService;
@@ -17,13 +17,13 @@ export default async () => {
     // Graceful shutdown handling
     process.on('SIGTERM', () => {
       console.log('🛑 Received SIGTERM, stopping cron jobs...');
-      cronService.stopPaymentVerificationCron();
+      cronService.stopAllCronJobs();
       process.exit(0);
     });
     
     process.on('SIGINT', () => {
       console.log('🛑 Received SIGINT, stopping cron jobs...');
-      cronService.stopPaymentVerificationCron();
+      cronService.stopAllCronJobs();
       process.exit(0);
     });
     

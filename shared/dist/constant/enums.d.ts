@@ -36,11 +36,14 @@ export declare enum MessageStatus {
 export declare enum OfferStatus {
     PENDING = "PENDING",
     ACCEPTED = "ACCEPTED",
-    REJECTED = "REJECTED"
+    REJECTED = "REJECTED",
+    CANCELLED = "CANCELLED"
 }
-export declare enum PaymentStatus {
+export declare enum TutorPaymentStatus {
     PENDING = "PENDING",
-    CONFIRMED = "CONFIRMED",
+    REQUESTED = "REQUESTED",
+    PAID = "PAID",
+    IN_REVIEW = "IN_REVIEW",
     REJECTED = "REJECTED"
 }
 export declare enum OtpType {
@@ -60,10 +63,9 @@ export declare enum OtpPurpose {
     PASSWORD_RESET = "password_reset"
 }
 export declare enum TutorSessionStatus {
-    PENDING = "PENDING",
+    CREATED = "CREATED",
     TUTOR_HOLIDAY = "TUTOR_HOLIDAY",
     PUBLIC_HOLIDAY = "PUBLIC_HOLIDAY",
-    COMPLETED = "COMPLETED",
     CANCELLED_BY_PARENT = "CANCELLED_BY_PARENT",
     CANCELLED_BY_TUTOR = "CANCELLED_BY_TUTOR"
 }

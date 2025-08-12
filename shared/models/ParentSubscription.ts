@@ -7,7 +7,6 @@ export interface ParentSubscriptionAttributes {
   id: string;
   parentId: string;
   tutorId: string;
-  childId: string;
   offerId: string; // Added offerId
   stripeSubscriptionId: string;
   status: string; // 'active', 'cancelled', 'expired'
@@ -28,7 +27,6 @@ export class ParentSubscription
   public id!: string;
   public parentId!: string;
   public tutorId!: string;
-  public childId!: string;
   public offerId!: string; // Added offerId
   public stripeSubscriptionId!: string;
   public status!: string;
@@ -61,14 +59,6 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
         allowNull: false,
         references: {
           model: "users",
-          key: "id",
-        },
-      },
-      childId: {
-        type: DataTypes.UUID,
-        allowNull: false,
-        references: {
-          model: "children",
           key: "id",
         },
       },
@@ -112,6 +102,14 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
     }
   );
 
+    ParentSubscription.belongsTo(Offer, { foreignKey: "offerId" });
+    Offer.hasMany(ParentSubscription, { foreignKey: "offerId" });
+
+    ParentSubscription.belongsTo(User, { foreignKey: "parentId" });
+    User.hasMany(ParentSubscription, { foreignKey: "parentId" });
+
+    ParentSubscription.belongsTo(User, { foreignKey: "tutorId" });
+    User.hasMany(ParentSubscription, { foreignKey: "tutorId" });
 
   return ParentSubscription;
-} 
+}
