@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.TutorTransaction = exports.PaymentMethod = exports.TutorSessionsDetail = exports.TutorSessions = exports.ParentTransaction = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
+exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.TutorTransaction = exports.PaymentMethod = exports.TutorSessionsDetail = exports.TutorSessions = exports.ParentTransaction = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorReview = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
 exports.initAllModels = initAllModels;
 const Child_1 = require("./Child");
 Object.defineProperty(exports, "Child", { enumerable: true, get: function () { return Child_1.Child; } });
@@ -28,6 +28,8 @@ const TutorSettings_1 = require("./TutorSettings");
 Object.defineProperty(exports, "TutorSettings", { enumerable: true, get: function () { return TutorSettings_1.TutorSettings; } });
 const TutorLocations_1 = require("./TutorLocations");
 Object.defineProperty(exports, "TutorLocation", { enumerable: true, get: function () { return TutorLocations_1.TutorLocation; } });
+const TutorReview_1 = require("./TutorReview");
+Object.defineProperty(exports, "TutorReview", { enumerable: true, get: function () { return TutorReview_1.TutorReview; } });
 const ParentSubscription_1 = require("./ParentSubscription");
 Object.defineProperty(exports, "ParentSubscription", { enumerable: true, get: function () { return ParentSubscription_1.ParentSubscription; } });
 const ParentTransaction_1 = require("./ParentTransaction");
@@ -63,6 +65,7 @@ function initAllModels(sequelize) {
     (0, TutorExperience_1.initTutorExperienceModel)(sequelize);
     (0, TutorSettings_1.initTutorSettingsModel)(sequelize);
     (0, TutorLocations_1.initTutorLocationModel)(sequelize);
+    (0, TutorReview_1.initTutorReviewModel)(sequelize);
     // Initialize chat models first since Offer depends on them
     (0, Conversation_1.initConversationModel)(sequelize);
     (0, ConversationParticipant_1.initConversationParticipantModel)(sequelize);

@@ -93,14 +93,18 @@ class DevManager {
     console.log('\nAvailable services:');
     console.log('1. ustaad-auth (port 300)');
     console.log('2. ustaad-parent (port 301)');
-    console.log('3. ustaad-tutor (port 302)');
+    console.log('3. ustaad-tutor (port 303)');
+    console.log('4. ustaad-chat (port 305)');
+    console.log('5. ustaad-admin (port 306)');
     
-    const choice = await this.question('Select service to start (1-3): ');
+    const choice = await this.question('Select service to start (1-5): ');
     
     const services = [
       { name: 'ustaad-auth', port: 300 },
       { name: 'ustaad-parent', port: 301 },
-      { name: 'ustaad-tutor', port: 302 }
+      { name: 'ustaad-tutor', port: 303 },
+      { name: 'ustaad-chat', port: 305 },
+      { name: 'ustaad-admin', port: 306 },
     ];
     
     const serviceIndex = parseInt(choice) - 1;
