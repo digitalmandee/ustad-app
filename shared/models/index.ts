@@ -13,6 +13,7 @@ import { initTutorEducationModel, TutorEducation } from "./TutorEducation";
 import { initTutorExperienceModel, TutorExperience } from "./TutorExperience";
 import { initTutorSettingsModel, TutorSettings } from "./TutorSettings";
 import { initTutorLocationModel, TutorLocation } from "./TutorLocations";
+import { initTutorReviewModel, TutorReview } from "./TutorReview";
 import { initParentSubscriptionModel, ParentSubscription } from "./ParentSubscription";
 import { initParentTransactionModel, ParentTransaction } from "./ParentTransaction";
 import { initTutorSessionsModel, TutorSessions } from "./TutorSessions";
@@ -40,6 +41,7 @@ export function initAllModels(sequelize: Sequelize) {
   initTutorExperienceModel(sequelize);
   initTutorSettingsModel(sequelize);
   initTutorLocationModel(sequelize);
+  initTutorReviewModel(sequelize);
   
   // Initialize chat models first since Offer depends on them
   initConversationModel(sequelize);
@@ -71,6 +73,7 @@ export {
   TutorEducation,
   TutorExperience,
   TutorSettings,
+  TutorReview,
   User,
   Otp,
   TutorLocation,

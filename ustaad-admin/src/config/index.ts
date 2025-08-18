@@ -7,7 +7,7 @@ if (envFound.error) {
 }
 
 export default {
-  port: process.env.PORT || 302,
+  port: process.env.PORT || 306,
   api: {
     prefix: '/api/v1',
   },

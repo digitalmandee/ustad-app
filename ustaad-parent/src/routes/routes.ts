@@ -29,6 +29,9 @@ const routes = {
   // offer
   OFFER_UPDATE_STATUS: '/parent/offer/:status/:offerId',
   
+  // tutor reviews
+  ADD_TUTOR_REVIEW: '/parent/tutor/review',
+  
   // webhook
   STRIPE_WEBHOOK: '/parent/webhook/stripe',
 };

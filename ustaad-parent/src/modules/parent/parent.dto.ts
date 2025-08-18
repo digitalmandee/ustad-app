@@ -53,5 +53,11 @@ export interface IPaymentMethodResponseDTO {
   updatedAt: Date;
 }
 
+export interface ICreateTutorReviewDTO {
+  tutorId: string;
+  rating: number;
+  review: string;
+}
+
 
 

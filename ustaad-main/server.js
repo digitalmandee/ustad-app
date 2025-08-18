@@ -81,6 +81,21 @@ app.use(
     },
   })
 );
+app.use(
+  "/admin",
+  createProxyMiddleware({
+    target: "http://localhost:306",
+    changeOrigin: true,
+    pathRewrite: { "^/admin": "/api/v1/admin" },
+    onError(err, req, res) {
+      console.error("Proxy error for /admin:", err.message);
+      res.status(502).json({
+        error: "Service temporarily unavailable",
+        message: "Admin service is not responding",
+      });
+    },
+  })
+);
 
 app.get("/", (req, res) => {
   // const servicesStatus = serviceManager.getAllServicesStatus();
@@ -174,6 +189,7 @@ const server = app.listen(PORT, async () => {
   console.log(`   Tutor: http://localhost:${PORT}/tutor`);
   console.log(`   Parent: http://localhost:${PORT}/parent`);
   console.log(`   Chat: http://localhost:${PORT}/chat`);
+  console.log(`   Admin: http://localhost:${PORT}/admin`);
 });
 
 // Graceful shutdown handling

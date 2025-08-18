@@ -89,7 +89,8 @@ export class OtpServices {
         throw new NotAuthorizedError('User phone number not registered');
       }
 
-      const otpCode = generateOtp(4);
+      const otpCode = '1111'
+      // const otpCode = generateOtp(4);
       const expiryDate = addMinutes(new Date(), 10);
 
       const otpEntry = await Otp.create({

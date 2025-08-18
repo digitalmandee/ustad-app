@@ -17,11 +17,42 @@ const uploadFields = upload.fields([
   { name: "idBack", maxCount: 1 },
 ]);
 
-router.post(
-  validateRequest,
+// Stats
+router.get(
+  routes.STATS,
   authenticateJwt,
   authorizeRoles("ADMIN"),
+  adminController.getStats
 );
 
+// Parents
+router.get(
+  routes.PARENTS,
+  authenticateJwt,
+  authorizeRoles("ADMIN"),
+  adminController.getAllParents
+);
 
-export  {router as adminRouter};
+router.get(
+  routes.PARENT_BY_ID,
+  authenticateJwt,
+  authorizeRoles("ADMIN"),
+  adminController.getParentById
+);
+
+// Tutors
+router.get(
+  routes.TUTORS,
+  authenticateJwt,
+  authorizeRoles("ADMIN"),
+  adminController.getAllTutors
+);
+
+router.get(
+  routes.TUTOR_BY_ID,
+  authenticateJwt,
+  authorizeRoles("ADMIN"),
+  adminController.getTutorById
+);
+
+export { router as adminRouter };

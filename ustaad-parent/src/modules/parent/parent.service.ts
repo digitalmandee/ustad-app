@@ -18,6 +18,7 @@ import {
   Offer,
   ParentTransaction,
   Child,
+  TutorReview,
 } from "@ustaad/shared";
 import Stripe from "stripe";
 import { OfferStatus } from "src/constant/enums";
@@ -846,6 +847,41 @@ export default class ParentService {
       return result;
     } catch (error) {
       console.error("Error in getAllSubscriptions:", error);
+      throw error;
+    }
+  }
+
+  async createTutorReview(parentId: string, tutorId: string, rating: number, review: string) {
+    try {
+      // Check if tutor exists in users table
+      const tutorUser = await User.findOne({
+        where: { id: tutorId, role: "TUTOR" }
+      });
+
+      if (!tutorUser) {
+        throw new UnProcessableEntityError("Tutor not found");
+      }
+
+      // Check if parent already reviewed this tutor
+      const existingReview = await TutorReview.findOne({
+        where: { parentId, tutorId }
+      });
+
+      if (existingReview) {
+        throw new ConflictError("You have already reviewed this tutor");
+      }
+
+      // Create the review
+      const tutorReview = await TutorReview.create({
+        parentId,
+        tutorId,
+        rating,
+        review,
+      });
+
+      return tutorReview;
+    } catch (error) {
+      console.error("Error in createTutorReview:", error);
       throw error;
     }
   }
