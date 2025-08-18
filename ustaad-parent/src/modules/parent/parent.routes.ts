@@ -109,6 +109,14 @@ router.post(
   parentController.cancelSubscription
 );
 
+// Tutor review route
+router.post(
+  routes.ADD_TUTOR_REVIEW,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.createTutorReview
+);
+
 // Stripe webhook route (no authentication required for webhooks)
 // router.post(
 //   routes.STRIPE_WEBHOOK,

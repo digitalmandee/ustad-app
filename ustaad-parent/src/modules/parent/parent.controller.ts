@@ -428,4 +428,40 @@ export default class ParentController {
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
+
+  createTutorReview = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: parentId } = req.user;
+      const { tutorId, rating, review } = req.body;
+
+      // Validate rating range
+      if (rating < 1 || rating > 5) {
+        return sendErrorResponse(res, "Rating must be between 1 and 5", 400);
+      }
+
+      const result = await this.parentService.createTutorReview(
+        parentId,
+        tutorId,
+        rating,
+        review
+      );
+
+      return sendSuccessResponse(
+        res,
+        "Tutor review created successfully",
+        201,
+        result
+      );
+    } catch (error: any) {
+      console.error("Create tutor review error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while creating review";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
 }
