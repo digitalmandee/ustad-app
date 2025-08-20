@@ -17,11 +17,13 @@ import {
   TutorSessions,
   Offer,
   ParentTransaction,
+  TutorTransaction,
   Child,
   TutorReview,
 } from "@ustaad/shared";
 import Stripe from "stripe";
 import { OfferStatus } from "src/constant/enums";
+import { TutorPaymentStatus } from "@ustaad/shared/dist/constant/enums";
 import { log } from "console";
 
 interface ParentProfileData {
@@ -484,38 +486,38 @@ export default class ParentService {
         throw new UnProcessableEntityError("Invalid offer status");
       }
 
-      const parent = await Parent.findOne({
-        where: { userId: offer.receiverId },
-      });
+      // const parent = await Parent.findOne({
+      //   where: { userId: offer.receiverId },
+      // });
 
-      if (!parent.customerId) {
-        throw new UnProcessableEntityError(
-          "Parent is not registered with stripe"
-        );
-      }
+      // if (!parent.customerId) {
+      //   throw new UnProcessableEntityError(
+      //     "Parent is not registered with stripe"
+      //   );
+      // }
 
-      const stripeCustomer = await this.stripe?.customers.retrieve(
-        parent.customerId
-      );
-      if (!stripeCustomer) {
-        throw new UnProcessableEntityError(
-          "Parent is not registered with stripe"
-        );
-      }
+      // const stripeCustomer = await this.stripe?.customers.retrieve(
+      //   parent.customerId
+      // );
+      // if (!stripeCustomer) {
+      //   throw new UnProcessableEntityError(
+      //     "Parent is not registered with stripe"
+      //   );
+      // }
 
-      const paymentMethod = await PaymentMethod.findOne({
-        where: { parentId: parent.userId, isDefault: true },
-      });
+      // const paymentMethod = await PaymentMethod.findOne({
+      //   where: { parentId: parent.userId, isDefault: true },
+      // });
 
-      const stripePaymentMethod = await this.stripe?.paymentMethods.retrieve(
-        paymentMethod.stripePaymentMethodId
-      );
+      // const stripePaymentMethod = await this.stripe?.paymentMethods.retrieve(
+      //   paymentMethod.stripePaymentMethodId
+      // );
 
-      if (!stripePaymentMethod) {
-        throw new UnProcessableEntityError(
-          "Parent does not have a payment method"
-        );
-      }
+      // if (!stripePaymentMethod) {
+      //   throw new UnProcessableEntityError(
+      //     "Parent does not have a payment method"
+      //   );
+      // }
 
       // const stripeSubscription = await this.stripe?.subscriptions.list({
       //   customer: parent.customerId,
@@ -527,62 +529,134 @@ export default class ParentService {
       //   );
       // }
 
-      const parentSubscription = await ParentSubscription.findOne({
-        where: { offerId: offerId },
-      });
-      if (parentSubscription) {
-        throw new UnProcessableEntityError(
-          "Parent already has a subscription against this offer"
-        );
-      }
+      // const parentSubscription = await ParentSubscription.findOne({
+      //   where: { offerId: offerId },
+      // });
+      // if (parentSubscription) {
+      //   throw new UnProcessableEntityError(
+      //     "Parent already has a subscription against this offer"
+      //   );
+      // }
 
-      // Create a product
-      const product = await this.stripe?.products.create({
-        name: `Ustaad Subscription for ${offer.id}`,
-        metadata: {
-          offerId: offerId,
-        },
-      });
+      // // Create a product
+      // const product = await this.stripe?.products.create({
+      //   name: `Ustaad Subscription for ${offer.id}`,
+      //   metadata: {
+      //     offerId: offerId,
+      //   },
+      // });
 
       // Create a monthly price
-      const price = await this.stripe?.prices.create({
-        unit_amount: Math.round(offer.amountMonthly * 100),
-        currency: "pkr",
-        recurring: { interval: "month" },
-        product: product.id,
-        metadata: {
-          offerId: offerId,
-        },
-      });
+      // const price = await this.stripe?.prices.create({
+      //   unit_amount: Math.round(offer.amountMonthly * 100),
+      //   currency: "pkr",
+      //   recurring: { interval: "month" },
+      //   product: product.id,
+      //   metadata: {
+      //     offerId: offerId,
+      //   },
+      // });
 
-      // Create a subscription
-      const subscription = await this.stripe?.subscriptions.create({
-        customer: parent.customerId,
-        items: [{ price: price.id }],
-        default_payment_method: paymentMethod.stripePaymentMethodId,
-        metadata: {
-          offerId: offerId,
-        },
-      });
+      // // Create a subscription
+      // const subscription = await this.stripe?.subscriptions.create({
+      //   customer: parent.customerId,
+      //   items: [{ price: price.id }],
+      //   default_payment_method: paymentMethod.stripePaymentMethodId,
+      //   metadata: {
+      //     offerId: offerId,
+      //   },
+      // });
 
-      if (!subscription) {
-        throw new UnProcessableEntityError("Failed to create subscription");
-      }
+      // if (!subscription) {
+      //   throw new UnProcessableEntityError("Failed to create subscription");
+      // }
 
       // Create a parent subscription
-      await ParentSubscription.create({
-        offerId: offerId,
-        parentId: parent.userId,
-        tutorId: offer.senderId,
-        stripeSubscriptionId: subscription.id,
-        status: "created",
-        planType: "monthly",
-        startDate: new Date(),
-        amount: offer.amountMonthly,
-      });
+      // await ParentSubscription.create({
+      //   offerId: offerId,
+      //   parentId: parent.userId,
+      //   tutorId: offer.senderId,
+      //   stripeSubscriptionId: subscription.id,
+      //   status: "created",
+      //   planType: "monthly",
+      //   startDate: new Date(),
+      //   amount: offer.amountMonthly,
+      // });
+
+      // If status is ACCEPTED, create entries in required tables
+      if (status === OfferStatus.ACCEPTED) {
+        // Check if subscription already exists for this offer
+        const existingSubscription = await ParentSubscription.findOne({
+          where: { offerId: offerId },
+        });
+
+        if (existingSubscription) {
+          throw new UnProcessableEntityError(
+            "Parent already has a subscription against this offer"
+          );
+        }
+
+        // Generate random stripe subscription ID for testing
+        const randomStripeSubscriptionId = `sub_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+
+        // 1. Create ParentSubscription entry
+        const parentSubscription = await ParentSubscription.create({
+          offerId: offerId,
+          parentId: offer.receiverId,
+          tutorId: offer.senderId,
+          stripeSubscriptionId: randomStripeSubscriptionId,
+          status: "active",
+          planType: "monthly",
+          startDate: new Date(),
+          amount: offer.amountMonthly,
+        });
+
+        // Generate random invoice ID for testing
+        const randomInvoiceId = `in_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+
+        // 2. Create ParentTransaction entry
+        await ParentTransaction.create({
+          parentId: offer.receiverId,
+          subscriptionId: parentSubscription.id,
+          invoiceId: randomInvoiceId,
+          status: "created",
+          amount: offer.amountMonthly,
+          childName: offer.childName,
+        });
+
+        // 3. Create TutorTransaction entry
+        await TutorTransaction.create({
+          tutorId: offer.senderId,
+          subscriptionId: parentSubscription.id,
+          status: TutorPaymentStatus.PENDING,
+          amount: offer.amountMonthly,
+        });
+
+        // 4. Create TutorSessions entry
+        // Generate current month in yyyy-mm format
+        const currentDate = new Date();
+        const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-01`;
+
+        await TutorSessions.create({
+          tutorId: offer.senderId,
+          parentId: offer.receiverId,
+          childName: offer.childName,
+          startTime: offer.startTime,
+          endTime: offer.endTime,
+          offerId: offerId,
+          daysOfWeek: offer.daysOfWeek,
+          price: Math.round(offer.amountMonthly * 100), // Convert to cents
+          status: "active",
+          month: currentMonth,
+          meta: {
+            createdFromOffer: true,
+            offerAcceptedAt: new Date(),
+          },
+        });
+      }
 
       // Update offer status
-      offer.status = OfferStatus.ACCEPTED;
+      offer.status = status as OfferStatus;
       await offer.save();
 
       return offer;
@@ -763,7 +837,7 @@ export default class ParentService {
       // Get all ParentSubscription records for this parent
       const dbSubscriptions = await ParentSubscription.findAll({
         where: { parentId: parent.userId },
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       if (!dbSubscriptions || dbSubscriptions.length === 0) {
@@ -792,7 +866,9 @@ export default class ParentService {
         if (!stripeSub) continue;
 
         // Get created date
-        const createdDate = dbSub.createdAt || (stripeSub.created ? new Date(stripeSub.created * 1000) : null);
+        const createdDate =
+          dbSub.createdAt ||
+          (stripeSub.created ? new Date(stripeSub.created * 1000) : null);
 
         // Get card details
         let cardDetail = null;
@@ -817,7 +893,11 @@ export default class ParentService {
 
         // Get offerId from plan.metadata
         let offerId = null;
-        if (stripeSub.plan && stripeSub.plan.metadata && stripeSub.plan.metadata.offerId) {
+        if (
+          stripeSub.plan &&
+          stripeSub.plan.metadata &&
+          stripeSub.plan.metadata.offerId
+        ) {
           offerId = stripeSub.plan.metadata.offerId;
         }
 
@@ -851,11 +931,16 @@ export default class ParentService {
     }
   }
 
-  async createTutorReview(parentId: string, tutorId: string, rating: number, review: string) {
+  async createTutorReview(
+    parentId: string,
+    tutorId: string,
+    rating: number,
+    review: string
+  ) {
     try {
       // Check if tutor exists in users table
       const tutorUser = await User.findOne({
-        where: { id: tutorId, role: "TUTOR" }
+        where: { id: tutorId, role: "TUTOR" },
       });
 
       if (!tutorUser) {
@@ -864,7 +949,7 @@ export default class ParentService {
 
       // Check if parent already reviewed this tutor
       const existingReview = await TutorReview.findOne({
-        where: { parentId, tutorId }
+        where: { parentId, tutorId },
       });
 
       if (existingReview) {

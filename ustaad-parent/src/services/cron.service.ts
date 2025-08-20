@@ -124,8 +124,8 @@ export class CronService {
    * Start all cron jobs
    */
   startAllCronJobs(): void {
-    this.startPaymentVerificationCron();
-    this.startCancelledSubscriptionCron();
+    // this.startPaymentVerificationCron();
+    // this.startCancelledSubscriptionCron();
     console.log("🚀 All cron jobs started");
   }
 

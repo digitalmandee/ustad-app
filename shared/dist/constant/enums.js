@@ -82,6 +82,7 @@ var OtpPurpose;
 var TutorSessionStatus;
 (function (TutorSessionStatus) {
     TutorSessionStatus["CREATED"] = "CREATED";
+    TutorSessionStatus["COMPLETED"] = "COMPLETED";
     TutorSessionStatus["TUTOR_HOLIDAY"] = "TUTOR_HOLIDAY";
     TutorSessionStatus["PUBLIC_HOLIDAY"] = "PUBLIC_HOLIDAY";
     TutorSessionStatus["CANCELLED_BY_PARENT"] = "CANCELLED_BY_PARENT";

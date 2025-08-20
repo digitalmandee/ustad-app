@@ -414,7 +414,7 @@ export default class TutorController {
       if (!tutor) {
         return sendErrorResponse(res, "Tutor not found", 404);
       }
-      const result = await this.tutorService.getTutorSettings(tutor.id);
+      const result = await this.tutorService.getTutorSettings(userId);
       return sendSuccessResponse(res, "Tutor settings fetched successfully", 200, result);
     } catch (error: any) {
       return sendErrorResponse(res, error.message || "Failed to fetch tutor settings", 400);
@@ -644,9 +644,7 @@ export default class TutorController {
 
   editTutorSession = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { id: userId } = req.user;
-      const { sessionId } = req.query as any;
-      const session = await this.tutorService.editTutorSession(userId, sessionId, req.body);
+      const session = await this.tutorService.editTutorSession(req.body);
       return sendSuccessResponse(res, "Tutor session updated successfully", 200, session);
     } catch (error: any) {
       return sendErrorResponse(res, error.message || "Failed to update tutor session", 400);
