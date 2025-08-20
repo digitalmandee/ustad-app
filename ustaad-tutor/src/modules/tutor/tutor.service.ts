@@ -443,7 +443,36 @@ export default class TutorService {
   }
 
   async getTutorSettings(tutorId: string) {
-    return await TutorSettings.findOne({ where: { tutorId } });
+    console.log("tutorId", tutorId);
+
+    const tutorSettings = await TutorSettings.findOne({ where: { tutorId } });
+
+    if (tutorSettings) {
+      return tutorSettings;
+    }
+
+    const tutorProfile = await Tutor.findOne({ where: { userId: tutorId } });
+
+    if (!tutorProfile) {
+      throw new UnProcessableEntityError("No tutor profile found!");
+    }
+
+    const subjects = tutorProfile.subjects;
+
+    const subjectCosts = subjects.reduce((acc, subject) => {
+      acc[subject] = {
+        cost: 0,
+        active: false,
+      };
+      return acc;
+    }, {} as Record<string, SubjectCostSetting>);
+
+    return await TutorSettings.create({
+      tutorId,
+      subjectCosts,
+      minSubjects: 1,
+      maxStudentsDaily: 1,
+    });
   }
 
   async updateTutorSettings(
@@ -742,6 +771,24 @@ export default class TutorService {
       throw new UnProcessableEntityError("Tutor session not found");
     }
 
+    // Check if session detail already exists for the same day
+    const existingSessionDetail = await TutorSessionsDetail.findOne({
+      where: {
+        tutorId: userId,
+        parentId: data.parentId,
+        createdAt: {
+          [Op.between]: [
+            new Date().setHours(0, 0, 0, 0),
+            new Date().setHours(23, 59, 59, 999)
+          ]
+        }
+      }
+    });
+
+    if (existingSessionDetail) {
+      throw new UnProcessableEntityError("A session detail already exists for today");
+    }
+
     if (session.id !== data.sessionId) {
       throw new UnProcessableEntityError("Tutor session already exists");
     }
@@ -756,14 +803,13 @@ export default class TutorService {
   }
 
   async editTutorSession(
-    userId: string,
-    sessionId: string,
     data: TutorSessionsDetail
   ) {
     const session = await TutorSessionsDetail.findOne({
       where: {
-        id: sessionId,
-        tutorId: userId,
+        id: data.id,
+        tutorId: data.tutorId,
+        parentId: data.parentId,
         status: TutorSessionStatus.CREATED,
       },
     });
@@ -776,7 +822,7 @@ export default class TutorService {
 
     return await TutorSessionsDetail.update(
       { ...data },
-      { where: { id: sessionId, tutorId: userId } }
+      { where: { id: data.id, tutorId: data.tutorId, parentId: data.parentId } }
     );
   }
 }
