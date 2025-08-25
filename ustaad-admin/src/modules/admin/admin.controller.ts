@@ -13,7 +13,14 @@ export default class AdminController {
 
   getStats = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const stats = await this.adminService.getStats();
+      const days = req.query.days ? Number(req.query.days) : undefined;
+      
+      // Validate days parameter if provided
+      if (days && ![7, 30, 90].includes(days)) {
+        return sendErrorResponse(res, "Days parameter must be 7, 30, or 90", 400);
+      }
+      
+      const stats = await this.adminService.getStats(days);
       sendSuccessResponse(res, "stats fetched successfully", 200, stats);
     } catch (e: any) {
       throw new GenericError(e, ` Error from getStats ${__filename}`);
@@ -67,4 +74,34 @@ export default class AdminController {
       throw new GenericError(e, ` Error from getTutorById ${__filename}`);
     }
   };
+
+  getAllPaymentRequests = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const data = await this.adminService.getAllPaymentRequests();
+      sendSuccessResponse(res, "payment requests fetched successfully", 200, data);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from getAllPaymentRequests ${__filename}`);
+    }
+  };
+
+  getPaymentRequestById = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const data = await this.adminService.getPaymentRequestById(id);
+      sendSuccessResponse(res, "payment request fetched successfully", 200, data);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from getPaymentRequestById ${__filename}`);
+    }
+  };
+
+  updatePaymentRequestStatus = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id, status } = req.body;
+      const data = await this.adminService.updatePaymentRequestStatus(id, status);
+      sendSuccessResponse(res, "payment request status updated successfully", 200, data);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from updatePaymentRequestStatus ${__filename}`);
+    }
+  };
+  
 }

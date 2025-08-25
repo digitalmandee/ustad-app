@@ -30,6 +30,7 @@ interface UserAttributes {
   googleId?: string | null;
 
   deviceId?: string | null;
+  isDeleted?: boolean;
 
   createdAt?: Date;
   updatedAt?: Date;
@@ -57,6 +58,7 @@ interface UserCreationAttributes
     | "deviceId"
     | "createdAt"
     | "updatedAt"
+    | "isDeleted"
   > {}
 
 export class User
@@ -88,6 +90,8 @@ export class User
   public googleId!: string | null;
 
   public deviceId!: string | null;
+
+  public isDeleted!: boolean;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -171,6 +175,10 @@ export function initUserModel(sequelize: Sequelize): typeof User {
         allowNull: true,
         defaultValue: null,
         comment: "Device identifier for push notifications or device tracking",
+      },
+      isDeleted: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
       },
       createdAt: {
         type: DataTypes.DATE,
