@@ -443,8 +443,6 @@ export default class TutorService {
   }
 
   async getTutorSettings(tutorId: string) {
-    console.log("tutorId", tutorId);
-
     const tutorSettings = await TutorSettings.findOne({ where: { tutorId } });
 
     if (tutorSettings) {
@@ -459,13 +457,16 @@ export default class TutorService {
 
     const subjects = tutorProfile.subjects;
 
-    const subjectCosts = subjects.reduce((acc, subject) => {
-      acc[subject] = {
-        cost: 0,
-        active: false,
-      };
-      return acc;
-    }, {} as Record<string, SubjectCostSetting>);
+    const subjectCosts = subjects.reduce(
+      (acc, subject) => {
+        acc[subject] = {
+          cost: 0,
+          active: false,
+        };
+        return acc;
+      },
+      {} as Record<string, SubjectCostSetting>
+    );
 
     return await TutorSettings.create({
       tutorId,
@@ -486,6 +487,31 @@ export default class TutorService {
     const existingSettings = await TutorSettings.findOne({
       where: { tutorId },
     });
+
+    const tutorProfile = await Tutor.findOne({ where: { userId: tutorId } });
+    if (!tutorProfile) {
+      throw new UnProcessableEntityError("No tutor profile found!");
+    }
+
+    // Get current subjects from tutor profile
+    const currentSubjects = tutorProfile.subjects || [];
+    
+    // Get active subjects from settings
+    const newSubjects = Object.entries(settings.subjectCosts)
+      .filter(([_, setting]) => setting.active)
+      .map(([subject]) => subject);
+
+    // Find subjects to add and remove
+    const subjectsToAdd = newSubjects.filter(s => !currentSubjects.includes(s));
+    const subjectsToRemove = currentSubjects.filter(s => !newSubjects.includes(s));
+
+    // Update tutor profile subjects
+    const updatedSubjects = [...currentSubjects, ...subjectsToAdd]
+      .filter(s => !subjectsToRemove.includes(s));
+
+    await tutorProfile.update({ subjects: updatedSubjects });
+
+    // Update settings
     if (existingSettings) {
       return await existingSettings.update(settings);
     }
@@ -779,14 +805,16 @@ export default class TutorService {
         createdAt: {
           [Op.between]: [
             new Date().setHours(0, 0, 0, 0),
-            new Date().setHours(23, 59, 59, 999)
-          ]
-        }
-      }
+            new Date().setHours(23, 59, 59, 999),
+          ],
+        },
+      },
     });
 
     if (existingSessionDetail) {
-      throw new UnProcessableEntityError("A session detail already exists for today");
+      throw new UnProcessableEntityError(
+        "A session detail already exists for today"
+      );
     }
 
     if (session.id !== data.sessionId) {
@@ -802,9 +830,7 @@ export default class TutorService {
     });
   }
 
-  async editTutorSession(
-    data: TutorSessionsDetail
-  ) {
+  async editTutorSession(data: TutorSessionsDetail) {
     const session = await TutorSessionsDetail.findOne({
       where: {
         id: data.id,

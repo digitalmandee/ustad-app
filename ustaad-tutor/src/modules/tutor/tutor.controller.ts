@@ -429,7 +429,7 @@ export default class TutorController {
       if (!tutor) {
         return sendErrorResponse(res, "Tutor not found", 404);
       }
-      const result = await this.tutorService.updateTutorSettings(tutor.id, { minSubjects, maxStudentsDaily, subjectCosts });
+      const result = await this.tutorService.updateTutorSettings(userId, { minSubjects, maxStudentsDaily, subjectCosts });
       return sendSuccessResponse(res, "Tutor settings updated successfully", 200, result);
     } catch (error: any) {
       return sendErrorResponse(res, error.message || "Failed to update tutor settings", 400);
