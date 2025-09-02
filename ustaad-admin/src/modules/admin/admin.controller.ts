@@ -103,5 +103,62 @@ export default class AdminController {
       throw new GenericError(e, ` Error from updatePaymentRequestStatus ${__filename}`);
     }
   };
+
+  createAdmin = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { fullName, email, password } = req.body;
+      
+      // Validate required fields
+      if (!fullName || !email || !password) {
+        return sendErrorResponse(res, "Full name, email, and password are required", 400);
+      }
+
+      // Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return sendErrorResponse(res, "Invalid email format", 400);
+      }
+
+      // Validate password strength
+      if (password.length < 6) {
+        return sendErrorResponse(res, "Password must be at least 6 characters long", 400);
+      }
+
+      const adminUser = await this.adminService.createAdmin({
+        fullName,
+        email,
+        password
+      });
+
+      sendSuccessResponse(res, "Admin user created successfully", 201, adminUser);
+    } catch (e: any) {
+      if (e.message === 'User with this email already exists') {
+        return sendErrorResponse(res, e.message, 409);
+      }
+      throw new GenericError(e, ` Error from createAdmin ${__filename}`);
+    }
+  };
+
+  getAllAdmins = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      
+      const data = await this.adminService.getAllAdmins(page, limit);
+      sendSuccessResponse(res, "Admins fetched successfully", 200, data);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from getAllAdmins ${__filename}`);
+    }
+  };
+
+  deleteAdmin = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id } = req.body;
+      const data = await this.adminService.deleteAdmin(id);
+      sendSuccessResponse(res, "Admin deleted successfully", 200, data);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from deleteAdmin ${__filename}`);
+    }
+  };
   
 }

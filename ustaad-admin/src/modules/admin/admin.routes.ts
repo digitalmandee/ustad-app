@@ -77,4 +77,26 @@ router.put(
   adminController.updatePaymentRequestStatus
 );
 
+// Admin user management
+router.post(
+  routes.CREATE_ADMIN,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN"),
+  adminController.createAdmin
+);
+
+router.get(
+  routes.GET_ALL_ADMINS,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN"),
+  adminController.getAllAdmins
+);
+
+router.delete(
+  routes.DELETE_ADMIN,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN"),
+  adminController.deleteAdmin
+);
+
 export { router as adminRouter };

@@ -572,13 +572,175 @@ Content-Type: application/json
 
 ---
 
+## 9. Admin User Management
+
+### 9.1. Create Admin User
+
+**Endpoint:** `POST /admin/users/create`
+
+**Description:** Create a new admin user in the users table with ADMIN role.
+
+**Request Body:**
+```json
+{
+  "fullName": "John Admin",
+  "email": "admin@example.com",
+  "phone": "+1234567890",
+  "password": "securePassword123"
+}
+```
+
+**Required Fields:**
+- `fullName`: Admin's full name
+- `email`: Admin's email address (must be unique)
+- `password`: Password (minimum 6 characters)
+
+**Optional Fields:**
+- `phone`: Admin's phone number
+
+**Request:**
+```bash
+POST /admin/users/create
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
+{
+  "fullName": "John Admin",
+  "email": "admin@example.com",
+  "phone": "+1234567890",
+  "password": "securePassword123"
+}
+```
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Admin user created successfully",
+  "data": {
+    "id": "admin-uuid-123",
+    "fullName": "John Admin",
+    "email": "admin@example.com",
+    "phone": "+1234567890",
+    "role": "ADMIN",
+    "isVerified": true,
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+**Error Responses:**
+```json
+// Missing required fields
+{
+  "success": false,
+  "errors": [
+    {
+      "message": "Full name, email, and password are required"
+    }
+  ]
+}
+
+// Invalid email format
+{
+  "success": false,
+  "errors": [
+    {
+      "message": "Invalid email format"
+    }
+  ]
+}
+
+// Password too short
+{
+  "success": false,
+  "errors": [
+    {
+      "message": "Password must be at least 6 characters long"
+    }
+  ]
+}
+
+// Email already exists
+{
+  "success": false,
+  "errors": [
+    {
+      "message": "User with this email already exists"
+    }
+  ]
+}
+```
+
+---
+
+### 9.2. Get All Admin Users
+
+**Endpoint:** `GET /admin/users/admins`
+
+**Description:** Get a paginated list of all admin users (ADMIN and SUPER_ADMIN roles).
+
+**Query Parameters:**
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 20)
+
+**Request:**
+```bash
+GET /admin/users/admins?page=1&limit=10
+Authorization: Bearer <jwt_token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Admins fetched successfully",
+  "data": {
+    "items": [
+      {
+        "id": "admin-uuid-1",
+        "fullName": "John Admin",
+        "email": "admin@example.com",
+        "phone": "+1234567890",
+        "role": "ADMIN",
+        "isVerified": true,
+        "createdAt": "2024-01-15T10:30:00Z",
+        "updatedAt": "2024-01-15T10:30:00Z"
+      },
+      {
+        "id": "super-admin-uuid-1",
+        "fullName": "Super Admin",
+        "email": "superadmin@example.com",
+        "phone": "+1987654321",
+        "role": "SUPER_ADMIN",
+        "isVerified": true,
+        "createdAt": "2024-01-10T09:15:00Z",
+        "updatedAt": "2024-01-10T09:15:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 5,
+      "totalPages": 1,
+      "hasNext": false,
+      "hasPrev": false
+    }
+  }
+}
+```
+
+---
+
 ## Summary
 
-The admin API provides 8 endpoints for managing the platform:
+The admin API provides 10 endpoints for managing the platform:
 
-1. **Statistics** - Platform overview
+1. **Statistics** - Platform overview with time period filtering
 2. **Parent Management** - List and view parent details
 3. **Tutor Management** - List and view tutor details with document paths  
 4. **Payment Management** - View and update payment requests
+5. **Admin User Management** - Create and manage admin users
 
 All endpoints require `SUPER_ADMIN` role authentication and return standardized JSON responses. The API supports pagination for list endpoints and provides detailed relational data for individual resource views.

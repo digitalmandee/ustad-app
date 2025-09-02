@@ -1,4 +1,4 @@
-import { UserRole } from "../../constant/enums";
+import { IsOnBaord, UserRole } from "../../constant/enums";
 import {
   User,
   Parent,
@@ -12,6 +12,7 @@ import {
 } from "@ustaad/shared";
 import { TutorPaymentStatus } from "@ustaad/shared/dist/constant/enums";
 import { Op } from "sequelize";
+import bcrypt from "bcrypt";
 
 export default class AdminService {
   async getStats(days?: number) {
@@ -218,7 +219,31 @@ export default class AdminService {
 
   async getPaymentRequestById(id: string) {
     const paymentRequest = await TutorTransaction.findByPk(id);
-    return paymentRequest;
+    if (!paymentRequest) {
+      throw new Error("Payment request not found");
+    }
+
+    const user = await User.findOne({ where: { id: paymentRequest.tutorId } });
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const tutor = await Tutor.findOne({ where: { userId: paymentRequest.tutorId } });
+    if (!tutor) {
+      throw new Error("Tutor not found");
+    }
+
+    return {
+      paymentRequest,
+      tutor: {
+        id: tutor.userId,
+        bankName: tutor.bankName,
+        accountNumber: tutor.accountNumber,
+        name: user.fullName,
+        email: user.email,
+        phone: user.phone,
+      },
+    };
   }
 
   async updatePaymentRequestStatus(id: string, status: string) {
@@ -226,5 +251,79 @@ export default class AdminService {
     paymentRequest.status = status as TutorPaymentStatus;
     await paymentRequest.save();
     return paymentRequest;
+  }
+
+  async createAdmin(userData: {
+    fullName: string;
+    email: string;
+    password: string;
+  }) {
+    // Check if user with email already exists
+    const existingUser = await User.findOne({
+      where: { email: userData.email },
+    });
+
+    if (existingUser) {
+      throw new Error("User with this email already exists");
+    }
+
+    // Hash the password
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
+
+    // Create admin user
+    const adminUser = await User.create({
+      fullName: userData.fullName,
+      email: userData.email,
+      password: hashedPassword,
+      role: UserRole.ADMIN,
+      isActive: true,
+      isAdminVerified: true,
+      isOnBoard: IsOnBaord.APPROVED,
+      isEmailVerified: true,
+      isPhoneVerified: true,
+    });
+
+    // Remove password from response
+    const { password, ...adminUserResponse } = adminUser.toJSON();
+    return adminUserResponse;
+  }
+
+  async getAllAdmins(page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
+
+    const { rows, count } = await User.findAndCountAll({
+      where: {
+        role: {
+          [Op.in]: [UserRole.ADMIN],
+        },
+      },
+      attributes: ["id", "fullName", "email", "role", "createdAt", "updatedAt"],
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+    });
+
+    return {
+      items: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+        hasNext: page * limit < count,
+        hasPrev: page > 1,
+      },
+    };
+  }
+
+  async deleteAdmin(id: string) {
+    const admin = await User.findByPk(id);
+    if (!admin) {
+      throw new Error("Admin not found");
+    }
+    await admin.destroy();
+    await admin.save();
+    return admin;
   }
 }
