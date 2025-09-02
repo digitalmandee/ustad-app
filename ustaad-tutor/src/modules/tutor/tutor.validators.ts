@@ -76,6 +76,15 @@ export const tutorSearchByLocationValidationRules = () => {
       .isInt({ min: 0 })
       .withMessage("offset must be a non-negative integer")
       .toInt(),
+
+    query("category")
+      .optional()
+      .isString()
+      .withMessage("category must be a string")
+      .isLength({ min: 1, max: 50 })
+      .withMessage("category must be between 1 and 50 characters")
+      .trim()
+      .toLowerCase(),
   ];
 };
 
