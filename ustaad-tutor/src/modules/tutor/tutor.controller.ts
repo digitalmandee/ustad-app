@@ -400,7 +400,7 @@ export default class TutorController {
       if (!tutor) {
         return sendErrorResponse(res, "Tutor not found", 404);
       }
-      const result = await this.tutorService.setTutorSettings(tutor.id, { minSubjects, maxStudentsDaily, subjectCosts });
+      const result = await this.tutorService.setTutorSettings(userId, { minSubjects, maxStudentsDaily, subjectCosts });
       return sendSuccessResponse(res, "Tutor settings saved successfully", 201, result);
     } catch (error: any) {
       return sendErrorResponse(res, error.message || "Failed to save tutor settings", 400);
