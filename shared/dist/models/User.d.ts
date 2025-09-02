@@ -21,10 +21,11 @@ interface UserAttributes {
     isPhoneVerified: boolean;
     googleId?: string | null;
     deviceId?: string | null;
+    isDeleted?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 }
-interface UserCreationAttributes extends Optional<UserAttributes, "id" | "role" | "isActive" | "isAdminVerified" | "isOnBoard" | "password" | "cnic" | "address" | "city" | "state" | "country" | "image" | "isEmailVerified" | "phone" | "isPhoneVerified" | "googleId" | "deviceId" | "createdAt" | "updatedAt"> {
+interface UserCreationAttributes extends Optional<UserAttributes, "id" | "role" | "isActive" | "isAdminVerified" | "isOnBoard" | "password" | "cnic" | "address" | "city" | "state" | "country" | "image" | "isEmailVerified" | "phone" | "isPhoneVerified" | "googleId" | "deviceId" | "createdAt" | "updatedAt" | "isDeleted"> {
 }
 export declare class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
     id: string;
@@ -46,6 +47,7 @@ export declare class User extends Model<UserAttributes, UserCreationAttributes> 
     isPhoneVerified: boolean;
     googleId: string | null;
     deviceId: string | null;
+    isDeleted: boolean;
     readonly createdAt: Date;
     readonly updatedAt: Date;
 }

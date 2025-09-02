@@ -1,7 +1,8 @@
 export enum UserRole {
-  ADMIN = "ADMIN",
-  PARENT = "PARENT",
-  TUTOR = "TUTOR",
+  ADMIN = 'ADMIN',
+  PARENT = 'PARENT',
+  TUTOR = 'TUTOR',
+  SUPER_ADMIN = 'SUPER_ADMIN',
 }
 
 // is on boar

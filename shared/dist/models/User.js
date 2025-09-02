@@ -87,6 +87,10 @@ function initUserModel(sequelize) {
             defaultValue: null,
             comment: "Device identifier for push notifications or device tracking",
         },
+        isDeleted: {
+            type: sequelize_1.DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
         createdAt: {
             type: sequelize_1.DataTypes.DATE,
             defaultValue: sequelize_1.DataTypes.NOW,

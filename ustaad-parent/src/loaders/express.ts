@@ -14,6 +14,8 @@ import { childRouter } from '../modules/child/child.routes';
 import cronRouter from '../modules/cron/cron.routes';
 import ParentController from '../modules/parent/parent.controller';
 
+import path from 'path';
+
 export default ({ app }: { app: express.Application }) => {
   // It shows the real origin IP in the heroku or Cloudwatch logs
   app.enable('trust proxy');
@@ -65,6 +67,12 @@ export default ({ app }: { app: express.Application }) => {
 
   app.use(cors());
   app.use(bodyParser.json());
+
+  // Serve static files from uploads directory
+  app.use(
+    "/uploads", 
+    express.static(path.join(__dirname, "../../uploads"))
+  );
 
   // Load all API routes
   app.use(config.api.prefix, tutorRouter);

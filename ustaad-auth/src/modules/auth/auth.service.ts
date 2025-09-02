@@ -94,6 +94,10 @@ export default class AuthService implements IAuthService {
         );
       }
 
+      if (user.isDeleted) {
+        throw new UnProcessableEntityError("User is deleted");
+      }
+
       const isPasswordMatch = await comparePassword(
         userSignInDTO.password,
         user.password
