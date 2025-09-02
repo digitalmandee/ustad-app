@@ -146,7 +146,7 @@ router.post(routes.ADD_CHILD_REVIEW, authenticateJwt,authorizeRoles("TUTOR"),tut
 router.get(
   routes.GET_TUTORS_LOCATIONS,
   authenticateJwt,
-  tutorSearchByLocationValidationRules(),
+  // tutorSearchByLocationValidationRules(),
   validateRequest,
   authorizeRoles("TUTOR", "PARENT"),
   tutorController.findTutorsByLocation

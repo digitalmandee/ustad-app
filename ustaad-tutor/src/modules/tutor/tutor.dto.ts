@@ -41,6 +41,7 @@ export interface FindTutorsByLocationDto {
   radius: number;
   limit?: number;
   offset?: number;
+  category?: string; // Subject filter (e.g., "math", "science", etc.)
 }
 
 

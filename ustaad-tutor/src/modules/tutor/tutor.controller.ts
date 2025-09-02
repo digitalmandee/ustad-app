@@ -471,12 +471,12 @@ export default class TutorController {
     }
   };
 
-  findTutorsByLocation = async (req: AuthenticatedRequest, res: Response) => {
+    findTutorsByLocation = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { latitude, longitude, radius, limit = 20, offset = 0 } = req.query as unknown as FindTutorsByLocationDto;
-      const results = await this.tutorService.findTutorsByLocation(latitude,longitude,radius,limit,offset);
-  
-      return sendSuccessResponse(res,InfoMessages.GENERIC.ITEM_GET_SUCCESSFULLY("Nearby Tutors"),200,results);
+      const { latitude, longitude, radius, limit = 20, offset = 0, category } = req.query as unknown as FindTutorsByLocationDto;
+      const results = await this.tutorService.findTutorsByLocation(latitude, longitude, radius, limit, offset, category);
+
+      return sendSuccessResponse(res, InfoMessages.GENERIC.ITEM_GET_SUCCESSFULLY("Nearby Tutors"), 200, results);
     } catch (e: any) {
       throw new GenericError(e, `Error from findTutorsByLocation ${__filename}`);
     }

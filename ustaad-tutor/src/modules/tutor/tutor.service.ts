@@ -189,7 +189,7 @@ export default class TutorService {
           {
             model: Tutor,
             attributes: [
-              "bankName",
+              "bankName", 
               "accountNumber",
               "resumeUrl",
               "idFrontUrl",
@@ -202,7 +202,50 @@ export default class TutorService {
         ],
       });
 
-      return user;
+      const experiences = await TutorExperience.findAll({ where: { tutorId: userId } });
+
+      // Calculate total experience in years
+      let totalExperience = 0;
+      experiences.forEach(exp => {
+        const startDate = new Date(exp.startDate);
+        const endDate = new Date(exp.endDate);
+        const diffInYears = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+        totalExperience += diffInYears;
+      });
+
+      const sessions = await TutorSessions.findAll({ where: { tutorId: userId, status: "active" } });
+
+      // Get today's day name in lowercase
+      const today = new Date().toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase();
+
+      // Count sessions scheduled for today
+      let totalSessions = 0;
+      sessions.forEach(session => {
+        // Check if today is in the session's days of week
+        if (session.daysOfWeek.some(day => {
+          if (day.includes('-')) {
+            // Handle ranges like "mon-fri"
+            const [start, end] = day.split('-');
+            const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+            const startIdx = days.indexOf(start);
+            const endIdx = days.indexOf(end);
+            const todayIdx = days.indexOf(today);
+            return todayIdx >= startIdx && todayIdx <= endIdx;
+          } else {
+            // Handle individual days
+            return day === today;
+          }
+        })) {
+          totalSessions++;
+        }
+      });
+
+      return {
+        user,
+        totalExperience: Math.round(totalExperience * 10) / 10, // Round to 1 decimal place
+        totalSessions
+      };
+
     } catch (error) {
       console.error("Error in getProfile:", error);
       throw error;
@@ -565,40 +608,125 @@ export default class TutorService {
   }
 
   async findTutorsByLocation(
-    parentLat: number,
-    parentLng: number,
-    radiusKm: number,
+    parentLat: number | null,
+    parentLng: number | null, 
+    radiusKm: number | null,
     limit = 20,
-    offset = 0
+    offset = 0,
+    category?: string
   ) {
     try {
+      console.log("Finding tutors with params:", { parentLat, parentLng, radiusKm, category });
+
+      // Build basic query conditions
+      let whereCondition: any = {};
+      let tutorWhereCondition: any = {};
+
+      // Add category filter if provided
+      if (category) {
+        console.log("Adding category filter for:", category);
+        tutorWhereCondition.subjects = {
+          [Op.contains]: [category.toLowerCase()],
+        };
+      }
+      
+      console.log("tutorWhereCondition:", tutorWhereCondition);
+
+      // If location params not provided, return all tutors with category filter
+      if (!parentLat || !parentLng || !radiusKm) {
+        console.log("No location params, getting all tutors");
+        
+        // Get all tutor locations with user and tutor info
+        let queryOptions: any = {
+          include: [
+            {
+              model: User,
+              as: "tutor",
+              attributes: ["id", "fullName", "email", "phone", "image"],
+              include: [
+                {
+                  model: Tutor,
+                  attributes: ["subjects", "about", "grade"],
+                  required: false, // Always include Tutor data
+                }
+              ],
+              required: true, // Make sure User is always included
+            }
+          ],
+          limit: category ? 1000 : limit, // Get more results if filtering by category
+          offset: category ? 0 : offset,
+        };
+
+        // If category filter, add it to the Tutor include
+        if (Object.keys(tutorWhereCondition).length > 0) {
+          queryOptions.include[0].include[0].where = tutorWhereCondition;
+          queryOptions.include[0].include[0].required = true;
+        }
+
+        const allTutors = await TutorLocation.findAll(queryOptions);
+        
+        console.log("Raw query result sample:", JSON.stringify(allTutors[0], null, 2));
+        
+        // Remove duplicates by tutorId (in case a tutor has multiple locations)
+        const uniqueTutors = allTutors.filter((tutor, index, self) => 
+          index === self.findIndex(t => t.tutorId === tutor.tutorId)
+        );
+        
+        // Apply pagination if we were filtering by category
+        const finalResults = category ? 
+          uniqueTutors.slice(offset, offset + limit) : 
+          uniqueTutors;
+        
+        console.log("Found tutors:", allTutors.length, "Unique tutors:", uniqueTutors.length, "Final results:", finalResults.length);
+        return finalResults;
+      }
+
+      console.log("Using location-based search");
+
       // Generate geohash for parent location
       const parentGeohash = geohash.encode(parentLat, parentLng);
 
       // Calculate geohash precision based on radius
-      // For radius ~5km, use precision 5
-      // For radius ~1km, use precision 6
-      // For radius ~100m, use precision 7
       const precision = radiusKm <= 1 ? 6 : radiusKm <= 5 ? 5 : 4;
       const parentGeohashPrefix = parentGeohash.substring(0, precision);
 
+      whereCondition.geoHash = {
+        [Op.like]: `${parentGeohashPrefix}%`,
+      };
+
       // Find tutors within the geohash area
-      const nearbyTutors = await TutorLocation.findAll({
-        where: {
-          geoHash: {
-            [Op.like]: `${parentGeohashPrefix}%`,
-          },
-        },
+      let locationQueryOptions: any = {
+        where: whereCondition,
         include: [
           {
             model: User,
             as: "tutor",
             attributes: ["id", "fullName", "email", "phone", "image"],
-          },
+            include: [
+              {
+                model: Tutor,
+                attributes: ["subjects", "about", "grade"],
+                required: false, // Always include Tutor data
+              }
+            ],
+            required: true, // Make sure User is always included
+          }
         ],
-        limit,
-        offset,
-      });
+        limit: category ? 1000 : limit, // Get more results if filtering by category
+        offset: category ? 0 : offset,
+      };
+
+      // If category filter, add it to the Tutor include
+      if (Object.keys(tutorWhereCondition).length > 0) {
+        locationQueryOptions.include[0].include[0].where = tutorWhereCondition;
+        locationQueryOptions.include[0].include[0].required = true;
+      }
+
+      const nearbyTutors = await TutorLocation.findAll(locationQueryOptions);
+      
+      console.log("Raw nearby tutors result sample:", JSON.stringify(nearbyTutors[0], null, 2));
+      
+      console.log("Found nearby tutors:", nearbyTutors.length);
 
       // Filter by actual distance and sort by distance
       const tutorsWithDistance = nearbyTutors
@@ -617,7 +745,18 @@ export default class TutorService {
         .filter((tutor) => tutor.distance <= radiusKm)
         .sort((a, b) => a.distance - b.distance);
 
-      return tutorsWithDistance;
+      // Remove duplicates by tutorId (in case a tutor has multiple locations)
+      const uniqueTutors = tutorsWithDistance.filter((tutor, index, self) => 
+        index === self.findIndex(t => t.tutorId === tutor.tutorId)
+      );
+
+      // Apply pagination if we were filtering by category
+      const finalResults = category ? 
+        uniqueTutors.slice(offset, offset + limit) : 
+        uniqueTutors;
+
+      console.log("Final unique tutors:", uniqueTutors.length, "Final results:", finalResults.length);
+      return finalResults;
     } catch (error) {
       console.error("Error in findTutorsByLocation:", error);
       throw error;

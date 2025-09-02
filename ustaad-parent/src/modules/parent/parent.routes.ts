@@ -9,11 +9,11 @@ import {
   createPaymentMethodValidationRules,
   updatePaymentMethodValidationRules,
   deletePaymentMethodValidationRules,
-    } from "./parent.validators";
+} from "./parent.validators";
 import routes from "../../routes/routes";
 import { authenticateJwt } from "../../middlewares/auth";
-import { Router } from 'express';
-import ParentController from './parent.controller';
+import { Router } from "express";
+import ParentController from "./parent.controller";
 import { authorizeRoles } from "../../middlewares/role-auth";
 
 const tutorController = new TutorController();
@@ -45,7 +45,12 @@ router.post(
   tutorController.editProfile
 );
 
-router.get(routes.PARENT_Profile, authenticateJwt, authorizeRoles("PARENT"), tutorController.getProfile);
+router.get(
+  routes.PARENT_Profile,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  tutorController.getProfile
+);
 
 // Payment Method routes
 router.post(
@@ -63,7 +68,6 @@ router.get(
   authorizeRoles("PARENT"),
   parentController.getPaymentMethods
 );
-
 
 router.put(
   routes.PARENT_PAYMENT_METHODS,
@@ -83,16 +87,20 @@ router.delete(
   parentController.deletePaymentMethod
 );
 
-
 router.patch(
   routes.OFFER_UPDATE_STATUS,
   authenticateJwt,
   authorizeRoles("PARENT"),
   validateRequest,
   parentController.updateOffer
-)
+);
 
-router.get(routes.GET_TUTOR_PROFILE, authenticateJwt, authorizeRoles("PARENT"), parentController.getTutorProfile);
+router.get(
+  routes.GET_TUTOR_PROFILE,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.getTutorProfile
+);
 
 // Subscription routes
 router.get(
@@ -123,4 +131,4 @@ router.post(
 //   parentController.handleStripeWebhook
 // );
 
-  export { router as tutorRouter };
+export { router as tutorRouter };
