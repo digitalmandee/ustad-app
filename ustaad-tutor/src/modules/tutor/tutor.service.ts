@@ -774,9 +774,9 @@ export default class TutorService {
 
     return sessions;
   }
-  async getTutorSession(userId: string) {
+  async getTutorSession(userId: string, sessionId: string ) {
     const session = await TutorSessionsDetail.findAll({
-      where: { tutorId: userId },
+      where: { tutorId: userId, sessionId: sessionId },
       include: [
         {
           model: User,
