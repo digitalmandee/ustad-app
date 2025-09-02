@@ -21,7 +21,7 @@ const uploadFields = upload.fields([
 router.get(
   routes.STATS,
   authenticateJwt,
-  authorizeRoles("ADMIN"),
+  authorizeRoles("SUPER_ADMIN"),
   adminController.getStats
 );
 
@@ -29,14 +29,14 @@ router.get(
 router.get(
   routes.PARENTS,
   authenticateJwt,
-  authorizeRoles("ADMIN"),
+  authorizeRoles("SUPER_ADMIN"),
   adminController.getAllParents
 );
 
 router.get(
   routes.PARENT_BY_ID,
   authenticateJwt,
-  authorizeRoles("ADMIN"),
+  authorizeRoles("SUPER_ADMIN"),
   adminController.getParentById
 );
 
@@ -44,15 +44,59 @@ router.get(
 router.get(
   routes.TUTORS,
   authenticateJwt,
-  authorizeRoles("ADMIN"),
+  authorizeRoles("SUPER_ADMIN"),
   adminController.getAllTutors
 );
 
 router.get(
   routes.TUTOR_BY_ID,
   authenticateJwt,
-  authorizeRoles("ADMIN"),
+  authorizeRoles("SUPER_ADMIN"),
   adminController.getTutorById
+);
+
+// Payment Requests
+router.get(
+  routes.PAYMENT_REQUESTS,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN"),
+  adminController.getAllPaymentRequests
+);
+
+router.get(
+  routes.PAYMENT_REQUEST_BY_ID,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN"),
+  adminController.getPaymentRequestById
+);
+
+router.put(
+  routes.PAYMENT_REQUEST_STATUS,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN"),
+  adminController.updatePaymentRequestStatus
+);
+
+// Admin user management
+router.post(
+  routes.CREATE_ADMIN,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN"),
+  adminController.createAdmin
+);
+
+router.get(
+  routes.GET_ALL_ADMINS,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN"),
+  adminController.getAllAdmins
+);
+
+router.delete(
+  routes.DELETE_ADMIN,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN"),
+  adminController.deleteAdmin
 );
 
 export { router as adminRouter };

@@ -10,6 +10,7 @@ import { errorHandler } from '../middlewares';
 import config from '../config';
 
 import { tutorRouter } from '../modules/tutor/tutor.routes';
+import path from 'path';
 
 
 export default ({ app }: { app: express.Application }) => {
@@ -17,6 +18,23 @@ export default ({ app }: { app: express.Application }) => {
   app.enable('trust proxy');
   // Set security HTTP headers
   app.use(helmet());
+
+  // app.use(
+  //   helmet({
+  //     contentSecurityPolicy: {
+  //       useDefaults: true,
+  //       directives: {
+  //         "img-src": [
+  //           "'self'",
+  //           "data:",
+  //           "http://localhost:303",   // your image server
+  //           "http://localhost:3000",  // your frontend (needed if it embeds images directly)
+  //         ],
+  //       },
+  //     },
+  //   })
+  // );
+
   // Body parser, reading data from body into req.body
   app.use(express.json({ limit: '10kb' }));
   app.use(express.urlencoded({ extended: true, limit: '10kb' }));
@@ -36,6 +54,20 @@ export default ({ app }: { app: express.Application }) => {
   );
 
   app.use(compression());
+
+  app.use((req, res, next) => {
+    res.removeHeader("Content-Security-Policy");
+    next();
+  });
+
+  app.use((req, res, next) => {
+    res.removeHeader("Cross-Origin-Resource-Policy");
+    // or explicitly allow all:
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    next();
+  });
+  
+  
 
   /**
    * Health Check endpoints
@@ -57,6 +89,12 @@ export default ({ app }: { app: express.Application }) => {
 
   app.use(cors());
   app.use(bodyParser.json());
+
+  // Serve static files from uploads directory
+  app.use(
+    "/uploads", 
+    express.static(path.join(__dirname, "../../uploads"))
+  );
 
   // Load all API routes
   app.use(config.api.prefix, tutorRouter);

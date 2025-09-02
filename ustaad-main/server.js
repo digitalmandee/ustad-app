@@ -113,7 +113,39 @@ app.get("/", (req, res) => {
   });
 });
 
+
+// Simple proxy for parent documents
+app.get('/documents/parent/*', async (req, res) => {
+  const documentPath = req.params[0];
+  try {
+    const response = await fetch(`http://localhost:301/${documentPath}`);
+    const buffer = await response.buffer();
+    res.set('Content-Type', response.headers.get('content-type'));
+    res.send(buffer);
+  } catch (error) {
+    res.status(404).json({ error: 'Document not found' });
+  }
+});
+
+// Simple proxy for tutor documents  
+app.get('/documents/tutor/*', async (req, res) => {
+  const documentPath = req.params[0];
+  try {
+    const response = await fetch(`http://localhost:303/${documentPath}`);
+
+    console.log(response);
+    const buffer = await response.buffer();
+    res.set('Content-Type', response.headers.get('content-type'));
+    res.send(buffer);
+  } catch (error) {
+    res.status(404).json({ error: 'Document not found' });
+  }
+});
+
 app.use(express.json());
+
+
+
 
 // app.listen(PORT, () => {
 //   console.info(`
