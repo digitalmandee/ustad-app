@@ -26,6 +26,7 @@ import { initMessageModel, Message } from "./Message";
 import { initOfferModel, Offer } from "./Offer";
 import { initTutorSessionsDetailModel, TutorSessionsDetail } from "./TutorSessionsDetail";
 import { initTutorTransactionModel, TutorTransaction } from "./TutorTransaction";
+import { initFileModel, File } from "./File";
 
 export function initAllModels(sequelize: Sequelize) {
   initUserModel(sequelize);
@@ -58,7 +59,7 @@ export function initAllModels(sequelize: Sequelize) {
   initTutorSessionsModel(sequelize);
   initTutorSessionsDetailModel(sequelize);
   initPaymentMethodModel(sequelize);
-  
+  initFileModel(sequelize);
   // Initialize remaining chat models
 }
 
@@ -83,6 +84,7 @@ export {
   TutorSessionsDetail,
   PaymentMethod,
   TutorTransaction,
+  File,
   // Chat models
   Conversation,
   ConversationParticipant,

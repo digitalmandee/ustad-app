@@ -9,6 +9,8 @@ import { NotFoundError } from '../errors';
 import { errorHandler } from '../middlewares';
 import config from '../config';
 import { chatRouter } from '../modules/chat/chat.routes'
+import { fileRouter } from '../modules/file/file.routes'
+import path from 'path';
 
 export default ({ app }: { app: express.Application }) => {
   // It shows the real origin IP in the heroku or Cloudwatch logs
@@ -55,9 +57,13 @@ export default ({ app }: { app: express.Application }) => {
 
   app.use(cors());
   app.use(bodyParser.json());
-
+  app.use(
+    "/uploads", 
+    express.static(path.join(__dirname, "../../uploads"))
+  );
   // Load all API routes
   app.use(config.api.prefix, chatRouter);
+  app.use(config.api.prefix, fileRouter);
 
   app.all('*', async (req, res) => {
     throw new NotFoundError(null);

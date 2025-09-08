@@ -8,6 +8,10 @@ const routes = {
   PAYMENT_REQUEST_BY_ID: '/admin/payment-requests/:id',
   PAYMENT_REQUEST_STATUS: '/admin/payment-requests',
   
+  // User management
+  PENDING_ONBOARD_USERS: '/admin/users/pending-onboard',
+  APPROVE_ONBOARDING: '/admin/users/approve-onboarding',
+  
   // Admin user management
   CREATE_ADMIN: '/admin/users/create',
   GET_ALL_ADMINS: '/admin/users/admins',

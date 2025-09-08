@@ -18,7 +18,8 @@ export enum MessageType {
   IMAGE = 'IMAGE',
   FILE = 'FILE',
   SYSTEM = 'SYSTEM',
-  OFFER = 'OFFER'
+  OFFER = 'OFFER',
+  AUDIO='AUDIO'
 }
 
 export enum ConversationType {

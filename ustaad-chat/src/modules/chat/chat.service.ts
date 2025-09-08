@@ -37,6 +37,7 @@ import {
   Message,
   ConversationParticipant,
   sequelize,
+  File,
 } from '@ustaad/shared';
 
 interface MessageMetadata {
@@ -116,9 +117,34 @@ export default class ChatService {
         );
         (message.metadata as MessageMetadata).offer = savedOfferdata;
       }
-      
 
-
+      if (messageData.type == MessageType.FILE) {
+        const file = await File.findOne({
+          where: {
+            id: messageData.fileId,
+            conversationId: messageData.conversationId, // safety check
+          },
+          transaction,
+        });
+        if (!file) {
+          throw new BadRequestError('File not found or not accessible');
+        }
+        await message.update(
+          {
+            metadata: {
+              ...(message.metadata || {}),
+              id: file.id,
+              url: file.url,
+              filename: file.filename,
+              fileOriginalName: file.originalName,
+              mimetype: file.mimetype,
+              size: file.size,
+              thumbnailUrl: file.thumbnailUrl,
+            },
+          },
+          { transaction }
+        );
+      }
 
       await transaction.commit();
       return this.formatMessageResponse(message);
@@ -339,7 +365,14 @@ export default class ChatService {
         throw new BadRequestError('Direct conversations must have exactly 2 participants');
       }
       console.log('hello2 participantIds');
+      const users = await User.findAll({
+        where: { id: participantIds },
+        attributes: ['id'],
+      });
 
+      if (users.length !== participantIds.length) {
+        throw new BadRequestError('One or more participants do not exist');
+      }
       // Check if direct conversation already exists
       if (data.type === ConversationType.DIRECT) {
         const existingConversation = await this.findDirectConversation(
@@ -539,7 +572,23 @@ export default class ChatService {
       };
       delete msgJson.offer; // optional: remove the root offer property
     }
-
+    if (
+      [MessageType.FILE, MessageType.IMAGE, MessageType.AUDIO].includes(msgJson.type) &&
+      msgJson.file
+    ) {
+      msgJson.metadata = {
+        ...(msgJson.metadata || {}),
+        file: {
+          id: msgJson.file.id,
+          url: msgJson.file.url,
+          filename: msgJson.file.originalName,
+          mimetype: msgJson.file.mimetype,
+          size: msgJson.file.size,
+          thumbnailUrl: msgJson.file.thumbnailUrl,
+        },
+      };
+      delete msgJson.file;
+    }
     return {
       id: msgJson.id,
       conversationId: msgJson.conversationId,

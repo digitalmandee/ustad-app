@@ -8,6 +8,11 @@ export default {
   GET_ALL_CONVERSATION:'/chat/conversations',
   GET_ID_CONVERSATION:'/chat/conversations/:conversationId',
 
+
+
+  SAVE_FILE:'/chat/files/upload',
+  GET_FILE:'/chat/files/:fileId',
+  DELETE_FILE:'/chat/files/:fileId',
 };
 
 
