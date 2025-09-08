@@ -99,4 +99,20 @@ router.delete(
   adminController.deleteAdmin
 );
 
+// Get pending onboard users
+router.get(
+  routes.PENDING_ONBOARD_USERS,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN"),
+  adminController.getPendingOnboardUsers
+);
+
+// Approve user onboarding
+router.put(
+  routes.APPROVE_ONBOARDING,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN"),
+  adminController.approveOnboarding
+);
+
 export { router as adminRouter };

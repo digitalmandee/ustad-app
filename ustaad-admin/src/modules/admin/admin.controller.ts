@@ -160,5 +160,45 @@ export default class AdminController {
       throw new GenericError(e, ` Error from deleteAdmin ${__filename}`);
     }
   };
+
+  getPendingOnboardUsers = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      
+      const data = await this.adminService.getPendingOnboardUsers(page, limit);
+      sendSuccessResponse(res, "Pending onboard tutors fetched successfully", 200, data);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from getPendingOnboardUsers ${__filename}`);
+    }
+  };
+
+  approveOnboarding = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { userId } = req.body;
+
+      // Validate required field
+      if (!userId) {
+        return sendErrorResponse(res, "User ID is required", 400);
+      }
+
+      // Validate userId format (should be UUID)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(userId)) {
+        return sendErrorResponse(res, "Invalid user ID format", 400);
+      }
+
+      const data = await this.adminService.approveOnboarding(userId);
+      sendSuccessResponse(res, "User onboarding approved successfully", 200, data);
+    } catch (e: any) {
+      if (e.message === 'User not found') {
+        return sendErrorResponse(res, e.message, 404);
+      }
+      if (e.message === 'Cannot approve deleted user' || e.message === 'User is already approved') {
+        return sendErrorResponse(res, e.message, 409);
+      }
+      throw new GenericError(e, ` Error from approveOnboarding ${__filename}`);
+    }
+  };
   
 }

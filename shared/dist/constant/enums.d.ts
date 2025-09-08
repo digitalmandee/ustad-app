@@ -15,7 +15,8 @@ export declare enum MessageType {
     IMAGE = "IMAGE",
     FILE = "FILE",
     SYSTEM = "SYSTEM",
-    OFFER = "OFFER"
+    OFFER = "OFFER",
+    AUDIO = "AUDIO"
 }
 export declare enum ConversationType {
     DIRECT = "DIRECT",

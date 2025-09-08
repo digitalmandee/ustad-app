@@ -23,6 +23,7 @@ var MessageType;
     MessageType["FILE"] = "FILE";
     MessageType["SYSTEM"] = "SYSTEM";
     MessageType["OFFER"] = "OFFER";
+    MessageType["AUDIO"] = "AUDIO";
 })(MessageType || (exports.MessageType = MessageType = {}));
 var ConversationType;
 (function (ConversationType) {

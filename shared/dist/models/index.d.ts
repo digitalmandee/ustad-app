@@ -23,5 +23,6 @@ import { Message } from "./Message";
 import { Offer } from "./Offer";
 import { TutorSessionsDetail } from "./TutorSessionsDetail";
 import { TutorTransaction } from "./TutorTransaction";
+import { File } from "./File";
 export declare function initAllModels(sequelize: Sequelize): void;
-export { Child, ChildNotes, ChildReview, Parent, Session, Subject, Tutor, TutorEducation, TutorExperience, TutorSettings, TutorReview, User, Otp, TutorLocation, ParentSubscription, ParentTransaction, TutorSessions, TutorSessionsDetail, PaymentMethod, TutorTransaction, Conversation, ConversationParticipant, Message, Offer };
+export { Child, ChildNotes, ChildReview, Parent, Session, Subject, Tutor, TutorEducation, TutorExperience, TutorSettings, TutorReview, User, Otp, TutorLocation, ParentSubscription, ParentTransaction, TutorSessions, TutorSessionsDetail, PaymentMethod, TutorTransaction, File, Conversation, ConversationParticipant, Message, Offer };

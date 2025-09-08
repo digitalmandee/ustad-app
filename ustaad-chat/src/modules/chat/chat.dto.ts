@@ -6,7 +6,8 @@ export interface ICreateMessageDto {
   type?: MessageType;
   replyToId?: string;
   metadata?: object;
-  offer?:object
+  offer?:object;
+  fileId?: string; 
 }
 
 export interface OfferData {

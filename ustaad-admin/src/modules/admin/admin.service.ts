@@ -326,4 +326,76 @@ export default class AdminService {
     await admin.save();
     return admin;
   }
+
+  async getPendingOnboardUsers(page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
+
+    const { rows, count } = await User.findAndCountAll({
+      where: {
+        role: UserRole.TUTOR,
+        isOnBoard: IsOnBaord.PENDING,
+        isDeleted: false,
+      },
+      attributes: [
+        "id", 
+        "fullName", 
+        "email", 
+        "phone", 
+        "role", 
+        "image",
+        "isOnBoard",
+        "isAdminVerified",
+        "isEmailVerified",
+        "isPhoneVerified",
+        "createdAt",
+        "updatedAt"
+      ],
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+    });
+
+    return {
+      items: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+        hasNext: page * limit < count,
+        hasPrev: page > 1,
+      },
+    };
+  }
+
+  async approveOnboarding(userId: string) {
+    const user = await User.findByPk(userId);
+    
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    if (user.isDeleted) {
+      throw new Error("Cannot approve deleted user");
+    }
+
+    if (user.isOnBoard === IsOnBaord.APPROVED) {
+      throw new Error("User is already approved");
+    }
+
+    // Update user onboarding status
+    await user.update({
+      isOnBoard: IsOnBaord.APPROVED,
+      isAdminVerified: true,
+    });
+
+    // Return updated user without password
+    const updatedUser = await User.findByPk(userId, {
+      attributes: {
+        exclude: ["password"]
+      }
+    });
+
+    return updatedUser;
+  }
 }
