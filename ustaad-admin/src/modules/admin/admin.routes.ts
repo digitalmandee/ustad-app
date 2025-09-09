@@ -21,7 +21,7 @@ const uploadFields = upload.fields([
 router.get(
   routes.STATS,
   authenticateJwt,
-  authorizeRoles("SUPER_ADMIN"),
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
   adminController.getStats
 );
 
@@ -29,14 +29,14 @@ router.get(
 router.get(
   routes.PARENTS,
   authenticateJwt,
-  authorizeRoles("SUPER_ADMIN"),
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
   adminController.getAllParents
 );
 
 router.get(
   routes.PARENT_BY_ID,
   authenticateJwt,
-  authorizeRoles("SUPER_ADMIN"),
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
   adminController.getParentById
 );
 
@@ -44,14 +44,14 @@ router.get(
 router.get(
   routes.TUTORS,
   authenticateJwt,
-  authorizeRoles("SUPER_ADMIN"),
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
   adminController.getAllTutors
 );
 
 router.get(
   routes.TUTOR_BY_ID,
   authenticateJwt,
-  authorizeRoles("SUPER_ADMIN"),
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
   adminController.getTutorById
 );
 
@@ -59,21 +59,21 @@ router.get(
 router.get(
   routes.PAYMENT_REQUESTS,
   authenticateJwt,
-  authorizeRoles("SUPER_ADMIN"),
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
   adminController.getAllPaymentRequests
 );
 
 router.get(
   routes.PAYMENT_REQUEST_BY_ID,
   authenticateJwt,
-  authorizeRoles("SUPER_ADMIN"),
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
   adminController.getPaymentRequestById
 );
 
 router.put(
   routes.PAYMENT_REQUEST_STATUS,
   authenticateJwt,
-  authorizeRoles("SUPER_ADMIN"),
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
   adminController.updatePaymentRequestStatus
 );
 
@@ -103,7 +103,7 @@ router.delete(
 router.get(
   routes.PENDING_ONBOARD_USERS,
   authenticateJwt,
-  authorizeRoles("SUPER_ADMIN"),
+  authorizeRoles("SUPER_ADMIN", "ADMIN" ),
   adminController.getPendingOnboardUsers
 );
 
@@ -111,7 +111,7 @@ router.get(
 router.put(
   routes.APPROVE_ONBOARDING,
   authenticateJwt,
-  authorizeRoles("SUPER_ADMIN"),
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
   adminController.approveOnboarding
 );
 
