@@ -2,8 +2,8 @@
 import { Model, DataTypes, Optional, Sequelize } from "sequelize";
 
 
-import { UserRole } from "../constant/enums";
-import { IsOnBaord } from "../constant/enums";
+import { UserRole } from "@ustaad/shared";
+import { IsOnBaord } from "@ustaad/shared";
 
 interface UserAttributes {
   id: string;

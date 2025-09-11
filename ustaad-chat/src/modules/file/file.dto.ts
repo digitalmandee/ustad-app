@@ -1,4 +1,4 @@
-import { MessageType } from "../../constant/enums";
+import { MessageType } from "@ustaad/shared";
 
 // dto/file.dto.ts
 export interface SaveFileDto {

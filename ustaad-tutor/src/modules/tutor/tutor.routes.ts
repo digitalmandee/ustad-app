@@ -10,7 +10,8 @@ import {
   tutorSettingsValidationRules,
   tutorLocationValidationRules,
   paymentRequestValidationRules,
-  tutorSearchByLocationValidationRules
+  tutorSearchByLocationValidationRules,
+  helpRequestValidationRules
 } from "./tutor.validators";
 import routes from "../../routes/routes";
 import { authenticateJwt } from "../../middlewares/auth";
@@ -200,6 +201,33 @@ router.get(routes.GET_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR"), t
 router.post(routes.ADD_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR"), tutorController.addTutorSession);
 router.delete(routes.DELETE_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR"), tutorController.deleteTutorSession);
 router.put(routes.EDIT_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR"), tutorController.editTutorSession);
+
+// Analytics routes
+router.get(routes.MONTHLY_EARNINGS, authenticateJwt, authorizeRoles("TUTOR"), tutorController.getMonthlyEarnings);
+
+// Help Request routes
+router.post(
+  routes.HELP_REQUEST,
+  authenticateJwt,
+  helpRequestValidationRules(),
+  validateRequest,
+  tutorController.createHelpRequest
+);
+
+router.get(
+  routes.GET_HELP_REQUESTS,
+  authenticateJwt,
+  tutorController.getHelpRequestsAgainstMe
+);
+
+// Contracts routes
+router.get(
+  routes.GET_CONTRACTS,
+  authenticateJwt,
+  tutorController.getContracts
+);
+
+
 
 
 

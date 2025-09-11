@@ -1,4 +1,4 @@
-import { MessageType } from "../../constant/enums";
+import { MessageType } from "@ustaad/shared";
 
 export interface ICreateMessageDto {
   conversationId: string;

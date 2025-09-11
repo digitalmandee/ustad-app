@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
+exports.HelpRequestStatus = exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
 var UserRole;
 (function (UserRole) {
     UserRole["ADMIN"] = "ADMIN";
@@ -89,3 +89,11 @@ var TutorSessionStatus;
     TutorSessionStatus["CANCELLED_BY_PARENT"] = "CANCELLED_BY_PARENT";
     TutorSessionStatus["CANCELLED_BY_TUTOR"] = "CANCELLED_BY_TUTOR";
 })(TutorSessionStatus || (exports.TutorSessionStatus = TutorSessionStatus = {}));
+var HelpRequestStatus;
+(function (HelpRequestStatus) {
+    HelpRequestStatus["OPEN"] = "OPEN";
+    HelpRequestStatus["IN_PROGRESS"] = "IN_PROGRESS";
+    HelpRequestStatus["RESOLVED"] = "RESOLVED";
+    HelpRequestStatus["CLOSED"] = "CLOSED";
+    HelpRequestStatus["CANCELLED"] = "CANCELLED";
+})(HelpRequestStatus || (exports.HelpRequestStatus = HelpRequestStatus = {}));

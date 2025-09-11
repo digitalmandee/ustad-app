@@ -1,4 +1,4 @@
-import { OtpPurpose, UserRole } from "../../constant/enums";
+import { OtpPurpose, UserRole } from "@ustaad/shared";
 
 export interface ISignUpCreateDTO {
   role: UserRole; // optional, default to PARENT in model
@@ -22,4 +22,12 @@ export interface IVerifyEmailOtpDTO {
   userId: string;
   otp: string;
   purpose: OtpPurpose;
+}
+
+export interface IGoogleLoginDTO {
+  email: string;
+  googleId: string;
+  fullName: string;
+  image?: string;
+  accessToken?: string;
 }

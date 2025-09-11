@@ -71,3 +71,10 @@ export declare enum TutorSessionStatus {
     CANCELLED_BY_PARENT = "CANCELLED_BY_PARENT",
     CANCELLED_BY_TUTOR = "CANCELLED_BY_TUTOR"
 }
+export declare enum HelpRequestStatus {
+    OPEN = "OPEN",
+    IN_PROGRESS = "IN_PROGRESS",
+    RESOLVED = "RESOLVED",
+    CLOSED = "CLOSED",
+    CANCELLED = "CANCELLED"
+}

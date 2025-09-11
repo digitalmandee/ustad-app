@@ -17,23 +17,11 @@ export default ({ app }: { app: express.Application }) => {
   // It shows the real origin IP in the heroku or Cloudwatch logs
   app.enable('trust proxy');
   // Set security HTTP headers
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    frameguard: false,
+  }));
 
-  // app.use(
-  //   helmet({
-  //     contentSecurityPolicy: {
-  //       useDefaults: true,
-  //       directives: {
-  //         "img-src": [
-  //           "'self'",
-  //           "data:",
-  //           "http://localhost:303",   // your image server
-  //           "http://localhost:3000",  // your frontend (needed if it embeds images directly)
-  //         ],
-  //       },
-  //     },
-  //   })
-  // );
 
   // Body parser, reading data from body into req.body
   app.use(express.json({ limit: '10kb' }));
@@ -56,14 +44,16 @@ export default ({ app }: { app: express.Application }) => {
   app.use(compression());
 
   app.use((req, res, next) => {
+    // Force clear conflicting headers
     res.removeHeader("Content-Security-Policy");
-    next();
-  });
-
-  app.use((req, res, next) => {
     res.removeHeader("Cross-Origin-Resource-Policy");
-    // or explicitly allow all:
+    res.removeHeader("Cross-Origin-Opener-Policy");
+    res.removeHeader("X-Frame-Options");
+
+    // Or explicitly allow embedding from anywhere
+    res.setHeader("Content-Security-Policy", "frame-ancestors *");
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+
     next();
   });
   

@@ -1,4 +1,4 @@
-import { IsOnBaord, UserRole } from "../../constant/enums";
+import { IsOnBaord, UserRole } from "@ustaad/shared";
 import {
   User,
   Parent,
@@ -10,7 +10,7 @@ import {
   ParentSubscription,
   TutorTransaction,
 } from "@ustaad/shared";
-import { TutorPaymentStatus } from "@ustaad/shared/dist/constant/enums";
+import { TutorPaymentStatus } from "@ustaad/shared";
 import { Op } from "sequelize";
 import bcrypt from "bcrypt";
 

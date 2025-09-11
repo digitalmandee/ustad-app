@@ -1,6 +1,6 @@
 import { body, query } from "express-validator";
 import constant from "../../constant/constant";
-import { UserRole } from "../../constant/enums";
+import { UserRole } from "@ustaad/shared";
 
 export const tutorOnboardingValidationRules = () => {
   return [
@@ -237,3 +237,28 @@ export const paymentRequestValidationRules = () => [
     .isFloat({ min: 0.01 }).withMessage("Amount must be a positive number")
     .toFloat(),
 ];
+
+export const helpRequestValidationRules = () => {
+  return [
+    body("subject")
+      .notEmpty()
+      .withMessage("Subject is required")
+      .isString()
+      .withMessage("Subject must be a string")
+      .trim()
+      .isLength({ min: 5, max: 200 })
+      .withMessage("Subject must be between 5 and 200 characters"),
+    body("message")
+      .notEmpty()
+      .withMessage("Message is required")
+      .isString()
+      .withMessage("Message must be a string")
+      .trim()
+      .isLength({ min: 10, max: 1000 })
+      .withMessage("Message must be between 10 and 1000 characters"),
+    body("againstId")
+      .optional()
+      .isUUID()
+      .withMessage("Against ID must be a valid UUID"),
+  ];
+};

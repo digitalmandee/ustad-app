@@ -5,7 +5,7 @@ import InfoMessages from "../../constant/messages";
 import ParentService from "./parent.service";
 import { AuthenticatedRequest } from "../../middlewares/auth";
 // import { User } from "../../models/User";
-import { IsOnBaord, OfferStatus } from "../../constant/enums";
+import { IsOnBaord, OfferStatus } from "@ustaad/shared";
 import Stripe from "stripe";
 
 import { User } from "@ustaad/shared";
@@ -462,6 +462,22 @@ export default class ParentController {
       const errorMessage =
         error?.message || "Something went wrong while creating review";
       return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  getMonthlySpending = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: parentId } = req.user;
+      const spending = await this.parentService.getMonthlySpending(parentId);
+      return sendSuccessResponse(
+        res, 
+        "Monthly spending retrieved successfully", 
+        200, 
+        spending
+      );
+    } catch (error: any) {
+      console.error('Get monthly spending error:', error);
+      throw new GenericError(error, `Error from getMonthlySpending ${__filename}`);
     }
   };
 }
