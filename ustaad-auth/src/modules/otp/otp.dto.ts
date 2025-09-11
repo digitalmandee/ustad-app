@@ -1,4 +1,4 @@
-import { OtpPurpose, OtpType } from "../../constant/enums"
+import { OtpPurpose, OtpType } from "@ustaad/shared"
 
 
 export interface IOtpSendDTO {

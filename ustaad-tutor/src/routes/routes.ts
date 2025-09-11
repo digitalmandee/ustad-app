@@ -32,6 +32,16 @@ const routes = {
   GET_TUTORS_LOCATIONS: "/tutor/locations",
   ADD_PAYMENT_REQUEST: "/tutor/payment-request",
   GET_PAYMENT_REQUESTS: "/tutor/payment-requests",
+  
+  // Analytics
+  MONTHLY_EARNINGS: "/tutor/monthly-earnings",
+  
+  // Help Request
+  HELP_REQUEST: "/tutor/help-requests",
+  GET_HELP_REQUESTS: "/tutor/help-requests",
+  
+  // Contracts
+  GET_CONTRACTS: "/tutor/contracts",
 
 
 

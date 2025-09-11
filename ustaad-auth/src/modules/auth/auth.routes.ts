@@ -1,6 +1,7 @@
 import express from 'express';
 import routes from '../../routes/routes';
 import AuthController from './auth.controller';
+import GoogleAuthController from './google-auth.controller';
 import {
   signupValidationRules,
   signinValidationRules,
@@ -13,6 +14,7 @@ import { authenticateJwt } from '../../middlewares/auth';
 
 const router = express.Router();
 const authController = new AuthController();
+const googleAuthController = new GoogleAuthController();
 
 /* User or consultant signup Route with email or phone */
 router.post(
@@ -50,5 +52,8 @@ router.post(
   validateRequest,
   authController.resetPasswordWithToken
 );
+
+// Google Login API endpoint
+router.post(routes.GOOGLE_LOGIN, googleAuthController.googleLogin);
 
 export { router as authRouter };

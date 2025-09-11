@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.File = exports.TutorTransaction = exports.PaymentMethod = exports.TutorSessionsDetail = exports.TutorSessions = exports.ParentTransaction = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorReview = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
+exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.HelpRequests = exports.File = exports.TutorTransaction = exports.PaymentMethod = exports.TutorSessionsDetail = exports.TutorSessions = exports.ParentTransaction = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorReview = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
 exports.initAllModels = initAllModels;
 const Child_1 = require("./Child");
 Object.defineProperty(exports, "Child", { enumerable: true, get: function () { return Child_1.Child; } });
@@ -53,6 +53,8 @@ const TutorTransaction_1 = require("./TutorTransaction");
 Object.defineProperty(exports, "TutorTransaction", { enumerable: true, get: function () { return TutorTransaction_1.TutorTransaction; } });
 const File_1 = require("./File");
 Object.defineProperty(exports, "File", { enumerable: true, get: function () { return File_1.File; } });
+const HelpRequests_1 = require("./HelpRequests");
+Object.defineProperty(exports, "HelpRequests", { enumerable: true, get: function () { return HelpRequests_1.HelpRequests; } });
 function initAllModels(sequelize) {
     (0, User_1.initUserModel)(sequelize);
     (0, Otp_1.initOtpModel)(sequelize);
@@ -81,5 +83,6 @@ function initAllModels(sequelize) {
     (0, TutorSessionsDetail_1.initTutorSessionsDetailModel)(sequelize);
     (0, PaymentMethod_1.initPaymentMethodModel)(sequelize);
     (0, File_1.initFileModel)(sequelize);
+    (0, HelpRequests_1.initHelpRequestsModel)(sequelize);
     // Initialize remaining chat models
 }

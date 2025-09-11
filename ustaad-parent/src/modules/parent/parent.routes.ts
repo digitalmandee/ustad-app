@@ -125,6 +125,14 @@ router.post(
   parentController.createTutorReview
 );
 
+// Analytics routes
+router.get(
+  routes.MONTHLY_SPENDING,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.getMonthlySpending
+);
+
 // Stripe webhook route (no authentication required for webhooks)
 // router.post(
 //   routes.STRIPE_WEBHOOK,

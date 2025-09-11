@@ -8,7 +8,6 @@ import { ITutorOnboardingDTO } from "./tutor.dto";
 import bcrypt from "bcrypt";
 import { Op } from "sequelize";
 import geohash from "ngeohash";
-import { PaymentStatus } from "../../constant/enums";
 
 import {
   User,
@@ -23,11 +22,12 @@ import {
   TutorSessions,
   TutorSessionsDetail,
   TutorTransaction,
+  Offer,
+  Parent,
 } from "@ustaad/shared";
-import {
-  TutorPaymentStatus,
-  TutorSessionStatus,
-} from "@ustaad/shared/dist/constant/enums";
+import { HelpRequests } from "@ustaad/shared";
+import { TutorPaymentStatus, TutorSessionStatus } from "@ustaad/shared";
+import { UserRole, HelpRequestStatus, OfferStatus } from "@ustaad/shared";
 
 interface TutorProfileData extends ITutorOnboardingDTO {
   resume: Express.Multer.File;
@@ -189,7 +189,7 @@ export default class TutorService {
           {
             model: Tutor,
             attributes: [
-              "bankName", 
+              "bankName",
               "accountNumber",
               "resumeUrl",
               "idFrontUrl",
@@ -202,40 +202,50 @@ export default class TutorService {
         ],
       });
 
-      const experiences = await TutorExperience.findAll({ where: { tutorId: userId } });
+      const experiences = await TutorExperience.findAll({
+        where: { tutorId: userId },
+      });
 
       // Calculate total experience in years
       let totalExperience = 0;
-      experiences.forEach(exp => {
+      experiences.forEach((exp) => {
         const startDate = new Date(exp.startDate);
         const endDate = new Date(exp.endDate);
-        const diffInYears = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+        const diffInYears =
+          (endDate.getTime() - startDate.getTime()) /
+          (1000 * 60 * 60 * 24 * 365);
         totalExperience += diffInYears;
       });
 
-      const sessions = await TutorSessions.findAll({ where: { tutorId: userId, status: "active" } });
+      const sessions = await TutorSessions.findAll({
+        where: { tutorId: userId, status: "active" },
+      });
 
       // Get today's day name in lowercase
-      const today = new Date().toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase();
+      const today = new Date()
+        .toLocaleDateString("en-US", { weekday: "short" })
+        .toLowerCase();
 
       // Count sessions scheduled for today
       let totalSessions = 0;
-      sessions.forEach(session => {
+      sessions.forEach((session) => {
         // Check if today is in the session's days of week
-        if (session.daysOfWeek.some(day => {
-          if (day.includes('-')) {
-            // Handle ranges like "mon-fri"
-            const [start, end] = day.split('-');
-            const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
-            const startIdx = days.indexOf(start);
-            const endIdx = days.indexOf(end);
-            const todayIdx = days.indexOf(today);
-            return todayIdx >= startIdx && todayIdx <= endIdx;
-          } else {
-            // Handle individual days
-            return day === today;
-          }
-        })) {
+        if (
+          session.daysOfWeek.some((day) => {
+            if (day.includes("-")) {
+              // Handle ranges like "mon-fri"
+              const [start, end] = day.split("-");
+              const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+              const startIdx = days.indexOf(start);
+              const endIdx = days.indexOf(end);
+              const todayIdx = days.indexOf(today);
+              return todayIdx >= startIdx && todayIdx <= endIdx;
+            } else {
+              // Handle individual days
+              return day === today;
+            }
+          })
+        ) {
           totalSessions++;
         }
       });
@@ -243,9 +253,8 @@ export default class TutorService {
       return {
         user,
         totalExperience: Math.round(totalExperience * 10) / 10, // Round to 1 decimal place
-        totalSessions
+        totalSessions,
       };
-
     } catch (error) {
       console.error("Error in getProfile:", error);
       throw error;
@@ -538,19 +547,24 @@ export default class TutorService {
 
     // Get current subjects from tutor profile
     const currentSubjects = tutorProfile.subjects || [];
-    
+
     // Get active subjects from settings
     const newSubjects = Object.entries(settings.subjectCosts)
       .filter(([_, setting]) => setting.active)
       .map(([subject]) => subject);
 
     // Find subjects to add and remove
-    const subjectsToAdd = newSubjects.filter(s => !currentSubjects.includes(s));
-    const subjectsToRemove = currentSubjects.filter(s => !newSubjects.includes(s));
+    const subjectsToAdd = newSubjects.filter(
+      (s) => !currentSubjects.includes(s)
+    );
+    const subjectsToRemove = currentSubjects.filter(
+      (s) => !newSubjects.includes(s)
+    );
 
     // Update tutor profile subjects
-    const updatedSubjects = [...currentSubjects, ...subjectsToAdd]
-      .filter(s => !subjectsToRemove.includes(s));
+    const updatedSubjects = [...currentSubjects, ...subjectsToAdd].filter(
+      (s) => !subjectsToRemove.includes(s)
+    );
 
     await tutorProfile.update({ subjects: updatedSubjects });
 
@@ -609,14 +623,19 @@ export default class TutorService {
 
   async findTutorsByLocation(
     parentLat: number | null,
-    parentLng: number | null, 
+    parentLng: number | null,
     radiusKm: number | null,
     limit = 20,
     offset = 0,
     category?: string
   ) {
     try {
-      console.log("Finding tutors with params:", { parentLat, parentLng, radiusKm, category });
+      console.log("Finding tutors with params:", {
+        parentLat,
+        parentLng,
+        radiusKm,
+        category,
+      });
 
       // Build basic query conditions
       let whereCondition: any = {};
@@ -629,13 +648,13 @@ export default class TutorService {
           [Op.contains]: [category.toLowerCase()],
         };
       }
-      
+
       console.log("tutorWhereCondition:", tutorWhereCondition);
 
       // If location params not provided, return all tutors with category filter
       if (!parentLat || !parentLng || !radiusKm) {
         console.log("No location params, getting all tutors");
-        
+
         // Get all tutor locations with user and tutor info
         let queryOptions: any = {
           include: [
@@ -648,10 +667,15 @@ export default class TutorService {
                   model: Tutor,
                   attributes: ["subjects", "about", "grade"],
                   required: false, // Always include Tutor data
-                }
+                },
+                {
+                  model: TutorExperience,
+                  attributes: ["startDate", "endDate"],
+                  required: false, // Include experience data if available
+                },
               ],
               required: true, // Make sure User is always included
-            }
+            },
           ],
           limit: category ? 1000 : limit, // Get more results if filtering by category
           offset: category ? 0 : offset,
@@ -664,20 +688,47 @@ export default class TutorService {
         }
 
         const allTutors = await TutorLocation.findAll(queryOptions);
-        
-        console.log("Raw query result sample:", JSON.stringify(allTutors[0], null, 2));
-        
-        // Remove duplicates by tutorId (in case a tutor has multiple locations)
-        const uniqueTutors = allTutors.filter((tutor, index, self) => 
-          index === self.findIndex(t => t.tutorId === tutor.tutorId)
+
+        console.log(
+          "Raw query result sample:",
+          JSON.stringify(allTutors[0], null, 2)
         );
-        
+
+        // Remove duplicates by tutorId (in case a tutor has multiple locations)
+        const uniqueTutors = allTutors.filter(
+          (tutor, index, self) =>
+            index === self.findIndex((t) => t.tutorId === tutor.tutorId)
+        );
+
+        // Add total experience to each tutor
+        const tutorsWithExperience = uniqueTutors.map((tutor) => {
+          const tutorData = tutor.toJSON() as any;
+          const totalExperience = this.calculateTotalExperience(
+            tutorData.tutor?.TutorExperiences || []
+          );
+          
+          return {
+            ...tutorData,
+            tutor: {
+              ...tutorData.tutor,
+              totalExperience,
+            },
+          };
+        });
+
         // Apply pagination if we were filtering by category
-        const finalResults = category ? 
-          uniqueTutors.slice(offset, offset + limit) : 
-          uniqueTutors;
-        
-        console.log("Found tutors:", allTutors.length, "Unique tutors:", uniqueTutors.length, "Final results:", finalResults.length);
+        const finalResults = category
+          ? tutorsWithExperience.slice(offset, offset + limit)
+          : tutorsWithExperience;
+
+        console.log(
+          "Found tutors:",
+          allTutors.length,
+          "Unique tutors:",
+          uniqueTutors.length,
+          "Final results:",
+          finalResults.length
+        );
         return finalResults;
       }
 
@@ -707,10 +758,15 @@ export default class TutorService {
                 model: Tutor,
                 attributes: ["subjects", "about", "grade"],
                 required: false, // Always include Tutor data
-              }
+              },
+              {
+                model: TutorExperience,
+                attributes: ["startDate", "endDate"],
+                required: false, // Include experience data if available
+              },
             ],
             required: true, // Make sure User is always included
-          }
+          },
         ],
         limit: category ? 1000 : limit, // Get more results if filtering by category
         offset: category ? 0 : offset,
@@ -723,9 +779,12 @@ export default class TutorService {
       }
 
       const nearbyTutors = await TutorLocation.findAll(locationQueryOptions);
-      
-      console.log("Raw nearby tutors result sample:", JSON.stringify(nearbyTutors[0], null, 2));
-      
+
+      console.log(
+        "Raw nearby tutors result sample:",
+        JSON.stringify(nearbyTutors[0], null, 2)
+      );
+
       console.log("Found nearby tutors:", nearbyTutors.length);
 
       // Filter by actual distance and sort by distance
@@ -737,25 +796,40 @@ export default class TutorService {
             tutorLocation.latitude,
             tutorLocation.longitude
           );
+          const tutorData = tutorLocation.toJSON() as any;
+          const totalExperience = this.calculateTotalExperience(
+            tutorData.tutor?.TutorExperiences || []
+          );
+          
           return {
-            ...tutorLocation.toJSON(),
+            ...tutorData,
             distance,
+            tutor: {
+              ...tutorData.tutor,
+              totalExperience,
+            },
           };
         })
         .filter((tutor) => tutor.distance <= radiusKm)
         .sort((a, b) => a.distance - b.distance);
 
       // Remove duplicates by tutorId (in case a tutor has multiple locations)
-      const uniqueTutors = tutorsWithDistance.filter((tutor, index, self) => 
-        index === self.findIndex(t => t.tutorId === tutor.tutorId)
+      const uniqueTutors = tutorsWithDistance.filter(
+        (tutor, index, self) =>
+          index === self.findIndex((t) => t.tutorId === tutor.tutorId)
       );
 
       // Apply pagination if we were filtering by category
-      const finalResults = category ? 
-        uniqueTutors.slice(offset, offset + limit) : 
-        uniqueTutors;
+      const finalResults = category
+        ? uniqueTutors.slice(offset, offset + limit)
+        : uniqueTutors;
 
-      console.log("Final unique tutors:", uniqueTutors.length, "Final results:", finalResults.length);
+      console.log(
+        "Final unique tutors:",
+        uniqueTutors.length,
+        "Final results:",
+        finalResults.length
+      );
       return finalResults;
     } catch (error) {
       console.error("Error in findTutorsByLocation:", error);
@@ -781,6 +855,24 @@ export default class TutorService {
         Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
+  }
+
+  calculateTotalExperience(experiences: any[]): number {
+    if (!experiences || experiences.length === 0) {
+      return 0;
+    }
+
+    let totalExperience = 0;
+    experiences.forEach((exp) => {
+      const startDate = new Date(exp.startDate);
+      const endDate = new Date(exp.endDate);
+      const diffInYears =
+        (endDate.getTime() - startDate.getTime()) /
+        (1000 * 60 * 60 * 24 * 365);
+      totalExperience += diffInYears;
+    });
+
+    return Math.round(totalExperience * 10) / 10; // Round to 1 decimal place
   }
 
   async getAllTutorLocations(userId: string) {
@@ -911,7 +1003,6 @@ export default class TutorService {
       ],
     });
 
-
     const runningSessions = await TutorSessionsDetail.findAll({
       where: { tutorId: userId, status: TutorSessionStatus.CREATED },
       include: [
@@ -920,10 +1011,10 @@ export default class TutorService {
           attributes: ["id", "fullName"],
         },
       ],
-    })
+    });
     return { sessions, runningSessions };
   }
-  async getTutorSession(userId: string, sessionId: string ) {
+  async getTutorSession(userId: string, sessionId: string) {
     const session = await TutorSessionsDetail.findAll({
       where: { tutorId: userId, sessionId: sessionId },
       include: [
@@ -999,5 +1090,336 @@ export default class TutorService {
       { ...data },
       { where: { id: data.id, tutorId: data.tutorId, parentId: data.parentId } }
     );
+  }
+
+  async getMonthlyEarnings(tutorId: string) {
+    try {
+      // Calculate date range for last 6 months
+      const currentDate = new Date();
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(currentDate.getMonth() - 6);
+
+      // Get all tutor transactions for the last 6 months
+      const transactions = await TutorTransaction.findAll({
+        where: {
+          tutorId: tutorId,
+          createdAt: {
+            [Op.gte]: sixMonthsAgo,
+          },
+          status: {
+            [Op.in]: [TutorPaymentStatus.PAID, TutorPaymentStatus.PENDING], // Include both paid and pending
+          },
+        },
+        order: [["createdAt", "ASC"]],
+      });
+
+      // Group transactions by month and calculate earnings
+      const monthlyData: {
+        [key: string]: { month: string; earnings: number; count: number };
+      } = {};
+
+      // Initialize last 6 months with zero earnings
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date();
+        date.setMonth(currentDate.getMonth() - i);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        const monthName = date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+        });
+
+        monthlyData[monthKey] = {
+          month: monthName,
+          earnings: 0,
+          count: 0,
+        };
+      }
+
+      // Sum up earnings by month
+      transactions.forEach((transaction) => {
+        const transactionDate = new Date(transaction.createdAt);
+        const monthKey = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, "0")}`;
+
+        if (monthlyData[monthKey]) {
+          monthlyData[monthKey].earnings += transaction.amount;
+          monthlyData[monthKey].count += 1;
+        }
+      });
+
+      // Convert to array and sort by month
+      const result = Object.keys(monthlyData)
+        .sort()
+        .map((key) => monthlyData[key]);
+
+      // Calculate total earnings and statistics
+      const totalEarnings = result.reduce(
+        (sum, month) => sum + month.earnings,
+        0
+      );
+      const totalTransactions = result.reduce(
+        (sum, month) => sum + month.count,
+        0
+      );
+      const avgMonthlyEarnings = totalEarnings / 6;
+
+      return {
+        monthlyEarnings: result,
+        summary: {
+          totalEarnings: parseFloat(totalEarnings.toFixed(2)),
+          totalTransactions,
+          averageMonthlyEarnings: parseFloat(avgMonthlyEarnings.toFixed(2)),
+          period: "6 months",
+        },
+      };
+    } catch (error) {
+      console.error("Error in getMonthlyEarnings:", error);
+      throw error;
+    }
+  }
+
+  async createHelpRequest(
+    requesterId: string,
+    requesterRole: UserRole,
+    subject: string,
+    message: string,
+    againstId?: string
+  ) {
+    try {
+      // If againstId is provided, validate against opposite role
+      if (againstId) {
+        let expectedRole: UserRole;
+
+        // Determine expected role based on requester role
+        if (requesterRole === UserRole.TUTOR) {
+          expectedRole = UserRole.PARENT;
+        } else if (requesterRole === UserRole.PARENT) {
+          expectedRole = UserRole.TUTOR;
+        } else {
+          // For ADMIN or SUPER_ADMIN, allow any role
+          expectedRole = requesterRole;
+        }
+
+        // Check if the againstId user exists and has the expected role
+        const againstUser = await User.findOne({
+          where: {
+            id: againstId,
+            ...(requesterRole !== UserRole.ADMIN &&
+            requesterRole !== UserRole.SUPER_ADMIN
+              ? { role: expectedRole }
+              : {}),
+          },
+        });
+
+        if (!againstUser) {
+          if (requesterRole === UserRole.TUTOR) {
+            throw new UnProcessableEntityError("Invalid parent ID provided");
+          } else if (requesterRole === UserRole.PARENT) {
+            throw new UnProcessableEntityError("Invalid tutor ID provided");
+          } else {
+            throw new UnProcessableEntityError("Invalid user ID provided");
+          }
+        }
+      }
+
+      const helpRequest = await HelpRequests.create({
+        requesterId,
+        againstId: againstId || null,
+        requester: requesterRole,
+        subject,
+        message,
+        status: HelpRequestStatus.OPEN,
+      });
+
+      return helpRequest;
+    } catch (error) {
+      console.error("Error in createHelpRequest:", error);
+      throw error;
+    }
+  }
+
+  async getHelpRequestsAgainstUser(userId: string, page = 1, limit = 20) {
+    try {
+      const offset = (page - 1) * limit;
+
+      const { rows: helpRequests, count } = await HelpRequests.findAndCountAll({
+        where: {
+          requesterId: userId,
+        },
+        order: [["createdAt", "DESC"]],
+        limit,
+        offset,
+      });
+
+      const totalPages = Math.ceil(count / limit);
+
+      return {
+        helpRequests,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems: count,
+          itemsPerPage: limit,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error("Error in getHelpRequestsAgainstUser:", error);
+      throw error;
+    }
+  }
+
+  async getContracts(userId: string, userRole: UserRole, page = 1, limit = 20) {
+    try {
+      const offset = (page - 1) * limit;
+
+      let whereCondition: any;
+      let includeCondition: any;
+
+      if (userRole === UserRole.TUTOR) {
+        // If user is PARENT, get offers where they are the sender and status is ACCEPTED
+        whereCondition = {
+          senderId: userId,
+        };
+        
+        // Include receiver (tutor) details
+        includeCondition = [
+          {
+            model: User,
+            as: 'receiver',
+            attributes: ['id', 'fullName', 'email', 'image', 'role'],
+            include: [
+              {
+                model: Parent,
+                attributes: ['userId'],
+                required: false,
+              }
+            ]
+          }
+        ];
+      } else if (userRole === UserRole.PARENT) {
+        // If user is TUTOR, get offers where they are the receiver and status is ACCEPTED
+        whereCondition = {
+          receiverId: userId,
+        };
+        
+        // Include sender (parent) details
+        includeCondition = [
+          {
+            model: User,
+            as: 'sender',
+            attributes: ['id', 'fullName', 'email', 'image', 'role'],
+            include: [
+              {
+                model: Tutor,
+                attributes: ['bankName', 'accountNumber', 'resumeUrl', 'subjects', 'about', 'grade'],
+                required: false,
+              }
+            ]
+          }
+        ];
+      } else {
+        // For ADMIN/SUPER_ADMIN, return all accepted offers
+        whereCondition = {
+          status: OfferStatus.ACCEPTED,
+        };
+        
+        includeCondition = [
+          {
+            model: User,
+            as: 'sender',
+            attributes: ['id', 'fullName', 'email', 'image', 'role'],
+            include: [
+              {
+                model: Tutor,
+                attributes: ['bankName', 'accountNumber', 'resumeUrl', 'subjects', 'about', 'grade'],
+                required: false,
+              }
+            ]
+          },
+          {
+            model: User,
+            as: 'receiver',
+            attributes: ['id', 'fullName', 'email', 'image', 'role'],
+            include: [
+              {
+                model: Tutor,
+                attributes: ['bankName', 'accountNumber', 'resumeUrl', 'subjects', 'about', 'grade'],
+                required: false,
+              }
+            ]
+          }
+        ];
+      }
+
+      const { rows: rawContracts, count } = await Offer.findAndCountAll({
+        where: whereCondition,
+        include: includeCondition,
+        order: [['createdAt', 'DESC']],
+        limit,
+        offset,
+      });
+
+      // Transform the data to have consistent structure for all roles
+      const contracts = rawContracts.map(contract => {
+        const contractData = contract.toJSON() as any;
+        
+        // Determine the other party based on user role
+        let otherParty;
+        if (userRole === UserRole.PARENT) {
+          // For parents, the other party is the receiver (tutor)
+          otherParty = contractData.receiver;
+        } else if (userRole === UserRole.TUTOR) {
+          // For tutors, the other party is the sender (parent)
+          otherParty = contractData.sender;
+        } else {
+          // For admins, include both but prioritize receiver for consistency
+          otherParty = contractData.receiver;
+        }
+
+        // Return consistent structure
+        return {
+          id: contractData.id,
+          conversationId: contractData.conversationId,
+          senderId: contractData.senderId,
+          receiverId: contractData.receiverId,
+          messageId: contractData.messageId,
+          childName: contractData.childName,
+          amountMonthly: contractData.amountMonthly,
+          subject: contractData.subject,
+          startDate: contractData.startDate,
+          startTime: contractData.startTime,
+          endTime: contractData.endTime,
+          description: contractData.description,
+          status: contractData.status,
+          daysOfWeek: contractData.daysOfWeek,
+          createdAt: contractData.createdAt,
+          updatedAt: contractData.updatedAt,
+          user: otherParty, // Consistent key for the other party
+          ...(userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN ? {
+            sender: contractData.sender,
+            receiver: contractData.receiver
+          } : {})
+        };
+      });
+
+      const totalPages = Math.ceil(count / limit);
+
+      return {
+        contracts,
+        pagination: {
+          currentPage: page,
+          totalPages,
+          totalItems: count,
+          itemsPerPage: limit,
+          hasNextPage: page < totalPages,
+          hasPreviousPage: page > 1,
+        },
+        userRole, // Include user role in response for frontend reference
+      };
+    } catch (error) {
+      console.error("Error in getContracts:", error);
+      throw error;
+    }
   }
 }

@@ -22,9 +22,8 @@ import {
   TutorReview,
 } from "@ustaad/shared";
 import Stripe from "stripe";
-import { OfferStatus } from "src/constant/enums";
-import { TutorPaymentStatus } from "@ustaad/shared/dist/constant/enums";
-import { log } from "console";
+import { TutorPaymentStatus, OfferStatus } from "@ustaad/shared";
+import { Op } from "sequelize";
 
 interface ParentProfileData {
   userId: string;
@@ -967,6 +966,98 @@ export default class ParentService {
       return tutorReview;
     } catch (error) {
       console.error("Error in createTutorReview:", error);
+      throw error;
+    }
+  }
+
+  async getMonthlySpending(parentId: string) {
+    try {
+      // Calculate date range for last 6 months
+      const currentDate = new Date();
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(currentDate.getMonth() - 6);
+
+      // Get all parent transactions for the last 6 months
+      const transactions = await ParentTransaction.findAll({
+        where: {
+          parentId: parentId,
+          createdAt: {
+            [Op.gte]: sixMonthsAgo,
+          },
+          status: {
+            [Op.in]: ['created', 'paid', 'completed'], // Include successful transactions
+          },
+        },
+        order: [['createdAt', 'ASC']],
+      });
+
+      // Group transactions by month and calculate spending
+      const monthlyData: { [key: string]: { month: string; spending: number; count: number; children: Set<string> } } = {};
+      
+      // Initialize last 6 months with zero spending
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date();
+        date.setMonth(currentDate.getMonth() - i);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+        
+        monthlyData[monthKey] = {
+          month: monthName,
+          spending: 0,
+          count: 0,
+          children: new Set<string>(),
+        };
+      }
+
+      // Sum up spending by month
+      transactions.forEach((transaction) => {
+        const transactionDate = new Date(transaction.createdAt);
+        const monthKey = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, '0')}`;
+        
+        if (monthlyData[monthKey]) {
+          monthlyData[monthKey].spending += transaction.amount;
+          monthlyData[monthKey].count += 1;
+          if (transaction.childName) {
+            monthlyData[monthKey].children.add(transaction.childName);
+          }
+        }
+      });
+
+      // Convert to array and sort by month, also convert Set to array length
+      const result = Object.keys(monthlyData)
+        .sort()
+        .map(key => ({
+          month: monthlyData[key].month,
+          spending: parseFloat(monthlyData[key].spending.toFixed(2)),
+          transactionCount: monthlyData[key].count,
+          childrenCount: monthlyData[key].children.size,
+        }));
+
+      // Calculate total spending and statistics
+      const totalSpending = result.reduce((sum, month) => sum + month.spending, 0);
+      const totalTransactions = result.reduce((sum, month) => sum + month.transactionCount, 0);
+      const avgMonthlySpending = totalSpending / 6;
+
+      // Get unique children from all transactions
+      const allChildren = new Set<string>();
+      transactions.forEach(transaction => {
+        if (transaction.childName) {
+          allChildren.add(transaction.childName);
+        }
+      });
+
+      return {
+        monthlySpending: result,
+        summary: {
+          totalSpending: parseFloat(totalSpending.toFixed(2)),
+          totalTransactions,
+          averageMonthlySpending: parseFloat(avgMonthlySpending.toFixed(2)),
+          totalChildren: allChildren.size,
+          period: '6 months',
+        },
+      };
+    } catch (error) {
+      console.error('Error in getMonthlySpending:', error);
       throw error;
     }
   }

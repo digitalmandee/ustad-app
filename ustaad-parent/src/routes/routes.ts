@@ -1,4 +1,4 @@
-import { OfferStatus } from "src/constant/enums";
+import { OfferStatus } from "@ustaad/shared";
 
 const routes = {
   PARENT_ONBOARDING: "/parent/onboarding",
@@ -31,6 +31,9 @@ const routes = {
   
   // tutor reviews
   ADD_TUTOR_REVIEW: '/parent/tutor/review',
+  
+  // Analytics
+  MONTHLY_SPENDING: '/parent/monthly-spending',
   
   // webhook
   STRIPE_WEBHOOK: '/parent/webhook/stripe',

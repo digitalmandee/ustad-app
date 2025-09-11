@@ -20,7 +20,10 @@ export default ({ app }: { app: express.Application }) => {
   // It shows the real origin IP in the heroku or Cloudwatch logs
   app.enable('trust proxy');
   // Set security HTTP headers
-  app.use(helmet());
+    app.use(helmet({
+    contentSecurityPolicy: false,
+    frameguard: false,
+  }));
 
 
 
@@ -46,6 +49,20 @@ export default ({ app }: { app: express.Application }) => {
   );
 
   app.use(compression());
+
+    app.use((req, res, next) => {
+    // Force clear conflicting headers
+    res.removeHeader("Content-Security-Policy");
+    res.removeHeader("Cross-Origin-Resource-Policy");
+    res.removeHeader("Cross-Origin-Opener-Policy");
+    res.removeHeader("X-Frame-Options");
+
+    // Or explicitly allow embedding from anywhere
+    res.setHeader("Content-Security-Policy", "frame-ancestors *");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+
+    next();
+  });
 
   /**
    * Health Check endpoints

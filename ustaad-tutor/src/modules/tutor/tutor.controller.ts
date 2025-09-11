@@ -5,7 +5,7 @@ import InfoMessages from "../../constant/messages";
 import TutorService from "./tutor.service";
 import { AuthenticatedRequest } from "../../middlewares/auth";
 // import { User } from "../../models/User";
-import { IsOnBaord } from "../../constant/enums";
+import { IsOnBaord } from "@ustaad/shared";
 import { User } from "@ustaad/shared";
 import { FindTutorsByLocationDto } from "./tutor.dto";
 
@@ -649,6 +649,92 @@ export default class TutorController {
       return sendSuccessResponse(res, "Tutor session updated successfully", 200, session);
     } catch (error: any) {
       return sendErrorResponse(res, error.message || "Failed to update tutor session", 400);
+    }
+  };
+
+  getMonthlyEarnings = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: tutorId } = req.user;
+      const earnings = await this.tutorService.getMonthlyEarnings(tutorId);
+      return sendSuccessResponse(
+        res, 
+        "Monthly earnings retrieved successfully", 
+        200, 
+        earnings
+      );
+    } catch (error: any) {
+      console.error('Get monthly earnings error:', error);
+      throw new GenericError(error, `Error from getMonthlyEarnings ${__filename}`);
+    }
+  };
+
+  createHelpRequest = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: requesterId, role } = req.user;
+      const { subject, message, againstId } = req.body;
+
+      const helpRequest = await this.tutorService.createHelpRequest(
+        requesterId,
+        role as any,
+        subject,
+        message,
+        againstId
+      );
+
+      return sendSuccessResponse(
+        res,
+        "Help request created successfully",
+        201,
+        helpRequest
+      );
+    } catch (error: any) {
+      console.error('Create help request error:', error);
+      
+      if (error.message?.includes('Invalid')) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+      
+      throw new GenericError(error, `Error from createHelpRequest ${__filename}`);
+    }
+  };
+
+  getHelpRequestsAgainstMe = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+
+      const result = await this.tutorService.getHelpRequestsAgainstUser(userId, page, limit);
+
+      return sendSuccessResponse(
+        res,
+        "Help requests retrieved successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error('Get help requests error:', error);
+      throw new GenericError(error, `Error from getHelpRequestsAgainstMe ${__filename}`);
+    }
+  };
+
+  getContracts = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId, role } = req.user;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+
+      const result = await this.tutorService.getContracts(userId, role as any, page, limit);
+
+      return sendSuccessResponse(
+        res,
+        "Contracts retrieved successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error('Get contracts error:', error);
+      throw new GenericError(error, `Error from getContracts ${__filename}`);
     }
   };
 }

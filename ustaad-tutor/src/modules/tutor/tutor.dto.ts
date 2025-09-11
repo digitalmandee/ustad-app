@@ -1,7 +1,7 @@
 
 import { body } from "express-validator";
 
-import { UserRole } from "../../constant/enums";
+import { UserRole } from "@ustaad/shared";
 
 
 export interface ISignUpCreateDTO {

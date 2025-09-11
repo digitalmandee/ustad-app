@@ -1,6 +1,6 @@
 import { body } from "express-validator";
 import constant from "../../constant/constant";
-import { UserRole } from "../../constant/enums";
+import { UserRole } from "@ustaad/shared";
 
 
 export const editProfileValidationRules = () => {
