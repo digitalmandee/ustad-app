@@ -6,3 +6,5 @@ yarn.lock
 
 develop.env
 production.env
+
+uploads
