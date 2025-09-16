@@ -37,7 +37,7 @@ export function initAllModels(sequelize: Sequelize) {
   initParentModel(sequelize);
   initChildModel(sequelize);
   initSubjectModel(sequelize);
-  initChildNotesModel(sequelize);
+  
   initChildReviewModel(sequelize);
   initTutorEducationModel(sequelize);
   initTutorExperienceModel(sequelize);
@@ -62,6 +62,7 @@ export function initAllModels(sequelize: Sequelize) {
   initPaymentMethodModel(sequelize);
   initFileModel(sequelize);
   initHelpRequestsModel(sequelize);
+  initChildNotesModel(sequelize);
   // Initialize remaining chat models
 }
 

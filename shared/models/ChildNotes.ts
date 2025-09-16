@@ -1,10 +1,11 @@
 import { Model, DataTypes, Sequelize, Optional } from "sequelize";
-import { Child } from "./Child";
-import { Tutor } from "./Tutor";
+import { User } from "./User";
+import { TutorSessionsDetail } from "./TutorSessionsDetail";
 
 export interface ChildNotesAttributes {
   id: string;
-  childId: string;
+  sessionId: string;
+  childName: string;
   tutorId: string;
   headline: string;
   description: string;
@@ -19,7 +20,8 @@ export class ChildNotes
   implements ChildNotesAttributes
 {
   public id!: string;
-  public childId!: string;
+  public sessionId!: string;
+  public childName!: string;
   public tutorId!: string;
   public headline!: string;
   public description!: string;
@@ -35,19 +37,23 @@ export function initChildNotesModel(sequelize: Sequelize): typeof ChildNotes {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
-      childId: {
+      sessionId: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: "children",
+          model: "tutorSessionsDetail",
           key: "id",
         },
+      },
+      childName: {
+        type: DataTypes.STRING,
+        allowNull: false,
       },
       tutorId: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: "tutors",
+          model: "users",
           key: "id",
         },
       },
@@ -66,11 +72,11 @@ export function initChildNotesModel(sequelize: Sequelize): typeof ChildNotes {
     }
   );
 
-  ChildNotes.belongsTo(Child, { foreignKey: "childId" });
-  Child.hasMany(ChildNotes, { foreignKey: "childId" });
+  ChildNotes.belongsTo(TutorSessionsDetail, { foreignKey: "sessionId" });
+  TutorSessionsDetail.hasMany(ChildNotes, { foreignKey: "sessionId" });
 
-  ChildNotes.belongsTo(Tutor, { foreignKey: "tutorId" });
-  Tutor.hasMany(ChildNotes, { foreignKey: "tutorId" });
+  ChildNotes.belongsTo(User, { foreignKey: "tutorId" });
+  User.hasMany(ChildNotes, { foreignKey: "tutorId" });
 
   return ChildNotes;
 } 

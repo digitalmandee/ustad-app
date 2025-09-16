@@ -436,18 +436,18 @@ export default class TutorController {
     }
   };
 
-  async addChildNote(req: AuthenticatedRequest, res: Response, ) {
+  addChildNote = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: tutorId } = req.user;
-      const { childId, headline, description } = req.body;
-      const note = await this.tutorService.createChildNote({ childId, tutorId, headline, description });
+      const { sessionId, headline, description } = req.body;
+      const note = await this.tutorService.createChildNote({ sessionId, tutorId, headline, description });
       return sendSuccessResponse(res, "Child note added successfully", 200, note);
     } catch (error: any) {
       return sendErrorResponse(res, error.message || "Failed to add child note", 400);
     }
-  }
+  };
   
-  async addChildReview(req: AuthenticatedRequest, res: Response, ) {
+  addChildReview = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: tutorId } = req.user;
       const { childId, rating, review } = req.body;
@@ -456,7 +456,7 @@ export default class TutorController {
     } catch (error: any) {
       return sendErrorResponse(res, error.message || "Failed to add child review", 400);
     }
-  }
+  };
 
   addTutorLocation = async (req: AuthenticatedRequest, res: Response) => {
     try {
