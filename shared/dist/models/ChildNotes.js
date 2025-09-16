@@ -3,8 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChildNotes = void 0;
 exports.initChildNotesModel = initChildNotesModel;
 const sequelize_1 = require("sequelize");
-const Child_1 = require("./Child");
-const Tutor_1 = require("./Tutor");
+const User_1 = require("./User");
+const TutorSessionsDetail_1 = require("./TutorSessionsDetail");
 class ChildNotes extends sequelize_1.Model {
 }
 exports.ChildNotes = ChildNotes;
@@ -15,19 +15,23 @@ function initChildNotesModel(sequelize) {
             defaultValue: sequelize_1.DataTypes.UUIDV4,
             primaryKey: true,
         },
-        childId: {
+        sessionId: {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: "children",
+                model: "tutorSessionsDetail",
                 key: "id",
             },
+        },
+        childName: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: false,
         },
         tutorId: {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: "tutors",
+                model: "users",
                 key: "id",
             },
         },
@@ -43,9 +47,9 @@ function initChildNotesModel(sequelize) {
         sequelize,
         tableName: "childNotes",
     });
-    ChildNotes.belongsTo(Child_1.Child, { foreignKey: "childId" });
-    Child_1.Child.hasMany(ChildNotes, { foreignKey: "childId" });
-    ChildNotes.belongsTo(Tutor_1.Tutor, { foreignKey: "tutorId" });
-    Tutor_1.Tutor.hasMany(ChildNotes, { foreignKey: "tutorId" });
+    ChildNotes.belongsTo(TutorSessionsDetail_1.TutorSessionsDetail, { foreignKey: "sessionId" });
+    TutorSessionsDetail_1.TutorSessionsDetail.hasMany(ChildNotes, { foreignKey: "sessionId" });
+    ChildNotes.belongsTo(User_1.User, { foreignKey: "tutorId" });
+    User_1.User.hasMany(ChildNotes, { foreignKey: "tutorId" });
     return ChildNotes;
 }

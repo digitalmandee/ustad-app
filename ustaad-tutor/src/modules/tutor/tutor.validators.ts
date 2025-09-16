@@ -262,3 +262,29 @@ export const helpRequestValidationRules = () => {
       .withMessage("Against ID must be a valid UUID"),
   ];
 };
+
+export const childNoteValidationRules = () => {
+  return [
+    body("sessionId")
+      .notEmpty()
+      .withMessage("Session ID is required")
+      .isUUID()
+      .withMessage("Session ID must be a valid UUID"),
+    body("headline")
+      .notEmpty()
+      .withMessage("Headline is required")
+      .isString()
+      .withMessage("Headline must be a string")
+      .trim()
+      .isLength({ min: 3, max: 100 })
+      .withMessage("Headline must be between 3 and 100 characters"),
+    body("description")
+      .notEmpty()
+      .withMessage("Description is required")
+      .isString()
+      .withMessage("Description must be a string")
+      .trim()
+      .isLength({ min: 10, max: 1000 })
+      .withMessage("Description must be between 10 and 1000 characters"),
+  ];
+};

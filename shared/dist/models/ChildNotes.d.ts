@@ -1,7 +1,8 @@
 import { Model, Sequelize, Optional } from "sequelize";
 export interface ChildNotesAttributes {
     id: string;
-    childId: string;
+    sessionId: string;
+    childName: string;
     tutorId: string;
     headline: string;
     description: string;
@@ -11,7 +12,8 @@ export interface ChildNotesAttributes {
 export type ChildNotesCreationAttributes = Optional<ChildNotesAttributes, "id">;
 export declare class ChildNotes extends Model<ChildNotesAttributes, ChildNotesCreationAttributes> implements ChildNotesAttributes {
     id: string;
-    childId: string;
+    sessionId: string;
+    childName: string;
     tutorId: string;
     headline: string;
     description: string;

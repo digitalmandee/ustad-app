@@ -11,7 +11,8 @@ import {
   tutorLocationValidationRules,
   paymentRequestValidationRules,
   tutorSearchByLocationValidationRules,
-  helpRequestValidationRules
+  helpRequestValidationRules,
+  childNoteValidationRules
 } from "./tutor.validators";
 import routes from "../../routes/routes";
 import { authenticateJwt } from "../../middlewares/auth";
@@ -141,7 +142,14 @@ router.put(
   tutorController.updateTutorSettings
 );
 
-router.post(routes.ADD_CHILD_NOTE, authenticateJwt, authorizeRoles("TUTOR"), tutorController.addChildNote);
+router.post(
+  routes.ADD_CHILD_NOTE,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  childNoteValidationRules(),
+  validateRequest,
+  tutorController.addChildNote
+);
 router.post(routes.ADD_CHILD_REVIEW, authenticateJwt,authorizeRoles("TUTOR"),tutorController.addChildReview);
 
 router.get(

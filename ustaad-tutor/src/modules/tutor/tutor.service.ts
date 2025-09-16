@@ -576,12 +576,37 @@ export default class TutorService {
   }
 
   async createChildNote(data: {
-    childId: string;
+    sessionId: string;
     tutorId: string;
     headline: string;
     description: string;
   }) {
-    return await ChildNotes.create(data);
+
+    console.log("data", data);
+    
+
+    // First, find the TutorSessionsDetail record by sessionId
+    const sessionDetail = await TutorSessionsDetail.findByPk(data.sessionId);
+    if (!sessionDetail) {
+      throw new Error("Session detail not found");
+    }
+
+    // Then, find the related TutorSessions record to get childName
+    const tutorSession = await TutorSessions.findByPk(sessionDetail.sessionId);
+    if (!tutorSession) {
+      throw new Error("Tutor session not found");
+    }
+
+    // Create the child note with the retrieved childName
+    const childNoteData = {
+      sessionId: data.sessionId,
+      childName: tutorSession.childName,
+      tutorId: data.tutorId,
+      headline: data.headline,
+      description: data.description,
+    };
+
+    return await ChildNotes.create(childNoteData);
   }
 
   async createChildReview(data: {

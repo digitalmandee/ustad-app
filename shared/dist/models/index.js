@@ -63,7 +63,6 @@ function initAllModels(sequelize) {
     (0, Parent_1.initParentModel)(sequelize);
     (0, Child_1.initChildModel)(sequelize);
     (0, Subjects_1.initSubjectModel)(sequelize);
-    (0, ChildNotes_1.initChildNotesModel)(sequelize);
     (0, ChildReview_1.initChildReviewModel)(sequelize);
     (0, TutorEducation_1.initTutorEducationModel)(sequelize);
     (0, TutorExperience_1.initTutorExperienceModel)(sequelize);
@@ -84,5 +83,6 @@ function initAllModels(sequelize) {
     (0, PaymentMethod_1.initPaymentMethodModel)(sequelize);
     (0, File_1.initFileModel)(sequelize);
     (0, HelpRequests_1.initHelpRequestsModel)(sequelize);
+    (0, ChildNotes_1.initChildNotesModel)(sequelize);
     // Initialize remaining chat models
 }
