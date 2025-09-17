@@ -12,11 +12,15 @@ import { chatRouter } from '../modules/chat/chat.routes'
 import { fileRouter } from '../modules/file/file.routes'
 import path from 'path';
 
+
 export default ({ app }: { app: express.Application }) => {
   // It shows the real origin IP in the heroku or Cloudwatch logs
   app.enable('trust proxy');
   // Set security HTTP headers
-  app.use(helmet());
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    frameguard: false,
+  }));
   // Body parser, reading data from body into req.body
   app.use(express.json({ limit: '10kb' }));
   app.use(express.urlencoded({ extended: true, limit: '10kb' }));
@@ -36,6 +40,20 @@ export default ({ app }: { app: express.Application }) => {
   );
 
   app.use(compression());
+
+  app.use((req, res, next) => {
+    // Force clear conflicting headers
+    res.removeHeader("Content-Security-Policy");
+    res.removeHeader("Cross-Origin-Resource-Policy");
+    res.removeHeader("Cross-Origin-Opener-Policy");
+    res.removeHeader("X-Frame-Options");
+
+    // Or explicitly allow embedding from anywhere
+    res.setHeader("Content-Security-Policy", "frame-ancestors *");
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+
+    next();
+  });
 
   /**
    * Health Check endpoints
@@ -57,10 +75,18 @@ export default ({ app }: { app: express.Application }) => {
 
   app.use(cors());
   app.use(bodyParser.json());
-  app.use(
-    "/uploads", 
-    express.static(path.join(__dirname, "../../uploads"))
-  );
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "../../uploads"), {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith(".mp3")) {
+        res.setHeader("Content-Type", "audio/mpeg");
+      }
+    }
+  })
+);
+
+
   // Load all API routes
   app.use(config.api.prefix, chatRouter);
   app.use(config.api.prefix, fileRouter);
