@@ -3,5 +3,19 @@ package-lock.json
 yarn.lock
 .DS_Store
 
-develop.env
-production.env
+.env
+
+.pnp.cjs
+.pnp.loader.mjs
+
+.yarn/
+.yarnrc.yml
+.yarn/patches
+.yarn/releases
+.yarn/sdks
+.yarn/versions
+.yarn/cache
+.yarn/install-state.gz
+.yarn/install-state.json
+.yarn/install-state.json.lock
+

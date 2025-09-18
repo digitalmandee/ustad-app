@@ -66,4 +66,19 @@ export default class AuthController {
       throw new GenericError(e, ` Error from resetPasswordWithToken ${__filename}`);
     }
   };
+
+  logout = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        throw new GenericError(null, 'Token missing');
+      }
+      
+      const token = authHeader.split(' ')[1];
+      await this.authService.logout(token);
+      sendSuccessResponse(res, 'Logout successful', 200);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from logout ${__filename}`);
+    }
+  };
 }
