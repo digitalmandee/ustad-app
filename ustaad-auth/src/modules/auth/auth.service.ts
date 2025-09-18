@@ -6,7 +6,7 @@ import {
   ISignInCreateDTO,
   IVerifyEmailOtpDTO,
 } from "./auth.dto";
-import { User, Otp } from "@ustaad/shared";
+import { User, Otp, Session } from "@ustaad/shared";
 import {
   comparePassword,
   generateOtp,
@@ -22,6 +22,9 @@ import { BadRequestError } from "../../errors/bad-request-error";
 export interface IAuthService {
   signUp: (userCreateDTO: ISignUpCreateDTO) => Promise<any>;
   signIn: (userSignInDTO: ISignInCreateDTO, deviceId: string) => Promise<any>;
+  logout: (token: string) => Promise<void>;
+  validateSession: (token: string) => Promise<any>;
+  cleanupExpiredSessions: () => Promise<number>;
 }
 
 export default class AuthService implements IAuthService {
@@ -123,12 +126,23 @@ export default class AuthService implements IAuthService {
         { expiresIn: "6d" }
       );
 
+      // Create session record
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 6); // 6 days from now
+
+      await Session.create({
+        userId: user.id,
+        token: token,
+        expiresAt: expiresAt,
+      });
+
       const sanitizedUser = user.toJSON();
       delete sanitizedUser.password;
       delete sanitizedUser.isActive;
 
       return { ...sanitizedUser, token };
     } catch (err: any) {
+      console.log("err", err);
       if (err instanceof UnProcessableEntityError) throw err;
       throw new GenericError(
         err,
@@ -324,6 +338,82 @@ export default class AuthService implements IAuthService {
         throw err;
       }
       throw new GenericError(err, "Invalid or expired OTP");
+    }
+  }
+
+  public async logout(token: string): Promise<void> {
+    try {
+      // Find and delete the session
+      const session = await Session.findOne({ where: { token } });
+      
+      if (!session) {
+        throw new NotAuthorizedError("Invalid session");
+      }
+
+      await session.destroy();
+    } catch (err: any) {
+      if (err instanceof NotAuthorizedError) {
+        throw err;
+      }
+      throw new GenericError(err, "Unable to logout");
+    }
+  }
+
+  public async validateSession(token: string): Promise<any> {
+    try {
+      const session = await Session.findOne({
+        where: { 
+          token,
+          expiresAt: {
+            [Op.gt]: new Date(), // Not expired
+          },
+        },
+        include: [
+          {
+            model: User,
+            attributes: ['id', 'email', 'phone', 'role', 'isActive'],
+          },
+        ],
+      });
+
+      if (!session) {
+        throw new NotAuthorizedError("Invalid or expired session");
+      }
+
+      const user = (session as any).User;
+      if (!user || !user.isActive) {
+        throw new NotAuthorizedError("User does not exist or is not active");
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        phone: user.phone,
+        role: user.role,
+      };
+    } catch (err: any) {
+      if (err instanceof NotAuthorizedError) {
+        throw err;
+      }
+      throw new GenericError(err, "Session validation failed");
+    }
+  }
+
+  public async cleanupExpiredSessions(): Promise<number> {
+    try {
+      const result = await Session.destroy({
+        where: {
+          expiresAt: {
+            [Op.lt]: new Date(), // Less than current time (expired)
+          },
+        },
+      });
+
+      console.log(`Cleaned up ${result} expired sessions`);
+      return result;
+    } catch (err: any) {
+      console.error('Error cleaning up expired sessions:', err);
+      throw new GenericError(err, "Failed to cleanup expired sessions");
     }
   }
 }

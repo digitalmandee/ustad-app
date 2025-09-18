@@ -31,6 +31,12 @@ router.post(
   authController.userSignIn
 );
 
+router.post(
+  routes.USER_LOGOUT,
+  authenticateJwt,
+  authController.logout
+);
+
 // router.post(
 //   routes.RESET_PASSWORD,
 //   // authenticateJwt,

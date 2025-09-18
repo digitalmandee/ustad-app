@@ -23,7 +23,7 @@ function initSessionModel(sequelize) {
             },
         },
         token: {
-            type: sequelize_1.DataTypes.STRING,
+            type: sequelize_1.DataTypes.TEXT,
             allowNull: false,
             unique: true,
         },

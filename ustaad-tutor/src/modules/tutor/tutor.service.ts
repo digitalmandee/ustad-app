@@ -102,11 +102,11 @@ export default class TutorService {
       ]);
 
       const formattedSubjects = Array.isArray(data.subjects)
-        ? data.subjects
+        ? data.subjects.map((s: string) => s.toLowerCase())
         : (data.subjects as string)
             .replace(/^\[|\]$/g, "")
             .split(",")
-            .map((s: string) => s.trim().replace(/^['"]|['"]$/g, ""));
+            .map((s: string) => s.trim().replace(/^['"]|['"]$/g, "").toLowerCase());
 
       const tutor = await Tutor.create({
         userId: data.userId,
@@ -197,6 +197,7 @@ export default class TutorService {
               "subjects",
               "about",
               "grade",
+              "balance",
             ],
           },
         ],
@@ -600,7 +601,7 @@ export default class TutorService {
     // Create the child note with the retrieved childName
     const childNoteData = {
       sessionId: data.sessionId,
-      childName: tutorSession.childName,
+      childName: tutorSession.childName.toLocaleLowerCase(),
       tutorId: data.tutorId,
       headline: data.headline,
       description: data.description,

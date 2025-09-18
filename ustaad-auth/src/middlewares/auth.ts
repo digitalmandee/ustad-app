@@ -3,6 +3,7 @@ import jwt , { JsonWebTokenError, TokenExpiredError }  from 'jsonwebtoken';
 import { User } from "@ustaad/shared";
 import { NotAuthorizedError } from '../errors/not-authorized-error';
 import { CustomError } from '../errors/custom-error';
+import AuthService from '../modules/auth/auth.service';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
@@ -29,28 +30,27 @@ export async function authenticateJwt(
 
     const token = authHeader.split(' ')[1];
 
-     let decoded: any;
+    // First verify JWT structure
+    let decoded: any;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
     } catch (err) {
       if (err instanceof TokenExpiredError) {
-    console.error('Token expired:', err.expiredAt);
-    throw new NotAuthorizedError('TokenExpired');
-  } else if (err instanceof JsonWebTokenError) {
-    console.error('Invalid token:', err.message);
-    throw new NotAuthorizedError('InvalidToken');
-  } else {
-    console.error('JWT error:', err);
-    throw new NotAuthorizedError('Authentication failed');
-  }
+        console.error('Token expired:', err.expiredAt);
+        throw new NotAuthorizedError('TokenExpired');
+      } else if (err instanceof JsonWebTokenError) {
+        console.error('Invalid token:', err.message);
+        throw new NotAuthorizedError('InvalidToken');
+      } else {
+        console.error('JWT error:', err);
+        throw new NotAuthorizedError('Authentication failed');
+      }
     }
 
-    const user = await User.findByPk(decoded.user.id);
-    console.log(user,"user")
+    // Then validate session in database
+    const authService = new AuthService();
+    const user = await authService.validateSession(token);
 
-    if (!user || !user.isActive) {
-      throw new NotAuthorizedError('User does not exist or is not active');
-    }
     req.user = {
       id: user.id.toString(),
       email: user.email,
@@ -60,14 +60,14 @@ export async function authenticateJwt(
 
     next();
   } catch (err) {
-  console.error(err);
+    console.error(err);
 
-  // If it's already a NotAuthorizedError, rethrow it
-  if (err instanceof CustomError) {
-    throw err;
-  }
+    // If it's already a NotAuthorizedError, rethrow it
+    if (err instanceof CustomError) {
+      throw err;
+    }
 
-  // Otherwise, wrap and throw a generic error
-  throw new NotAuthorizedError('Authentication failed');
+    // Otherwise, wrap and throw a generic error
+    throw new NotAuthorizedError('Authentication failed');
   }
 }
