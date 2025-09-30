@@ -1,6 +1,7 @@
-import { User } from '@ustaad/shared';
-import jwt from 'jsonwebtoken';
-import { UserRole, IsOnBaord } from '@ustaad/shared';
+import { User } from "@ustaad/shared";
+import jwt from "jsonwebtoken";
+import { UserRole, IsOnBaord } from "@ustaad/shared";
+import { UnProcessableEntityError } from "src/errors/unprocessable-entity.error";
 
 export interface GoogleUserData {
   email: string;
@@ -12,21 +13,21 @@ export interface GoogleUserData {
 }
 
 export class GoogleAuthService {
-  
-  public async processGoogleLogin(googleUserData: GoogleUserData, deviceId?: string) {
+  public async processGoogleLogin(
+    googleUserData: GoogleUserData,
+    deviceId?: string
+  ) {
     try {
       const { email, googleId, fullName, image, role } = googleUserData;
 
-      // Validate required fields
       if (!email || !googleId) {
-        throw new Error('Email and Google ID are required');
+        throw new Error("Email and Google ID are required");
       }
 
-      // Check if user already exists with this Google ID
+      // 1. Find by Google ID first
       let user = await User.findOne({ where: { googleId } });
 
       if (user) {
-        // User exists with Google ID, update deviceId if provided
         if (deviceId) {
           user.deviceId = deviceId;
           await user.save();
@@ -34,39 +35,38 @@ export class GoogleAuthService {
         return user;
       }
 
-      // Check if user exists with this email (for account linking)
+      // 2. Check if email exists → Link account
       user = await User.findOne({ where: { email } });
 
       if (user) {
-        // User exists with email but no Google ID, link accounts
         user.googleId = googleId;
-        if (!user.image && image) {
-          user.image = image; // Set Google profile picture if user doesn't have one
-        }
-        if (deviceId) {
-          user.deviceId = deviceId;
-        }
+        if (!user.image && image) user.image = image;
+        if (deviceId) user.deviceId = deviceId;
         await user.save();
         return user;
       }
 
-      // Create new user
+      // 3. Create new user
+      if (!role) {
+        throw new UnProcessableEntityError("Role is required");
+      }
+
       user = await User.create({
         googleId,
         email,
         fullName,
-        role: role, // Default role
+        role, // ideally enforce a safe default
         isActive: true,
-        isEmailVerified: true, // Google emails are pre-verified
-        isOnBoard: IsOnBaord.REQUIRED, // Still needs onboarding
-        password: null, // No password for Google users
+        isEmailVerified: true,
+        isOnBoard: IsOnBaord.REQUIRED,
+        password: null,
         image: image || null,
         deviceId: deviceId || null,
       });
 
       return user;
     } catch (error) {
-      console.error('Google login processing error:', error);
+      console.error("Google login processing error:", error);
       throw error;
     }
   }
@@ -82,7 +82,7 @@ export class GoogleAuthService {
         },
       },
       process.env.JWT_SECRET!,
-      { expiresIn: '6d' } // Longer expiry for OAuth users
+      { expiresIn: "6d" } // Longer expiry for OAuth users
     );
   }
 

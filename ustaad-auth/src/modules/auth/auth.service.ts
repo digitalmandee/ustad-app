@@ -6,7 +6,7 @@ import {
   ISignInCreateDTO,
   IVerifyEmailOtpDTO,
 } from "./auth.dto";
-import { User, Otp, Session } from "@ustaad/shared";
+import { User, Otp, Session, sendNotification } from "@ustaad/shared";
 import {
   comparePassword,
   generateOtp,
@@ -139,6 +139,9 @@ export default class AuthService implements IAuthService {
       const sanitizedUser = user.toJSON();
       delete sanitizedUser.password;
       delete sanitizedUser.isActive;
+
+
+      await sendNotification(user.deviceId, 'Login Success', 'You have successfully logged in to your account');
 
       return { ...sanitizedUser, token };
     } catch (err: any) {

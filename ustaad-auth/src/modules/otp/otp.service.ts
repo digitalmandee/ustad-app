@@ -16,6 +16,7 @@ import { addMinutes } from 'date-fns';
 import { OtpPurpose, OtpStatus } from '../../constant/enums';
 import { Op } from 'sequelize';
 import { smsService } from '../sms/sms.service';
+import { sendNotification } from '@ustaad/shared';
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY!;
 const FROM_EMAIL = process.env.FROM_EMAIL!;
@@ -178,6 +179,8 @@ export class OtpServices {
       await otpEntry.save();
 
       await user.save();
+
+      await sendNotification(user.deviceId, 'OTP Verified', 'Your OTP has been verified successfully');
 
       return { success: true, message: 'OTP verified successfully' };
     } catch (err: any) {

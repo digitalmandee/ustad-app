@@ -17,3 +17,5 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./db"), exports);
 __exportStar(require("./models"), exports); // 👈 this allows access to `User`
 __exportStar(require("./constant/enums"), exports);
+__exportStar(require("./notification-service"), exports); // 👈 this allows access to notification functions
+__exportStar(require("./firebase-con"), exports); // 👈 this allows access to Firebase initialization

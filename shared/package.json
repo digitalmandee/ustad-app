@@ -6,8 +6,13 @@
   "files": [
     "dist"
   ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
   "license": "MIT",
   "dependencies": {
+    "firebase-admin": "^12.7.0",
     "pg": "^8.16.3",
     "sequelize": "^6.37.7",
     "typescript": "^5.8.3"

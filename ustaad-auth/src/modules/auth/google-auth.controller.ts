@@ -3,6 +3,8 @@ import { GenericError } from '../../errors/generic-error';
 import { sendSuccessResponse, sendErrorResponse } from '../../helper/response';
 import InfoMessages from '../../constant/messages';
 import GoogleAuthService, { GoogleUserData } from './google-auth.service';
+import jwt from 'jsonwebtoken';
+import { Session } from '@ustaad/shared';
 
 export default class GoogleAuthController {
   private googleAuthService = new GoogleAuthService();
@@ -36,11 +38,34 @@ export default class GoogleAuthController {
       // Process Google login
       const user = await this.googleAuthService.processGoogleLogin(googleUserData, deviceId);
 
+      const token = jwt.sign(
+        {
+          user: {
+            id: user.id,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+          },
+        },
+        process.env.JWT_SECRET!,
+        { expiresIn: "6d" }
+      );
       // Generate JWT token
-      const token = this.googleAuthService.generateJWT(user);
+      // const token = this.googleAuthService.generateJWT(user);
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 6); // 6 days from now
+      await Session.create({
+        userId: user.id,
+        token: token,
+        expiresAt: expiresAt,
+      });
+
+      const sanitizedUser = user.toJSON();
+      delete sanitizedUser.password;
+      delete sanitizedUser.isActive;
       
       // Sanitize user data
-      const sanitizedUser = this.googleAuthService.sanitizeUser(user);
+      // const sanitizedUser = this.googleAuthService.sanitizeUser(user);
 
       return sendSuccessResponse(
         res,

@@ -8,6 +8,9 @@ import { CustomError } from "../errors/custom-error";
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 async function validateSession(token: string): Promise<any> {
+
+
+  console.log("token", token);
   try {
     const session = await Session.findOne({
       where: { 
