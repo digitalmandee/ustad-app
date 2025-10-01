@@ -36,40 +36,42 @@ export default class GoogleAuthController {
         role,
       };
 
-      // Process Google login
+      // Process Google signup
       const user = await this.googleAuthService.processGoogleSignup(googleUserData, deviceId);
 
-      // const token = jwt.sign(
-      //   {
-      //     user: {
-      //       id: user.id,
-      //       email: user.email,
-      //       phone: user.phone,
-      //       role: user.role,
-      //     },
-      //   },
-      //   process.env.JWT_SECRET!,
-      //   { expiresIn: "6d" }
-      // );
-      // // Generate JWT token
-      // // const token = this.googleAuthService.generateJWT(user);
-      // const expiresAt = new Date();
-      // expiresAt.setDate(expiresAt.getDate() + 6); // 6 days from now
-      // await Session.create({
-      //   userId: user.id,
-      //   token: token,
-      //   expiresAt: expiresAt,
-      // });
+      // Generate JWT token
+      const token = jwt.sign(
+        {
+          user: {
+            id: user.id,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+          },
+        },
+        process.env.JWT_SECRET!,
+        { expiresIn: "6d" }
+      );
 
-      // const sanitizedUser = user.toJSON();
-      // delete sanitizedUser.password;
-      // delete sanitizedUser.isActive;  
+      // Create session record
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 6); // 6 days from now
+      await Session.create({
+        userId: user.id,
+        token: token,
+        expiresAt: expiresAt,
+      });
+
+      // Sanitize user data
+      const sanitizedUser = user.toJSON();
+      delete sanitizedUser.password;
+      delete sanitizedUser.isActive;
 
       return sendSuccessResponse(
         res,
-        "Google signup sucessfull! Please login to continue.",
+        "Google signup successful! User created and logged in.",
         200,
-        // { ...user }
+        { ...sanitizedUser, token }
       );
     } catch (error: any) {
       console.error('Google login error:', error);
