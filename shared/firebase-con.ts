@@ -12,7 +12,7 @@ export function initializeFirebase(): admin.app.App {
     let serviceAccount: any;
     
     try {
-      serviceAccount = require("./app/config/ustaad.json");
+      serviceAccount = require("./noti.json");
       console.log("✅ Loaded ustaad.json service account");
     } catch (fileError) {
       // Fallback to environment variables
