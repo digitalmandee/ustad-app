@@ -8,6 +8,8 @@ import {
   verifyEmailOtpRules,
   passwordResetRules,
   forgotPasswordRules,
+  googleSignupValidationRules,
+  googleLoginValidationRules,
 } from './auth.validators';
 import { validateRequest } from '../../middlewares';
 import { authenticateJwt } from '../../middlewares/auth';
@@ -59,7 +61,19 @@ router.post(
   authController.resetPasswordWithToken
 );
 
-// Google Login API endpoint
-router.post(routes.GOOGLE_LOGIN, googleAuthController.googleLogin);
+// Google OAuth API endpoints
+router.post(
+  routes.GOOGLE_SIGNUP,
+  googleSignupValidationRules(),
+  validateRequest,
+  googleAuthController.googleSignup
+);
+
+router.post(
+  routes.GOOGLE_LOGIN,
+  googleLoginValidationRules(),
+  validateRequest,
+  googleAuthController.googleLogin
+);
 
 export { router as authRouter };

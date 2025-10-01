@@ -204,8 +204,8 @@ router.get(
 );
 
 // Tutor Sessions routes
-router.get(routes.GET_TUTOR_SESSIONS, authenticateJwt, authorizeRoles("TUTOR"), tutorController.getTutorSessions);
-router.get(routes.GET_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR"), tutorController.getTutorSession);
+router.get(routes.GET_TUTOR_SESSIONS, authenticateJwt, authorizeRoles("TUTOR", "PARENT"), tutorController.getTutorSessions);
+router.get(routes.GET_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR", "PARENT"), tutorController.getTutorSession);
 router.post(routes.ADD_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR"), tutorController.addTutorSession);
 router.delete(routes.DELETE_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR"), tutorController.deleteTutorSession);
 router.put(routes.EDIT_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR"), tutorController.editTutorSession);

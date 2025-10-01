@@ -24,10 +24,16 @@ export interface IVerifyEmailOtpDTO {
   purpose: OtpPurpose;
 }
 
-export interface IGoogleLoginDTO {
+export interface IGoogleSignupDTO {
   email: string;
   googleId: string;
   fullName: string;
   image?: string;
   accessToken?: string;
+  role: UserRole;
+}
+
+export interface IGoogleLoginDTO {
+  email: string;
+  googleId: string;
 }

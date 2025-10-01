@@ -103,6 +103,66 @@ export const signinValidationRules = () => {
   ];
 };
 
+export const googleSignupValidationRules = () => {
+  return [
+    body('email')
+      .exists()
+      .withMessage(constant.VALIDATION.KEY_MISSING('email'))
+      .bail()
+      .isEmail()
+      .withMessage(constant.AUTH.INVALID_EMAIL),
+    
+    body('googleId')
+      .exists()
+      .withMessage(constant.VALIDATION.KEY_MISSING('googleId'))
+      .bail()
+      .isString()
+      .withMessage(constant.VALIDATION.VALUE_MUST_BE_STRING('googleId'))
+      .bail()
+      .notEmpty()
+      .withMessage(constant.VALIDATION.EMPTY_VALUE('googleId')),
+    
+    body('fullName')
+      .exists()
+      .withMessage(constant.VALIDATION.KEY_MISSING('fullName'))
+      .bail()
+      .isString()
+      .withMessage(constant.VALIDATION.VALUE_MUST_BE_STRING('fullName'))
+      .bail()
+      .notEmpty()
+      .withMessage(constant.VALIDATION.EMPTY_VALUE('fullName')),
+    
+    body('role')
+      .exists()
+      .withMessage(constant.VALIDATION.KEY_MISSING('role'))
+      .bail()
+      .custom((value: string) => validateRoles(value))
+      .withMessage(constant.AUTH.INVALID_ROLE),
+    
+  ];
+};
+
+export const googleLoginValidationRules = () => {
+  return [
+    body('email')
+      .exists()
+      .withMessage(constant.VALIDATION.KEY_MISSING('email'))
+      .bail()
+      .isEmail()
+      .withMessage(constant.AUTH.INVALID_EMAIL),
+    
+    body('googleId')
+      .exists()
+      .withMessage(constant.VALIDATION.KEY_MISSING('googleId'))
+      .bail()
+      .isString()
+      .withMessage(constant.VALIDATION.VALUE_MUST_BE_STRING('googleId'))
+      .bail()
+      .notEmpty()
+      .withMessage(constant.VALIDATION.EMPTY_VALUE('googleId'))
+  ];
+};
+
 export const verifyEmailOtpRules = () => {
   return [
     body('otp')

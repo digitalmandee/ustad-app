@@ -8,6 +8,7 @@ export default {
   FORGOT_PASSWORD: '/auth/forgot-password',
   
   /** Google OAuth */
+  GOOGLE_SIGNUP: '/auth/google-signup',
   GOOGLE_LOGIN: '/auth/google-login',
   
   // Other module routes

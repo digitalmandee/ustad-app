@@ -13,7 +13,7 @@ export interface GoogleUserData {
 }
 
 export class GoogleAuthService {
-  public async processGoogleLogin(
+  public async processGoogleSignup(
     googleUserData: GoogleUserData,
     deviceId?: string
   ) {
@@ -26,24 +26,15 @@ export class GoogleAuthService {
 
       // 1. Find by Google ID first
       let user = await User.findOne({ where: { googleId } });
-
       if (user) {
-        if (deviceId) {
-          user.deviceId = deviceId;
-          await user.save();
-        }
-        return user;
+        throw new UnProcessableEntityError("User already exists");
       }
 
       // 2. Check if email exists → Link account
       user = await User.findOne({ where: { email } });
 
       if (user) {
-        user.googleId = googleId;
-        if (!user.image && image) user.image = image;
-        if (deviceId) user.deviceId = deviceId;
-        await user.save();
-        return user;
+        throw new UnProcessableEntityError("User already exists");
       }
 
       // 3. Create new user
