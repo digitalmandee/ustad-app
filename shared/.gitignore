@@ -23,3 +23,5 @@ noti.json
 app/config/ustaad.json
 *.json
 !*.json.template
+
+/dist
