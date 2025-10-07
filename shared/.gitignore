@@ -25,3 +25,4 @@ app/config/ustaad.json
 !*.json.template
 
 /dist
+dist
