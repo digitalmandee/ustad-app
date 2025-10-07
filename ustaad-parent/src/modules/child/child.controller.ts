@@ -154,10 +154,10 @@ export class ChildController {
     }
   };
 
-  async getChildNotesByChildId(req: AuthenticatedRequest, res: Response) {
+  async getChildNotesByChildId(req: AuthenticatedRequest, res: Response) {  
     try {
-      const { childId } = req.params;
-      const notes = await this.childService.getChildNotesByChildId(childId);
+      const { childName } = req.params;
+      const notes = await this.childService.getChildNotesByChildId(childName);
 
       return sendSuccessResponse(
         res,
@@ -178,31 +178,4 @@ export class ChildController {
     }
   }
 
-  async getChildReviewsByChildId(
-    req: AuthenticatedRequest,
-    res: Response,
-    next: NextFunction
-  ) {
-    try {
-      const { childId } = req.params;
-      const reviews = await this.childService.getChildReviewsByChildId(childId);
-
-      return sendSuccessResponse(
-        res,
-        InfoMessages.GENERIC.ITEM_GET_SUCCESSFULLY("Child Reviews"),
-        200,
-        reviews
-      );
-    } catch (error: any) {
-      console.error("Get Reviews error:", error);
-
-      if (error instanceof GenericError) {
-        return sendErrorResponse(res, error.message, 400);
-      }
-
-      const errorMessage =
-        error?.message || "Something went wrong while retrieving child";
-      return sendErrorResponse(res, errorMessage, 400);
-    }
-  }
 }

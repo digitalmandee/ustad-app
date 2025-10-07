@@ -18,6 +18,7 @@ import { initParentSubscriptionModel, ParentSubscription } from "./ParentSubscri
 import { initParentTransactionModel, ParentTransaction } from "./ParentTransaction";
 import { initTutorSessionsModel, TutorSessions } from "./TutorSessions";
 import { initPaymentMethodModel, PaymentMethod } from "./PaymentMethod";
+import { initNotificationModel, Notification } from "./Notification";
 
 // Chat models
 import { initConversationModel, Conversation } from "./Conversation";
@@ -63,6 +64,7 @@ export function initAllModels(sequelize: Sequelize) {
   initFileModel(sequelize);
   initHelpRequestsModel(sequelize);
   initChildNotesModel(sequelize);
+  initNotificationModel(sequelize);
   // Initialize remaining chat models
 }
 
@@ -89,6 +91,7 @@ export {
   TutorTransaction,
   File,
   HelpRequests,
+  Notification,
   // Chat models
   Conversation,
   ConversationParticipant,

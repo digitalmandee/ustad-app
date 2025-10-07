@@ -5,6 +5,7 @@ exports.sendBulkNotifications = sendBulkNotifications;
 exports.sendNotificationToMultipleTokens = sendNotificationToMultipleTokens;
 exports.validateFirebaseToken = validateFirebaseToken;
 const firebase_con_1 = require("./firebase-con");
+const models_1 = require("./models");
 /**
  * Send a push notification to a specific device token
  * @param token - Firebase device token
@@ -15,7 +16,7 @@ const firebase_con_1 = require("./firebase-con");
  * @param clickAction - Optional click action
  * @returns Promise<NotificationResult>
  */
-async function sendNotification(token, headline, message, data, imageUrl, clickAction) {
+async function sendNotification(userId, token, headline, message, data, imageUrl, clickAction) {
     try {
         const firebaseApp = (0, firebase_con_1.getFirebaseApp)();
         const notificationMessage = {
@@ -43,8 +44,21 @@ async function sendNotification(token, headline, message, data, imageUrl, clickA
                 },
             },
         };
+        const notification = await models_1.Notification.create({
+            userId: userId,
+            type: "notification",
+            title: headline,
+            body: message,
+            deviceToken: token,
+            status: "pending",
+            isRead: false,
+            sentAt: new Date(),
+        });
         const response = await firebaseApp.messaging().send(notificationMessage);
         console.log("✅ Notification sent successfully:", response);
+        notification.status = "sent";
+        notification.sentAt = new Date();
+        await notification.save();
         return {
             success: true,
             messageId: response,

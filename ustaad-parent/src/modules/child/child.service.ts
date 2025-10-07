@@ -74,14 +74,8 @@ export class ChildService {
     return child;
   }
 
-  async getChildNotesByChildId(childId: string) {
-    return "Child Notes";
-    // return await ChildNotes.findAll({ where: { childId } });
-  }
-
-  async getChildReviewsByChildId(childId: string) {
-
-    return "Child Reviews";
-    // return await ChildReview.findAll({ where: { childId } });
+  async getChildNotesByChildId(childName: string) {
+    // return "Child Notes";
+    return await ChildNotes.findAll({ where: { childName } });
   }
 }

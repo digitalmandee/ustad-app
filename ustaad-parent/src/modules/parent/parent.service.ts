@@ -163,7 +163,45 @@ export default class ParentService {
         throw new UnProcessableEntityError("User not found");
       }
 
-      return user;
+
+
+      const sessions = await TutorSessions.findAll({
+        where: { parentId: userId, status: "active" },
+      });
+
+      // Get today's day name in lowercase
+      const today = new Date()
+        .toLocaleDateString("en-US", { weekday: "short" })
+        .toLowerCase();
+
+      // Count sessions scheduled for today
+      let totalSessions = 0;
+      sessions.forEach((session) => {
+        // Check if today is in the session's days of week
+        if (
+          session.daysOfWeek.some((day) => {
+            if (day.includes("-")) {
+              // Handle ranges like "mon-fri"
+              const [start, end] = day.split("-");
+              const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+              const startIdx = days.indexOf(start);
+              const endIdx = days.indexOf(end);
+              const todayIdx = days.indexOf(today);
+              return todayIdx >= startIdx && todayIdx <= endIdx;
+            } else {
+              // Handle individual days
+              return day === today;
+            }
+          })
+        ) {
+          totalSessions++;
+        }
+      });
+
+      return {
+        user,
+        totalSessions,
+      };
     } catch (error) {
       console.error("Error in getProfile:", error);
       throw error;

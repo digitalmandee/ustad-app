@@ -50,8 +50,6 @@ router.get(
   childController.getChild
 );
 
-router.get(routes.CHILD_GET_NOTES, authenticateJwt, authorizeRoles("PARENT"), childController.getChildNotesByChildId.bind(childController));
-
-router.get(routes.CHILD_GET_REVIEWS, authenticateJwt, authorizeRoles("PARENT"), childController.getChildReviewsByChildId.bind(childController));
+router.get(routes.CHILD_GET_NOTES, authenticateJwt, authorizeRoles("PARENT"), childController.getChildNotesByChildId);
 
 export  { router as childRouter }; 

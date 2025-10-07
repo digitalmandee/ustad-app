@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.HelpRequests = exports.File = exports.TutorTransaction = exports.PaymentMethod = exports.TutorSessionsDetail = exports.TutorSessions = exports.ParentTransaction = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorReview = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
+exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.Notification = exports.HelpRequests = exports.File = exports.TutorTransaction = exports.PaymentMethod = exports.TutorSessionsDetail = exports.TutorSessions = exports.ParentTransaction = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorReview = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
 exports.initAllModels = initAllModels;
 const Child_1 = require("./Child");
 Object.defineProperty(exports, "Child", { enumerable: true, get: function () { return Child_1.Child; } });
@@ -38,6 +38,8 @@ const TutorSessions_1 = require("./TutorSessions");
 Object.defineProperty(exports, "TutorSessions", { enumerable: true, get: function () { return TutorSessions_1.TutorSessions; } });
 const PaymentMethod_1 = require("./PaymentMethod");
 Object.defineProperty(exports, "PaymentMethod", { enumerable: true, get: function () { return PaymentMethod_1.PaymentMethod; } });
+const Notification_1 = require("./Notification");
+Object.defineProperty(exports, "Notification", { enumerable: true, get: function () { return Notification_1.Notification; } });
 // Chat models
 const Conversation_1 = require("./Conversation");
 Object.defineProperty(exports, "Conversation", { enumerable: true, get: function () { return Conversation_1.Conversation; } });
@@ -84,5 +86,6 @@ function initAllModels(sequelize) {
     (0, File_1.initFileModel)(sequelize);
     (0, HelpRequests_1.initHelpRequestsModel)(sequelize);
     (0, ChildNotes_1.initChildNotesModel)(sequelize);
+    (0, Notification_1.initNotificationModel)(sequelize);
     // Initialize remaining chat models
 }

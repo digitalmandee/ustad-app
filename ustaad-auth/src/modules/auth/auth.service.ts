@@ -141,7 +141,11 @@ export default class AuthService implements IAuthService {
       delete sanitizedUser.isActive;
 
 
-      await sendNotification(user.deviceId, 'Login Success', 'You have successfully logged in to your account');
+      console.log("user.deviceId", user.deviceId, user.id);
+      
+
+
+      await sendNotification(user.id, user.deviceId, 'Login Success', 'You have successfully logged in to your account');
 
       return { ...sanitizedUser, token };
     } catch (err: any) {

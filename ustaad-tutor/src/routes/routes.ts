@@ -44,6 +44,10 @@ const routes = {
   GET_CONTRACTS: "/tutor/contracts",
 
 
+  // Notifications
+  NOTIFICATION_HISTORY: "/tutor/notification/history",
+  NOTIFICATION_READ: "/tutor/notification/read/:notificationId",
+
 
 };
 

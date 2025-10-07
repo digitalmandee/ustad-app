@@ -235,6 +235,9 @@ router.get(
   tutorController.getContracts
 );
 
+// Notifications routes
+router.get(routes.NOTIFICATION_HISTORY, authenticateJwt, authorizeRoles("TUTOR", "PARENT"), tutorController.getNotificationHistory);
+router.put(routes.NOTIFICATION_READ, authenticateJwt, authorizeRoles("TUTOR", "PARENT"), tutorController.markNotificationAsRead);
 
 
 

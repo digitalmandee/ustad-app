@@ -24,6 +24,7 @@ import {
   TutorTransaction,
   Offer,
   Parent,
+  Notification,
 } from "@ustaad/shared";
 import { HelpRequests } from "@ustaad/shared";
 import { TutorPaymentStatus, TutorSessionStatus } from "@ustaad/shared";
@@ -1445,6 +1446,27 @@ export default class TutorService {
       };
     } catch (error) {
       console.error("Error in getContracts:", error);
+      throw error;
+    }
+  }
+
+
+  async getNotificationHistory(userId: string) {
+    try {
+      const notifications = await Notification.findAll({ where: { userId } });
+      return notifications;
+    } catch (error) {
+      console.error("Error in getNotificationHistory:", error);
+      throw error;
+    }
+  }
+
+  async markNotificationAsRead(userId: string, notificationId: string) {
+    try {
+      const notification = await Notification.update({ isRead: true }, { where: { id: notificationId } });
+      return notification;
+    } catch (error) {
+      console.error("Error in markNotificationAsRead:", error);
       throw error;
     }
   }

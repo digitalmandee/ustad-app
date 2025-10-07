@@ -737,4 +737,27 @@ export default class TutorController {
       throw new GenericError(error, `Error from getContracts ${__filename}`);
     }
   };
+
+
+
+  getNotificationHistory = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const notifications = await this.tutorService.getNotificationHistory(userId);
+      return sendSuccessResponse(res, "Notification history retrieved successfully", 200, notifications);
+    } catch (error: any) {
+      return sendErrorResponse(res, error.message || "Failed to retrieve notification history", 400);
+    }
+  };
+
+  markNotificationAsRead = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { notificationId } = req.params;
+      await this.tutorService.markNotificationAsRead(userId, notificationId);
+      return sendSuccessResponse(res, "Notification marked as read successfully", 200);
+    } catch (error: any) {
+      return sendErrorResponse(res, error.message || "Failed to mark notification as read", 400);
+    }
+  };
 }

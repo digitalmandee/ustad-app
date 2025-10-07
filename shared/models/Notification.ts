@@ -6,13 +6,11 @@ export interface NotificationAttributes {
   type: string;
   title: string;
   body: string;
-  data?: object;
   isRead: boolean;
   sentAt: Date;
   readAt?: Date;
   deviceToken?: string;
   status: 'pending' | 'sent' | 'failed';
-  retryCount: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -28,13 +26,11 @@ export class Notification
   public type!: string;
   public title!: string;
   public body!: string;
-  public data?: object;
   public isRead!: boolean;
   public sentAt!: Date;
   public readAt?: Date;
   public deviceToken?: string;
   public status!: 'pending' | 'sent' | 'failed';
-  public retryCount!: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -64,11 +60,6 @@ export function initNotificationModel(sequelize: Sequelize): typeof Notification
         type: DataTypes.TEXT,
         allowNull: false,
       },
-      data: {
-        type: DataTypes.JSONB,
-        allowNull: true,
-        comment: "Additional data for the notification",
-      },
       isRead: {
         type: DataTypes.BOOLEAN,
         allowNull: false,
@@ -92,11 +83,6 @@ export function initNotificationModel(sequelize: Sequelize): typeof Notification
         type: DataTypes.ENUM('pending', 'sent', 'failed'),
         allowNull: false,
         defaultValue: 'pending',
-      },
-      retryCount: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        defaultValue: 0,
       },
     },
     {

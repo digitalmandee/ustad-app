@@ -1,13 +1,15 @@
 import * as admin from "firebase-admin";
 import { getFirebaseApp } from "./firebase-con";
+import { Notification } from "./models";
 
 export interface NotificationPayload {
   token: string;
   headline: string;
   message: string;
-  data?: Record<string, string>;
+  data?: any;
   imageUrl?: string;
   clickAction?: string;
+  userId: string;
 }
 
 export interface NotificationResult {
@@ -27,10 +29,11 @@ export interface NotificationResult {
  * @returns Promise<NotificationResult>
  */
 export async function sendNotification(
+  userId: string,
   token: string,
   headline: string,
   message: string,
-  data?: Record<string, string>,
+  data?: any,
   imageUrl?: string,
   clickAction?: string
 ): Promise<NotificationResult> {
@@ -63,9 +66,27 @@ export async function sendNotification(
       },
     };
 
+
+    const notification = await Notification.create({
+      userId: userId,
+      type: "notification",
+      title: headline,
+      body: message,
+      deviceToken: token,
+      status: "pending",
+      isRead: false,
+sentAt: new Date(),
+    });
+
+
+
     const response = await firebaseApp.messaging().send(notificationMessage);
     
     console.log("✅ Notification sent successfully:", response);
+
+    notification.status = "sent";
+    notification.sentAt = new Date();
+    await notification.save();
     
     return {
       success: true,

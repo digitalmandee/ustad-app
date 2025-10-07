@@ -180,7 +180,7 @@ export class OtpServices {
 
       await user.save();
 
-      await sendNotification(user.deviceId, 'OTP Verified', 'Your OTP has been verified successfully');
+      await sendNotification(userId,user.deviceId, 'OTP Verified', 'Your OTP has been verified successfully');
 
       return { success: true, message: 'OTP verified successfully' };
     } catch (err: any) {

@@ -45,7 +45,7 @@ function initializeFirebase() {
         // Try to load the correct Firebase service account file
         let serviceAccount;
         try {
-            serviceAccount = require("./app/config/ustaad.json");
+            serviceAccount = require("./noti.json");
             console.log("✅ Loaded ustaad.json service account");
         }
         catch (fileError) {

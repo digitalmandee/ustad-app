@@ -2,9 +2,10 @@ export interface NotificationPayload {
     token: string;
     headline: string;
     message: string;
-    data?: Record<string, string>;
+    data?: any;
     imageUrl?: string;
     clickAction?: string;
+    userId: string;
 }
 export interface NotificationResult {
     success: boolean;
@@ -21,7 +22,7 @@ export interface NotificationResult {
  * @param clickAction - Optional click action
  * @returns Promise<NotificationResult>
  */
-export declare function sendNotification(token: string, headline: string, message: string, data?: Record<string, string>, imageUrl?: string, clickAction?: string): Promise<NotificationResult>;
+export declare function sendNotification(userId: string, token: string, headline: string, message: string, data?: any, imageUrl?: string, clickAction?: string): Promise<NotificationResult>;
 /**
  * Send notifications to multiple device tokens
  * @param notifications - Array of notification payloads
