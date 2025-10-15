@@ -20,6 +20,8 @@ import {
   TutorTransaction,
   Child,
   TutorReview,
+  sendNotificationToUser,
+  NotificationType,
 } from "@ustaad/shared";
 import Stripe from "stripe";
 import { TutorPaymentStatus, OfferStatus } from "@ustaad/shared";
@@ -696,6 +698,50 @@ export default class ParentService {
       offer.status = status as OfferStatus;
       await offer.save();
 
+      // 🔔 SEND NOTIFICATION TO TUTOR
+      try {
+        const parent = await User.findByPk(userId);
+        const tutor = await User.findByPk(offer.senderId);
+        
+        if (status === OfferStatus.ACCEPTED) {
+          await sendNotificationToUser({
+            userId: offer.senderId, // Tutor
+            type: NotificationType.OFFER_ACCEPTED,
+            title: 'Offer Accepted! 🎉',
+            body: `${parent?.fullName || 'A parent'} has accepted your tutoring offer for ${offer.childName}`,
+            relatedEntityId: offerId,
+            relatedEntityType: 'offer',
+            actionUrl: `/offers/${offerId}`,
+            metadata: {
+              parentName: parent?.fullName || 'Unknown',
+              childName: offer.childName,
+              subject: offer.subject,
+              amountMonthly: offer.amountMonthly.toString(),
+            },
+          });
+          console.log(`✅ Sent offer accepted notification to tutor ${offer.senderId}`);
+        } else if (status === OfferStatus.REJECTED) {
+          await sendNotificationToUser({
+            userId: offer.senderId, // Tutor
+            type: NotificationType.OFFER_REJECTED,
+            title: 'Offer Declined',
+            body: `${parent?.fullName || 'A parent'} has declined your tutoring offer for ${offer.childName}`,
+            relatedEntityId: offerId,
+            relatedEntityType: 'offer',
+            actionUrl: `/offers/${offerId}`,
+            metadata: {
+              parentName: parent?.fullName || 'Unknown',
+              childName: offer.childName,
+              subject: offer.subject,
+            },
+          });
+          console.log(`✅ Sent offer rejected notification to tutor ${offer.senderId}`);
+        }
+      } catch (notificationError) {
+        // Don't fail the offer update if notification fails
+        console.error('❌ Error sending offer notification:', notificationError);
+      }
+
       return offer;
     } catch (error: any) {
       console.log(error);
@@ -840,6 +886,32 @@ export default class ParentService {
         status: "cancelled",
         endDate: new Date(),
       });
+
+      // 🔔 SEND NOTIFICATION TO TUTOR
+      try {
+        const parentUser = await User.findByPk(userId);
+        const offer = await Offer.findByPk(subscription.offerId);
+        
+        if (offer) {
+          await sendNotificationToUser({
+            userId: subscription.tutorId,
+            type: NotificationType.SUBSCRIPTION_CANCELLED_BY_PARENT,
+            title: '❌ Subscription Cancelled',
+            body: `${parentUser?.fullName || 'A parent'} has cancelled the subscription for ${offer.childName}`,
+            relatedEntityId: subscriptionId,
+            relatedEntityType: 'subscription',
+            actionUrl: `/subscriptions/${subscriptionId}`,
+            metadata: {
+              parentName: parentUser?.fullName || 'Unknown',
+              childName: offer.childName,
+              subject: offer.subject,
+            },
+          });
+          console.log(`✅ Sent subscription cancelled notification to tutor ${subscription.tutorId}`);
+        }
+      } catch (notificationError) {
+        console.error('❌ Error sending subscription cancellation notification:', notificationError);
+      }
 
       return {
         message: "Subscription cancelled successfully",
@@ -1000,6 +1072,29 @@ export default class ParentService {
         rating,
         review,
       });
+
+      // 🔔 SEND NOTIFICATION TO TUTOR
+      try {
+        const parent = await User.findByPk(parentId);
+        
+        await sendNotificationToUser({
+          userId: tutorId,
+          type: NotificationType.REVIEW_RECEIVED_TUTOR,
+          title: '⭐ New Review',
+          body: `${parent?.fullName || 'A parent'} gave you ${rating} stars${review ? `: "${review.substring(0, 50)}${review.length > 50 ? '...' : ''}"` : ''}`,
+          relatedEntityId: tutorReview.id,
+          relatedEntityType: 'review',
+          actionUrl: `/reviews/${tutorReview.id}`,
+          metadata: {
+            rating: rating.toString(),
+            reviewerName: parent?.fullName || 'Unknown',
+            hasReview: !!review,
+          },
+        });
+        console.log(`✅ Sent review notification to tutor ${tutorId}`);
+      } catch (notificationError) {
+        console.error('❌ Error sending review notification:', notificationError);
+      }
 
       return tutorReview;
     } catch (error) {

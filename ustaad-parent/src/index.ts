@@ -1,5 +1,6 @@
 import express from 'express';
 import config from './config';
+import { SessionReminderService } from './services/session-reminder.service';
 
 // Start the server
 async function startServer() {
@@ -16,6 +17,9 @@ async function startServer() {
         🛡️  Server listening on port: ${config.port} 🛡️
         ################################################\x1b[0m
       `);
+      
+      // Start session reminder cron job
+      SessionReminderService.startReminderCron();
     });
 
     // Handle server errors

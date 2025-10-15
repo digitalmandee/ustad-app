@@ -38,6 +38,8 @@ import {
   ConversationParticipant,
   sequelize,
   File,
+  sendNotificationToUser,
+  NotificationType,
 } from '@ustaad/shared';
 
 interface MessageMetadata {
@@ -116,6 +118,8 @@ export default class ChatService {
           { transaction }
         );
         (message.metadata as MessageMetadata).offer = savedOfferdata;
+        
+        // 🔔 SEND OFFER NOTIFICATION TO PARENT (will be sent after commit in the main notification block)
       }
 
       if (messageData.type == MessageType.FILE) {
@@ -147,6 +151,62 @@ export default class ChatService {
       }
 
       await transaction.commit();
+      
+      // 🔔 SEND NOTIFICATION TO RECEIVER
+      try {
+        // Get receiver (other participant in conversation)
+        const participants = await ConversationParticipant.findAll({
+          where: {
+            conversationId: messageData.conversationId,
+            isActive: true,
+          },
+        });
+        
+        const receiver = participants.find(p => p.userId !== senderId);
+        
+        if (receiver) {
+          const sender = await User.findByPk(senderId);
+          
+          // Determine notification body based on message type
+          let notificationBody = messageData.content || '';
+          if (messageData.type === MessageType.IMAGE) {
+            notificationBody = '📷 Sent an image';
+          } else if (messageData.type === MessageType.FILE) {
+            notificationBody = '📎 Sent a file';
+          } else if (messageData.type === MessageType.AUDIO) {
+            notificationBody = '🎤 Sent an audio message';
+          } else if (messageData.type === MessageType.OFFER) {
+            notificationBody = '💼 Sent a tutoring offer';
+          }
+          
+          // Truncate long messages
+          if (notificationBody.length > 100) {
+            notificationBody = notificationBody.substring(0, 100) + '...';
+          }
+          
+          await sendNotificationToUser({
+            userId: receiver.userId,
+            type: NotificationType.NEW_MESSAGE,
+            title: `${sender?.fullName || 'Someone'}`,
+            body: notificationBody,
+            relatedEntityId: message.id,
+            relatedEntityType: 'message',
+            actionUrl: `/chat/${messageData.conversationId}`,
+            metadata: {
+              conversationId: messageData.conversationId,
+              senderId,
+              senderName: sender?.fullName || 'Unknown',
+              messageType: messageData.type,
+            },
+          });
+          
+          console.log(`✅ Sent chat notification to user ${receiver.userId}`);
+        }
+      } catch (notificationError) {
+        // Don't fail the message creation if notification fails
+        console.error('❌ Error sending chat notification:', notificationError);
+      }
+      
       return this.formatMessageResponse(message);
     } catch (err: any) {
       await transaction.rollback();

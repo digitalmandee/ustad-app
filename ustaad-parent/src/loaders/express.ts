@@ -12,6 +12,7 @@ import config from '../config';
 import { tutorRouter } from '../modules/parent/parent.routes';
 import { childRouter } from '../modules/child/child.routes';
 import cronRouter from '../modules/cron/cron.routes';
+import notificationRouter from '../modules/notification/notification.routes';
 import ParentController from '../modules/parent/parent.controller';
 
 import path from 'path';
@@ -95,6 +96,7 @@ export default ({ app }: { app: express.Application }) => {
   app.use(config.api.prefix, tutorRouter);
   app.use(config.api.prefix, childRouter);
   app.use(config.api.prefix + '/cron', cronRouter);
+  app.use(config.api.prefix + '/notifications', notificationRouter);
 
   app.all('*', async (req, res) => {
     throw new NotFoundError(null);

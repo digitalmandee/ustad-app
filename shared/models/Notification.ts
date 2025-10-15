@@ -1,9 +1,10 @@
 import { Model, DataTypes, Sequelize, Optional } from "sequelize";
+import { NotificationType } from "../constant/enums";
 
 export interface NotificationAttributes {
   id: string;
   userId: string;
-  type: string;
+  type: NotificationType;
   title: string;
   body: string;
   isRead: boolean;
@@ -11,6 +12,10 @@ export interface NotificationAttributes {
   readAt?: Date;
   deviceToken?: string;
   status: 'pending' | 'sent' | 'failed';
+  relatedEntityId?: string;
+  relatedEntityType?: string;
+  actionUrl?: string;
+  metadata?: Record<string, any>;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -23,7 +28,7 @@ export class Notification
 {
   public id!: string;
   public userId!: string;
-  public type!: string;
+  public type!: NotificationType;
   public title!: string;
   public body!: string;
   public isRead!: boolean;
@@ -31,6 +36,10 @@ export class Notification
   public readAt?: Date;
   public deviceToken?: string;
   public status!: 'pending' | 'sent' | 'failed';
+  public relatedEntityId?: string;
+  public relatedEntityType?: string;
+  public actionUrl?: string;
+  public metadata?: Record<string, any>;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -48,9 +57,26 @@ export function initNotificationModel(sequelize: Sequelize): typeof Notification
         allowNull: false,
       },
       type: {
-        type: DataTypes.STRING,
+        type: DataTypes.ENUM(
+          'NEW_MESSAGE',
+          'OFFER_RECEIVED',
+          'OFFER_ACCEPTED',
+          'OFFER_REJECTED',
+          'SESSION_REMINDER',
+          'SESSION_CANCELLED_BY_PARENT',
+          'SESSION_CANCELLED_BY_TUTOR',
+          'TUTOR_CHECKED_IN',
+          'TUTOR_CHECKED_OUT',
+          'TUTOR_ON_LEAVE',
+          'TUTOR_HOLIDAY',
+          'SUBSCRIPTION_CANCELLED_BY_PARENT',
+          'SUBSCRIPTION_CANCELLED_BY_TUTOR',
+          'REVIEW_RECEIVED_TUTOR',
+          'REVIEW_RECEIVED_CHILD',
+          'SYSTEM_NOTIFICATION'
+        ),
         allowNull: false,
-        comment: "Notification type (e.g., 'booking_confirmation', 'session_reminder')",
+        comment: "Notification type",
       },
       title: {
         type: DataTypes.STRING,
@@ -83,6 +109,26 @@ export function initNotificationModel(sequelize: Sequelize): typeof Notification
         type: DataTypes.ENUM('pending', 'sent', 'failed'),
         allowNull: false,
         defaultValue: 'pending',
+      },
+      relatedEntityId: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        comment: "ID of related entity (offer, message, session, etc.)",
+      },
+      relatedEntityType: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: "Type of related entity (offer, message, session, review, etc.)",
+      },
+      actionUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: "Deep link URL to navigate to when notification is clicked",
+      },
+      metadata: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        comment: "Additional metadata for the notification",
       },
     },
     {

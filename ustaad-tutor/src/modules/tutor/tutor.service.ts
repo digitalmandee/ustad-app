@@ -25,6 +25,9 @@ import {
   Offer,
   Parent,
   Notification,
+  sendNotificationToUser,
+  NotificationType,
+  ParentSubscription,
 } from "@ustaad/shared";
 import { HelpRequests } from "@ustaad/shared";
 import { TutorPaymentStatus, TutorSessionStatus } from "@ustaad/shared";
@@ -1088,7 +1091,60 @@ export default class TutorService {
       throw new UnProcessableEntityError("Tutor session already exists");
     }
 
-    return await TutorSessionsDetail.create({ tutorId: userId, ...data });
+    const sessionDetail = await TutorSessionsDetail.create({ tutorId: userId, ...data });
+
+    // 🔔 SEND NOTIFICATION TO PARENT based on status
+    try {
+      const tutor = await User.findByPk(userId);
+      const sessionInfo = await TutorSessions.findByPk(data.sessionId);
+      
+      if (sessionInfo) {
+        let notificationType: NotificationType | null = null;
+        let title = '';
+        let body = '';
+        
+        if (data.status === TutorSessionStatus.CREATED || data.status === TutorSessionStatus.COMPLETED) {
+          // This is essentially a check-in
+          notificationType = NotificationType.TUTOR_CHECKED_IN;
+          title = '✅ Session Started';
+          body = `${tutor?.fullName || 'Your tutor'} has started the session with ${sessionInfo.childName}`;
+        } else if (data.status === TutorSessionStatus.TUTOR_HOLIDAY) {
+          notificationType = NotificationType.TUTOR_HOLIDAY;
+          title = '📅 Tutor Holiday';
+          body = `${tutor?.fullName || 'Your tutor'} has marked a holiday for today's session`;
+        } else if (data.status === TutorSessionStatus.PUBLIC_HOLIDAY) {
+          notificationType = NotificationType.TUTOR_HOLIDAY;
+          title = '📅 Public Holiday';
+          body = `Session cancelled due to public holiday`;
+        } else if (data.status === TutorSessionStatus.CANCELLED_BY_TUTOR) {
+          notificationType = NotificationType.SESSION_CANCELLED_BY_TUTOR;
+          title = '❌ Session Cancelled';
+          body = `${tutor?.fullName || 'Your tutor'} has cancelled today's session`;
+        }
+        
+        if (notificationType) {
+          await sendNotificationToUser({
+            userId: data.parentId,
+            type: notificationType,
+            title,
+            body,
+            relatedEntityId: sessionDetail.id,
+            relatedEntityType: 'sessionDetail',
+            actionUrl: `/sessions/${data.sessionId}`,
+            metadata: {
+              tutorName: tutor?.fullName || 'Unknown',
+              childName: sessionInfo.childName,
+              status: data.status,
+            },
+          });
+          console.log(`✅ Sent session status notification to parent ${data.parentId}`);
+        }
+      }
+    } catch (notificationError) {
+      console.error('❌ Error sending session status notification:', notificationError);
+    }
+
+    return sessionDetail;
   }
 
   async deleteTutorSession(userId: string, sessionId: string) {
@@ -1111,7 +1167,62 @@ export default class TutorService {
       throw new NotFoundError("Session not found");
     }
 
+    const oldStatus = session.status;
     await session.update({ ...data });
+
+    // 🔔 SEND NOTIFICATION TO PARENT if status changed
+    if (data.status && data.status !== oldStatus) {
+      try {
+        const tutor = await User.findByPk(data.tutorId);
+        const sessionInfo = await TutorSessions.findByPk(data.sessionId);
+        
+        if (sessionInfo) {
+          let notificationType: NotificationType | null = null;
+          let title = '';
+          let body = '';
+          
+          if (data.status === TutorSessionStatus.COMPLETED) {
+            // Checkout notification
+            notificationType = NotificationType.TUTOR_CHECKED_OUT;
+            title = '👋 Session Completed';
+            body = `${tutor?.fullName || 'Your tutor'} has completed the session with ${sessionInfo.childName}`;
+          } else if (data.status === TutorSessionStatus.TUTOR_HOLIDAY) {
+            notificationType = NotificationType.TUTOR_HOLIDAY;
+            title = '📅 Tutor Holiday';
+            body = `${tutor?.fullName || 'Your tutor'} has marked a holiday`;
+          } else if (data.status === TutorSessionStatus.CANCELLED_BY_TUTOR) {
+            notificationType = NotificationType.SESSION_CANCELLED_BY_TUTOR;
+            title = '❌ Session Cancelled';
+            body = `${tutor?.fullName || 'Your tutor'} has cancelled the session`;
+          } else if (data.status === TutorSessionStatus.CANCELLED_BY_PARENT) {
+            notificationType = NotificationType.SESSION_CANCELLED_BY_PARENT;
+            title = '❌ Session Cancelled';
+            body = `Session with ${sessionInfo.childName} has been cancelled`;
+          }
+          
+          if (notificationType) {
+            await sendNotificationToUser({
+              userId: data.parentId,
+              type: notificationType,
+              title,
+              body,
+              relatedEntityId: session.id,
+              relatedEntityType: 'sessionDetail',
+              actionUrl: `/sessions/${data.sessionId}`,
+              metadata: {
+                tutorName: tutor?.fullName || 'Unknown',
+                childName: sessionInfo.childName,
+                oldStatus,
+                newStatus: data.status,
+              },
+            });
+            console.log(`✅ Sent session update notification to parent ${data.parentId}`);
+          }
+        }
+      } catch (notificationError) {
+        console.error('❌ Error sending session update notification:', notificationError);
+      }
+    }
 
     return await TutorSessionsDetail.update(
       { ...data },

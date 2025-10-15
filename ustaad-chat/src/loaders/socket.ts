@@ -8,7 +8,20 @@ const chatController = new ChatController();
 
 export let io: Server;
 
+// Track user socket connections (userId -> socketId)
+const userSocketMap = new Map<string, string>();
+
 function registerSocketHandlers(socket: Socket) {
+  // Register user's socket connection
+  const userId = (socket.data.user as any)?.id;
+  if (userId) {
+    userSocketMap.set(userId, socket.id);
+    console.log(`🔌 Registered user ${userId} with socket ${socket.id}`);
+    
+    // Join user to their personal notification room
+    socket.join(`user:${userId}`);
+  }
+  
   socket.on('joinConversation', (conversationId) =>
     chatController.handleJoinConversation(socket, conversationId)
   );
@@ -26,7 +39,46 @@ function registerSocketHandlers(socket: Socket) {
 
   socket.on('disconnect', () => {
     console.log(`❌ User disconnected: ${socket.id}`);
+    
+    // Remove user from socket map
+    if (userId) {
+      userSocketMap.delete(userId);
+      console.log(`🔌 Unregistered user ${userId}`);
+    }
   });
+}
+
+/**
+ * Emit a real-time notification to a user
+ * @param userId - User ID to send notification to
+ * @param notification - Notification data
+ */
+export function emitNotificationToUser(userId: string, notification: any) {
+  if (!io) {
+    console.warn('⚠️ Socket.IO not initialized, cannot emit notification');
+    return;
+  }
+  
+  // Emit to user's personal room
+  io.to(`user:${userId}`).emit('notification', notification);
+  console.log(`📤 Emitted real-time notification to user ${userId}`);
+}
+
+/**
+ * Emit a real-time notification to multiple users
+ * @param userIds - Array of user IDs
+ * @param notification - Notification data
+ */
+export function emitNotificationToUsers(userIds: string[], notification: any) {
+  if (!io) {
+    console.warn('⚠️ Socket.IO not initialized, cannot emit notifications');
+    return;
+  }
+  
+  userIds.forEach(userId => {
+    io.to(`user:${userId}`).emit('notification', notification);
+  });
+  console.log(`📤 Emitted real-time notification to ${userIds.length} users`);
 }
 
 export default function socketLoader(httpServer?: HTTPServer) {
