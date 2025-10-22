@@ -16,6 +16,7 @@ export class ChildService {
     const childData: ChildCreationAttributes = {
       ...data,
       userId,
+      fullName: data.fullName.toLowerCase(),
     };
     return await Child.create(childData);
   }
@@ -32,7 +33,10 @@ export class ChildService {
       throw new UnProcessableEntityError("child not found");
     }
 
-    await child.update(data);
+    await child.update({
+      ...data,
+      fullName: data.fullName.toLowerCase(),
+    });
     return child;
   }
 

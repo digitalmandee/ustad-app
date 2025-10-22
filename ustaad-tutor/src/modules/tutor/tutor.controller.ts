@@ -602,8 +602,8 @@ export default class TutorController {
 
   getTutorSessions = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { id: userId } = req.user;
-      const sessions = await this.tutorService.getTutorSessions(userId);
+      const { id: userId, role } = req.user;
+      const sessions = await this.tutorService.getTutorSessions(userId, role as any);
       return sendSuccessResponse(res, "Tutor sessions retrieved successfully", 200, sessions);
     } catch (error: any) {
       return sendErrorResponse(res, error.message || "Failed to retrieve tutor sessions", 400);
@@ -613,9 +613,9 @@ export default class TutorController {
 
   getTutorSession = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { id: userId } = req.user;
+      const { id: userId, role } = req.user;
       const { sessionId } = req.query as any;
-      const session = await this.tutorService.getTutorSession(userId, sessionId);
+      const session = await this.tutorService.getTutorSession(userId, sessionId, role as any);
       return sendSuccessResponse(res, "Tutor session retrieved successfully", 200, session);
     } catch (error: any) {
       return sendErrorResponse(res, error.message || "Failed to retrieve tutor session", 400);

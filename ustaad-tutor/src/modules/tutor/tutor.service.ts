@@ -110,7 +110,12 @@ export default class TutorService {
         : (data.subjects as string)
             .replace(/^\[|\]$/g, "")
             .split(",")
-            .map((s: string) => s.trim().replace(/^['"]|['"]$/g, "").toLowerCase());
+            .map((s: string) =>
+              s
+                .trim()
+                .replace(/^['"]|['"]$/g, "")
+                .toLowerCase()
+            );
 
       const tutor = await Tutor.create({
         userId: data.userId,
@@ -586,9 +591,7 @@ export default class TutorService {
     headline: string;
     description: string;
   }) {
-
     console.log("data", data);
-    
 
     // First, find the TutorSessionsDetail record by sessionId
     const sessionDetail = await TutorSessionsDetail.findByPk(data.sessionId);
@@ -736,7 +739,7 @@ export default class TutorService {
           const totalExperience = this.calculateTotalExperience(
             tutorData.tutor?.TutorExperiences || []
           );
-          
+
           return {
             ...tutorData,
             tutor: {
@@ -830,7 +833,7 @@ export default class TutorService {
           const totalExperience = this.calculateTotalExperience(
             tutorData.tutor?.TutorExperiences || []
           );
-          
+
           return {
             ...tutorData,
             distance,
@@ -897,8 +900,7 @@ export default class TutorService {
       const startDate = new Date(exp.startDate);
       const endDate = new Date(exp.endDate);
       const diffInYears =
-        (endDate.getTime() - startDate.getTime()) /
-        (1000 * 60 * 60 * 24 * 365);
+        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
       totalExperience += diffInYears;
     });
 
@@ -1022,9 +1024,24 @@ export default class TutorService {
   }
 
   // Tutor Sessions Methods
-  async getTutorSessions(userId: string) {
+  async getTutorSessions(userId: string, role: UserRole) {
+    console.log("userId", userId, "role", role);
+
+    let sessionWhereClause: any = {};
+    let runningSessionWhereClause: any = { status: TutorSessionStatus.CREATED };
+
+    if (role === "TUTOR") {
+      sessionWhereClause.tutorId = userId;
+      runningSessionWhereClause.tutorId = userId;
+    } else if (role === "PARENT") {
+      sessionWhereClause.parentId = userId;
+      runningSessionWhereClause.parentId = userId;
+    } else {
+      throw new UnProcessableEntityError("Invalid user role");
+    }
+
     const sessions = await TutorSessions.findAll({
-      where: { tutorId: userId },
+      where: sessionWhereClause,
       include: [
         {
           model: User,
@@ -1033,8 +1050,10 @@ export default class TutorService {
       ],
     });
 
+    console.log("sessions", sessions);
+
     const runningSessions = await TutorSessionsDetail.findAll({
-      where: { tutorId: userId, status: TutorSessionStatus.CREATED },
+      where: runningSessionWhereClause,
       include: [
         {
           model: User,
@@ -1042,11 +1061,26 @@ export default class TutorService {
         },
       ],
     });
+
     return { sessions, runningSessions };
   }
-  async getTutorSession(userId: string, sessionId: string) {
+  async getTutorSession(userId: string, sessionId: string, role: UserRole) {
+    let sessionWhereClause: any = {};
+
+    if (role === "PARENT") {
+      sessionWhereClause.parentId = userId;
+    } else {
+      sessionWhereClause.tutorId = userId;
+    }
+
+    if (sessionId) {
+      sessionWhereClause.sessionId = sessionId;
+    }
+
+    console.log("sessionWhereClause", sessionWhereClause);
+
     const session = await TutorSessionsDetail.findAll({
-      where: { tutorId: userId, sessionId: sessionId },
+      where: sessionWhereClause,
       include: [
         {
           model: User,
@@ -1072,6 +1106,7 @@ export default class TutorService {
       where: {
         tutorId: userId,
         parentId: data.parentId,
+        sessionId: data.sessionId,
         createdAt: {
           [Op.between]: [
             new Date().setHours(0, 0, 0, 0),
@@ -1091,37 +1126,43 @@ export default class TutorService {
       throw new UnProcessableEntityError("Tutor session already exists");
     }
 
-    const sessionDetail = await TutorSessionsDetail.create({ tutorId: userId, ...data });
+    const sessionDetail = await TutorSessionsDetail.create({
+      tutorId: userId,
+      ...data,
+    });
 
     // 🔔 SEND NOTIFICATION TO PARENT based on status
     try {
       const tutor = await User.findByPk(userId);
       const sessionInfo = await TutorSessions.findByPk(data.sessionId);
-      
+
       if (sessionInfo) {
         let notificationType: NotificationType | null = null;
-        let title = '';
-        let body = '';
-        
-        if (data.status === TutorSessionStatus.CREATED || data.status === TutorSessionStatus.COMPLETED) {
+        let title = "";
+        let body = "";
+
+        if (
+          data.status === TutorSessionStatus.CREATED ||
+          data.status === TutorSessionStatus.COMPLETED
+        ) {
           // This is essentially a check-in
           notificationType = NotificationType.TUTOR_CHECKED_IN;
-          title = '✅ Session Started';
-          body = `${tutor?.fullName || 'Your tutor'} has started the session with ${sessionInfo.childName}`;
+          title = "✅ Session Started";
+          body = `${tutor?.fullName || "Your tutor"} has started the session with ${sessionInfo.childName}`;
         } else if (data.status === TutorSessionStatus.TUTOR_HOLIDAY) {
           notificationType = NotificationType.TUTOR_HOLIDAY;
-          title = '📅 Tutor Holiday';
-          body = `${tutor?.fullName || 'Your tutor'} has marked a holiday for today's session`;
+          title = "📅 Tutor Holiday";
+          body = `${tutor?.fullName || "Your tutor"} has marked a holiday for today's session`;
         } else if (data.status === TutorSessionStatus.PUBLIC_HOLIDAY) {
           notificationType = NotificationType.TUTOR_HOLIDAY;
-          title = '📅 Public Holiday';
+          title = "📅 Public Holiday";
           body = `Session cancelled due to public holiday`;
         } else if (data.status === TutorSessionStatus.CANCELLED_BY_TUTOR) {
           notificationType = NotificationType.SESSION_CANCELLED_BY_TUTOR;
-          title = '❌ Session Cancelled';
-          body = `${tutor?.fullName || 'Your tutor'} has cancelled today's session`;
+          title = "❌ Session Cancelled";
+          body = `${tutor?.fullName || "Your tutor"} has cancelled today's session`;
         }
-        
+
         if (notificationType) {
           await sendNotificationToUser({
             userId: data.parentId,
@@ -1129,19 +1170,24 @@ export default class TutorService {
             title,
             body,
             relatedEntityId: sessionDetail.id,
-            relatedEntityType: 'sessionDetail',
+            relatedEntityType: "sessionDetail",
             actionUrl: `/sessions/${data.sessionId}`,
             metadata: {
-              tutorName: tutor?.fullName || 'Unknown',
+              tutorName: tutor?.fullName || "Unknown",
               childName: sessionInfo.childName,
               status: data.status,
             },
           });
-          console.log(`✅ Sent session status notification to parent ${data.parentId}`);
+          console.log(
+            `✅ Sent session status notification to parent ${data.parentId}`
+          );
         }
       }
     } catch (notificationError) {
-      console.error('❌ Error sending session status notification:', notificationError);
+      console.error(
+        "❌ Error sending session status notification:",
+        notificationError
+      );
     }
 
     return sessionDetail;
@@ -1175,31 +1221,31 @@ export default class TutorService {
       try {
         const tutor = await User.findByPk(data.tutorId);
         const sessionInfo = await TutorSessions.findByPk(data.sessionId);
-        
+
         if (sessionInfo) {
           let notificationType: NotificationType | null = null;
-          let title = '';
-          let body = '';
-          
+          let title = "";
+          let body = "";
+
           if (data.status === TutorSessionStatus.COMPLETED) {
             // Checkout notification
             notificationType = NotificationType.TUTOR_CHECKED_OUT;
-            title = '👋 Session Completed';
-            body = `${tutor?.fullName || 'Your tutor'} has completed the session with ${sessionInfo.childName}`;
+            title = "👋 Session Completed";
+            body = `${tutor?.fullName || "Your tutor"} has completed the session with ${sessionInfo.childName}`;
           } else if (data.status === TutorSessionStatus.TUTOR_HOLIDAY) {
             notificationType = NotificationType.TUTOR_HOLIDAY;
-            title = '📅 Tutor Holiday';
-            body = `${tutor?.fullName || 'Your tutor'} has marked a holiday`;
+            title = "📅 Tutor Holiday";
+            body = `${tutor?.fullName || "Your tutor"} has marked a holiday`;
           } else if (data.status === TutorSessionStatus.CANCELLED_BY_TUTOR) {
             notificationType = NotificationType.SESSION_CANCELLED_BY_TUTOR;
-            title = '❌ Session Cancelled';
-            body = `${tutor?.fullName || 'Your tutor'} has cancelled the session`;
+            title = "❌ Session Cancelled";
+            body = `${tutor?.fullName || "Your tutor"} has cancelled the session`;
           } else if (data.status === TutorSessionStatus.CANCELLED_BY_PARENT) {
             notificationType = NotificationType.SESSION_CANCELLED_BY_PARENT;
-            title = '❌ Session Cancelled';
+            title = "❌ Session Cancelled";
             body = `Session with ${sessionInfo.childName} has been cancelled`;
           }
-          
+
           if (notificationType) {
             await sendNotificationToUser({
               userId: data.parentId,
@@ -1207,20 +1253,25 @@ export default class TutorService {
               title,
               body,
               relatedEntityId: session.id,
-              relatedEntityType: 'sessionDetail',
+              relatedEntityType: "sessionDetail",
               actionUrl: `/sessions/${data.sessionId}`,
               metadata: {
-                tutorName: tutor?.fullName || 'Unknown',
+                tutorName: tutor?.fullName || "Unknown",
                 childName: sessionInfo.childName,
                 oldStatus,
                 newStatus: data.status,
               },
             });
-            console.log(`✅ Sent session update notification to parent ${data.parentId}`);
+            console.log(
+              `✅ Sent session update notification to parent ${data.parentId}`
+            );
           }
         }
       } catch (notificationError) {
-        console.error('❌ Error sending session update notification:', notificationError);
+        console.error(
+          "❌ Error sending session update notification:",
+          notificationError
+        );
       }
     }
 
@@ -1419,89 +1470,110 @@ export default class TutorService {
         whereCondition = {
           senderId: userId,
         };
-        
+
         // Include receiver (tutor) details
         includeCondition = [
           {
             model: User,
-            as: 'receiver',
-            attributes: ['id', 'fullName', 'email', 'image', 'role'],
+            as: "receiver",
+            attributes: ["id", "fullName", "email", "image", "role"],
             include: [
               {
                 model: Parent,
-                attributes: ['userId'],
+                attributes: ["userId"],
                 required: false,
-              }
-            ]
-          }
+              },
+            ],
+          },
         ];
       } else if (userRole === UserRole.PARENT) {
         // If user is TUTOR, get offers where they are the receiver and status is ACCEPTED
         whereCondition = {
           receiverId: userId,
         };
-        
+
         // Include sender (parent) details
         includeCondition = [
           {
             model: User,
-            as: 'sender',
-            attributes: ['id', 'fullName', 'email', 'image', 'role'],
+            as: "sender",
+            attributes: ["id", "fullName", "email", "image", "role"],
             include: [
               {
                 model: Tutor,
-                attributes: ['bankName', 'accountNumber', 'resumeUrl', 'subjects', 'about', 'grade'],
+                attributes: [
+                  "bankName",
+                  "accountNumber",
+                  "resumeUrl",
+                  "subjects",
+                  "about",
+                  "grade",
+                ],
                 required: false,
-              }
-            ]
-          }
+              },
+            ],
+          },
         ];
       } else {
         // For ADMIN/SUPER_ADMIN, return all accepted offers
         whereCondition = {
           status: OfferStatus.ACCEPTED,
         };
-        
+
         includeCondition = [
           {
             model: User,
-            as: 'sender',
-            attributes: ['id', 'fullName', 'email', 'image', 'role'],
+            as: "sender",
+            attributes: ["id", "fullName", "email", "image", "role"],
             include: [
               {
                 model: Tutor,
-                attributes: ['bankName', 'accountNumber', 'resumeUrl', 'subjects', 'about', 'grade'],
+                attributes: [
+                  "bankName",
+                  "accountNumber",
+                  "resumeUrl",
+                  "subjects",
+                  "about",
+                  "grade",
+                ],
                 required: false,
-              }
-            ]
+              },
+            ],
           },
           {
             model: User,
-            as: 'receiver',
-            attributes: ['id', 'fullName', 'email', 'image', 'role'],
+            as: "receiver",
+            attributes: ["id", "fullName", "email", "image", "role"],
             include: [
               {
                 model: Tutor,
-                attributes: ['bankName', 'accountNumber', 'resumeUrl', 'subjects', 'about', 'grade'],
+                attributes: [
+                  "bankName",
+                  "accountNumber",
+                  "resumeUrl",
+                  "subjects",
+                  "about",
+                  "grade",
+                ],
                 required: false,
-              }
-            ]
-          }
+              },
+            ],
+          },
         ];
       }
 
       const { rows: rawContracts, count } = await Offer.findAndCountAll({
         where: whereCondition,
         include: includeCondition,
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
         limit,
         offset,
       });
 
       // Transform the data to have consistent structure for all roles
-      const contracts = rawContracts.map(contract => {
+      const contracts = rawContracts.map((contract) => {
         const contractData = contract.toJSON() as any;
-        
+
         // Determine the other party based on user role
         let otherParty;
         if (userRole === UserRole.PARENT) {
@@ -1534,10 +1606,12 @@ export default class TutorService {
           createdAt: contractData.createdAt,
           updatedAt: contractData.updatedAt,
           user: otherParty, // Consistent key for the other party
-          ...(userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN ? {
-            sender: contractData.sender,
-            receiver: contractData.receiver
-          } : {})
+          ...(userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN
+            ? {
+                sender: contractData.sender,
+                receiver: contractData.receiver,
+              }
+            : {}),
         };
       });
 
@@ -1561,7 +1635,6 @@ export default class TutorService {
     }
   }
 
-
   async getNotificationHistory(userId: string) {
     try {
       const notifications = await Notification.findAll({ where: { userId } });
@@ -1574,7 +1647,10 @@ export default class TutorService {
 
   async markNotificationAsRead(userId: string, notificationId: string) {
     try {
-      const notification = await Notification.update({ isRead: true }, { where: { id: notificationId } });
+      const notification = await Notification.update(
+        { isRead: true },
+        { where: { id: notificationId } }
+      );
       return notification;
     } catch (error) {
       console.error("Error in markNotificationAsRead:", error);

@@ -22,7 +22,7 @@ const connectToPostgres = async (retryCount = 0) => {
         console.info("✅ Connected to PostgreSQL");
         (0, models_1.initAllModels)(sequelize);
         // Temporarily use force: true to recreate tables with new enum
-        await sequelize.sync({ force: true }); // This will drop and recreate all tables
+        // await sequelize.sync({ force: true }); // This will drop and recreate all tables
         // await sequelize.sync({alter: true }); // Use this after first run
         return sequelize;
     }

@@ -38,8 +38,7 @@ import {
   ConversationParticipant,
   sequelize,
   File,
-  sendNotificationToUser,
-  NotificationType,
+  Child,
 } from '@ustaad/shared';
 
 interface MessageMetadata {
@@ -90,14 +89,37 @@ export default class ChatService {
         if (!messageData.offer) {
           throw new BadRequestError('Offer data is required for message type OFFER');
         }
+
         const offerData = messageData.offer as OfferData;
+
+        const children = await Child.findAll({
+          where: { userId: offerData.receiverId, fullName: offerData.childName.toLowerCase() },
+        });
+
+        if (children.length === 0) {
+          throw new BadRequestError('Child not found');
+        }
+
+        const existingOffer = await Offer.findOne({
+          where: {
+            conversationId: messageData.conversationId,
+            senderId,
+            receiverId: offerData.receiverId,
+            childName: offerData.childName.toLowerCase(),
+          },
+        });
+
+        if (existingOffer) {
+          throw new BadRequestError("Offer already exists for this parent's child");
+        }
+
         const savedOfferdata = await Offer.create(
           {
             conversationId: messageData.conversationId,
             senderId,
             receiverId: offerData.receiverId,
             messageId: message.id, // Link to message
-            childName: offerData.childName,
+            childName: offerData.childName.toLowerCase(),
             amountMonthly: offerData.amountMonthly,
             subject: offerData.subject,
             startDate: offerData.startDate,
@@ -118,7 +140,7 @@ export default class ChatService {
           { transaction }
         );
         (message.metadata as MessageMetadata).offer = savedOfferdata;
-        
+
         // 🔔 SEND OFFER NOTIFICATION TO PARENT (will be sent after commit in the main notification block)
       }
 
@@ -151,7 +173,7 @@ export default class ChatService {
       }
 
       await transaction.commit();
-      
+
       // 🔔 SEND NOTIFICATION TO RECEIVER
       try {
         // Get receiver (other participant in conversation)
@@ -161,12 +183,12 @@ export default class ChatService {
             isActive: true,
           },
         });
-        
-        const receiver = participants.find(p => p.userId !== senderId);
-        
+
+        const receiver = participants.find((p) => p.userId !== senderId);
+
         if (receiver) {
           const sender = await User.findByPk(senderId);
-          
+
           // Determine notification body based on message type
           let notificationBody = messageData.content || '';
           if (messageData.type === MessageType.IMAGE) {
@@ -178,35 +200,35 @@ export default class ChatService {
           } else if (messageData.type === MessageType.OFFER) {
             notificationBody = '💼 Sent a tutoring offer';
           }
-          
+
           // Truncate long messages
           if (notificationBody.length > 100) {
             notificationBody = notificationBody.substring(0, 100) + '...';
           }
-          
-          await sendNotificationToUser({
-            userId: receiver.userId,
-            type: NotificationType.NEW_MESSAGE,
-            title: `${sender?.fullName || 'Someone'}`,
-            body: notificationBody,
-            relatedEntityId: message.id,
-            relatedEntityType: 'message',
-            actionUrl: `/chat/${messageData.conversationId}`,
-            metadata: {
-              conversationId: messageData.conversationId,
-              senderId,
-              senderName: sender?.fullName || 'Unknown',
-              messageType: messageData.type,
-            },
-          });
-          
+
+          // await sendNotificationToUser({
+          //   userId: receiver.userId,
+          //   type: NotificationType.NEW_MESSAGE,
+          //   title: `${sender?.fullName || 'Someone'}`,
+          //   body: notificationBody,
+          //   relatedEntityId: message.id,
+          //   relatedEntityType: 'message',
+          //   actionUrl: `/chat/${messageData.conversationId}`,
+          //   metadata: {
+          //     conversationId: messageData.conversationId,
+          //     senderId,
+          //     senderName: sender?.fullName || 'Unknown',
+          //     messageType: messageData.type,
+          //   },
+          // });
+
           console.log(`✅ Sent chat notification to user ${receiver.userId}`);
         }
       } catch (notificationError) {
         // Don't fail the message creation if notification fails
         console.error('❌ Error sending chat notification:', notificationError);
       }
-      
+
       return this.formatMessageResponse(message);
     } catch (err: any) {
       await transaction.rollback();

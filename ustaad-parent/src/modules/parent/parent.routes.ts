@@ -48,7 +48,7 @@ router.post(
 router.get(
   routes.PARENT_Profile,
   authenticateJwt,
-  authorizeRoles("PARENT"),
+  authorizeRoles("PARENT", "TUTOR"),
   tutorController.getProfile
 );
 
