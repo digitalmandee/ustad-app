@@ -28,7 +28,7 @@ export const connectToPostgres = async (retryCount = 0): Promise<Sequelize> => {
 
     // Temporarily use force: true to recreate tables with new enum
     // await sequelize.sync({ force: true }); // This will drop and recreate all tables
-    // await sequelize.sync({alter: true }); // Use this after first run
+    await sequelize.sync({alter: true }); // Use this after first run
     return sequelize;
   } catch (err) {
     console.error("❌ DB connection error:", err);

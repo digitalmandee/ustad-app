@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.NotificationType = exports.HelpRequestStatus = exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
+exports.NotificationType = exports.HelpRequestType = exports.HelpRequestStatus = exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
 var UserRole;
 (function (UserRole) {
     UserRole["ADMIN"] = "ADMIN";
@@ -97,6 +97,11 @@ var HelpRequestStatus;
     HelpRequestStatus["CLOSED"] = "CLOSED";
     HelpRequestStatus["CANCELLED"] = "CANCELLED";
 })(HelpRequestStatus || (exports.HelpRequestStatus = HelpRequestStatus = {}));
+var HelpRequestType;
+(function (HelpRequestType) {
+    HelpRequestType["CONTRACT"] = "CONTRACT";
+    HelpRequestType["GENERAL"] = "GENERAL";
+})(HelpRequestType || (exports.HelpRequestType = HelpRequestType = {}));
 var NotificationType;
 (function (NotificationType) {
     // Chat

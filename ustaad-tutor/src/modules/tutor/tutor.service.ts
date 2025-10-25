@@ -28,6 +28,7 @@ import {
   sendNotificationToUser,
   NotificationType,
   ParentSubscription,
+  HelpRequestType,
 } from "@ustaad/shared";
 import { HelpRequests } from "@ustaad/shared";
 import { TutorPaymentStatus, TutorSessionStatus } from "@ustaad/shared";
@@ -1463,153 +1464,118 @@ export default class TutorService {
       const offset = (page - 1) * limit;
 
       let whereCondition: any;
-      let includeCondition: any;
 
       if (userRole === UserRole.TUTOR) {
-        // If user is PARENT, get offers where they are the sender and status is ACCEPTED
+        // For tutors, get subscriptions where they are the tutor
         whereCondition = {
-          senderId: userId,
+          tutorId: userId,
         };
-
-        // Include receiver (tutor) details
-        includeCondition = [
-          {
-            model: User,
-            as: "receiver",
-            attributes: ["id", "fullName", "email", "image", "role"],
-            include: [
-              {
-                model: Parent,
-                attributes: ["userId"],
-                required: false,
-              },
-            ],
-          },
-        ];
       } else if (userRole === UserRole.PARENT) {
-        // If user is TUTOR, get offers where they are the receiver and status is ACCEPTED
+        // For parents, get subscriptions where they are the parent
         whereCondition = {
-          receiverId: userId,
+          parentId: userId,
         };
-
-        // Include sender (parent) details
-        includeCondition = [
-          {
-            model: User,
-            as: "sender",
-            attributes: ["id", "fullName", "email", "image", "role"],
-            include: [
-              {
-                model: Tutor,
-                attributes: [
-                  "bankName",
-                  "accountNumber",
-                  "resumeUrl",
-                  "subjects",
-                  "about",
-                  "grade",
-                ],
-                required: false,
-              },
-            ],
-          },
-        ];
       } else {
-        // For ADMIN/SUPER_ADMIN, return all accepted offers
-        whereCondition = {
-          status: OfferStatus.ACCEPTED,
-        };
-
-        includeCondition = [
-          {
-            model: User,
-            as: "sender",
-            attributes: ["id", "fullName", "email", "image", "role"],
-            include: [
-              {
-                model: Tutor,
-                attributes: [
-                  "bankName",
-                  "accountNumber",
-                  "resumeUrl",
-                  "subjects",
-                  "about",
-                  "grade",
-                ],
-                required: false,
-              },
-            ],
-          },
-          {
-            model: User,
-            as: "receiver",
-            attributes: ["id", "fullName", "email", "image", "role"],
-            include: [
-              {
-                model: Tutor,
-                attributes: [
-                  "bankName",
-                  "accountNumber",
-                  "resumeUrl",
-                  "subjects",
-                  "about",
-                  "grade",
-                ],
-                required: false,
-              },
-            ],
-          },
-        ];
+        // For admins, return all subscriptions
+        whereCondition = {};
       }
 
-      const { rows: rawContracts, count } = await Offer.findAndCountAll({
-        where: whereCondition,
-        include: includeCondition,
-        order: [["createdAt", "DESC"]],
-        limit,
-        offset,
+      console.log("whereCondition", whereCondition);
+      
+      // Get contracts with offer data only
+      const { rows: rawContracts, count } =
+        await ParentSubscription.findAndCountAll({
+          where: whereCondition,
+          include: [
+            {
+              model: Offer,
+              attributes: [
+                "id",
+                "childName",
+                "subject",
+                "startDate",
+                "startTime",
+                "endTime",
+                "description",
+                "daysOfWeek",
+              ],
+              required: false,
+            },
+          ],
+          order: [["createdAt", "DESC"]],
+          limit,
+          offset,
+        });
+
+      // Get user data separately to avoid association conflicts
+      const contractIds = rawContracts.map(contract => contract.id);
+      const userIds = [...new Set([
+        ...rawContracts.map(contract => contract.parentId),
+        ...rawContracts.map(contract => contract.tutorId)
+      ])];
+      
+      const users = await User.findAll({
+        where: { id: { [Op.in]: userIds } },
+        attributes: ["id", "fullName", "email", "image", "role"],
+        include: [
+          {
+            model: Tutor,
+            attributes: ["subjects", "about", "grade"],
+            required: false,
+          },
+          {
+            model: Parent,
+            attributes: ["userId"],
+            required: false,
+          },
+        ],
+      });
+
+      // Create user lookup map
+      const userMap = new Map();
+      users.forEach(user => {
+        userMap.set(user.id, user);
       });
 
       // Transform the data to have consistent structure for all roles
       const contracts = rawContracts.map((contract) => {
         const contractData = contract.toJSON() as any;
+        const parentUser = userMap.get(contractData.parentId);
+        const tutorUser = userMap.get(contractData.tutorId);
 
         // Determine the other party based on user role
         let otherParty;
         if (userRole === UserRole.PARENT) {
-          // For parents, the other party is the receiver (tutor)
-          otherParty = contractData.receiver;
+          // For parents, the other party is the tutor
+          otherParty = tutorUser;
         } else if (userRole === UserRole.TUTOR) {
-          // For tutors, the other party is the sender (parent)
-          otherParty = contractData.sender;
+          // For tutors, the other party is the parent
+          otherParty = parentUser;
         } else {
-          // For admins, include both but prioritize receiver for consistency
-          otherParty = contractData.receiver;
+          // For admins, include both
+          otherParty = tutorUser;
         }
 
         // Return consistent structure
         return {
           id: contractData.id,
-          conversationId: contractData.conversationId,
-          senderId: contractData.senderId,
-          receiverId: contractData.receiverId,
-          messageId: contractData.messageId,
-          childName: contractData.childName,
-          amountMonthly: contractData.amountMonthly,
-          subject: contractData.subject,
-          startDate: contractData.startDate,
-          startTime: contractData.startTime,
-          endTime: contractData.endTime,
-          description: contractData.description,
+          parentId: contractData.parentId,
+          tutorId: contractData.tutorId,
+          offerId: contractData.offerId,
+          stripeSubscriptionId: contractData.stripeSubscriptionId,
           status: contractData.status,
-          daysOfWeek: contractData.daysOfWeek,
+          planType: contractData.planType,
+          startDate: contractData.startDate,
+          endDate: contractData.endDate,
+          amount: contractData.amount,
           createdAt: contractData.createdAt,
           updatedAt: contractData.updatedAt,
           user: otherParty, // Consistent key for the other party
+          offer: contractData.Offer, // Include offer details
           ...(userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN
             ? {
-                sender: contractData.sender,
-                receiver: contractData.receiver,
+                parent: parentUser,
+                tutor: tutorUser,
               }
             : {}),
         };
@@ -1654,6 +1620,148 @@ export default class TutorService {
       return notification;
     } catch (error) {
       console.error("Error in markNotificationAsRead:", error);
+      throw error;
+    }
+  }
+
+  async cancelContract(tutorId: string, contractId: string) {
+    try {
+      // First, verify that the contract exists and belongs to this tutor
+      const contract = await ParentSubscription.findOne({
+        where: {
+          id: contractId,
+          tutorId: tutorId,
+        },
+      });
+
+      if (!contract) {
+        throw new NotFoundError(
+          "Contract not found or you don't have permission to cancel this contract"
+        );
+      }
+
+      // Check if contract is already cancelled
+      if (contract.status === "cancelled") {
+        throw new BadRequestError("Contract is already cancelled");
+      }
+
+      // Update the contract status to cancelled
+      await ParentSubscription.update(
+        {
+          status: "cancelled",
+          endDate: new Date(), // Set end date to current date
+        },
+        {
+          where: {
+            id: contractId,
+            tutorId: tutorId,
+          },
+        }
+      );
+
+      // Get the updated contract with related data
+      const updatedContract = await ParentSubscription.findOne({
+        where: { id: contractId },
+        include: [
+          {
+            model: User,
+            as: "parent",
+            foreignKey: "parentId",
+            attributes: ["id", "fullName", "email", "image", "role"],
+          },
+          {
+            model: Offer,
+            attributes: [
+              "id",
+              "childName",
+              "subject",
+              "startDate",
+              "startTime",
+              "endTime",
+              "description",
+              "daysOfWeek",
+            ],
+            required: false,
+          },
+        ],
+      });
+
+      return updatedContract;
+    } catch (error) {
+      console.error("Error in cancelContract:", error);
+      throw error;
+    }
+  }
+
+  async createHelpRequestAgainstContract(
+    tutorId: string,
+    requesterRole: UserRole,
+    contractId: string,
+    subject: string,
+    message: string
+  ) {
+    try {
+      let contract: any;
+
+      console.log("requesterRole", requesterRole);
+      console.log("contractId", contractId);
+      console.log("tutorId", tutorId);
+
+      if (requesterRole === UserRole.TUTOR) {
+        contract = await ParentSubscription.findOne({
+          where: {
+            id: contractId,
+            tutorId: tutorId,
+          },
+        });
+      } else if (requesterRole === UserRole.PARENT) {
+        contract = await ParentSubscription.findOne({
+          where: {
+            id: contractId,
+            parentId: tutorId,
+          },
+        });
+      }
+
+      if (!contract) {
+        throw new NotFoundError(
+          "Contract not found or you don't have permission to create help request for this contract"
+        );
+      }
+
+      const data: any = {
+        parentId: contract.parentId,
+        tutorId: contract.tutorId,
+        contractId: contract.id,
+      };
+
+      // Create help request against the parent from this contract
+      const helpRequest = await HelpRequests.create({
+        requesterId:
+          requesterRole === UserRole.TUTOR ? tutorId : contract.parentId,
+        againstId:
+          requesterRole === UserRole.TUTOR ? contract.parentId : tutorId,
+        requester: requesterRole,
+        subject: `Contract Help Request: ${subject}`,
+        message: `Contract ID: ${contractId}\n\n${message}`,
+        status: HelpRequestStatus.OPEN,
+        type: HelpRequestType.CONTRACT,
+        data,
+      });
+
+      const contractData = contract.toJSON() as any;
+
+      return {
+        helpRequest,
+        contract: {
+          id: contract.id,
+          parentName: contractData.parent?.fullName,
+          childName: contractData.Offer?.childName,
+          subject: contractData.Offer?.subject,
+        },
+      };
+    } catch (error) {
+      console.error("Error in createHelpRequestAgainstContract:", error);
       throw error;
     }
   }

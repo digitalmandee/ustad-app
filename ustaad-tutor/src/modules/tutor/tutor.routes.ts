@@ -217,6 +217,7 @@ router.get(routes.MONTHLY_EARNINGS, authenticateJwt, authorizeRoles("TUTOR"), tu
 router.post(
   routes.HELP_REQUEST,
   authenticateJwt,
+  authorizeRoles("TUTOR", "PARENT"),
   helpRequestValidationRules(),
   validateRequest,
   tutorController.createHelpRequest
@@ -225,6 +226,7 @@ router.post(
 router.get(
   routes.GET_HELP_REQUESTS,
   authenticateJwt,
+  authorizeRoles("TUTOR", "PARENT"),
   tutorController.getHelpRequestsAgainstMe
 );
 
@@ -232,7 +234,24 @@ router.get(
 router.get(
   routes.GET_CONTRACTS,
   authenticateJwt,
+  authorizeRoles("TUTOR", "PARENT"),
   tutorController.getContracts
+);
+
+router.patch(
+  routes.CANCEL_CONTRACT,
+  authenticateJwt,
+  authorizeRoles("TUTOR", "PARENT"),
+  tutorController.cancelContract
+);
+
+router.post(
+  routes.HELP_REQUEST_CONTRACT,
+  authenticateJwt,
+  authorizeRoles("TUTOR", "PARENT"),
+  helpRequestValidationRules(),
+  validateRequest,
+  tutorController.createHelpRequestAgainstContract
 );
 
 // Notifications routes

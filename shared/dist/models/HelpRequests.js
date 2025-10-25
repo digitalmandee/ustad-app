@@ -39,6 +39,15 @@ function initHelpRequestsModel(sequelize) {
             type: sequelize_1.DataTypes.TEXT,
             allowNull: false,
         },
+        type: {
+            type: sequelize_1.DataTypes.ENUM(...Object.values(enums_1.HelpRequestType)),
+            allowNull: false,
+            defaultValue: enums_1.HelpRequestType.GENERAL,
+        },
+        data: {
+            type: sequelize_1.DataTypes.JSONB,
+            allowNull: true,
+        },
     }, {
         sequelize,
         tableName: "help_requests",

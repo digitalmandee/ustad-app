@@ -42,6 +42,8 @@ const routes = {
   
   // Contracts
   GET_CONTRACTS: "/tutor/contracts",
+  CANCEL_CONTRACT: "/tutor/contracts/:contractId/cancel",
+  HELP_REQUEST_CONTRACT: "/tutor/contracts/:contractId/help-request",
 
 
   // Notifications

@@ -760,4 +760,65 @@ export default class TutorController {
       return sendErrorResponse(res, error.message || "Failed to mark notification as read", 400);
     }
   };
+
+  cancelContract = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: tutorId } = req.user;
+      const { contractId } = req.params;
+
+      const updatedContract = await this.tutorService.cancelContract(tutorId, contractId);
+
+      return sendSuccessResponse(
+        res,
+        "Contract cancelled successfully",
+        200,
+        updatedContract
+      );
+    } catch (error: any) {
+      console.error('Cancel contract error:', error);
+      
+      if (error.message?.includes('not found') || error.message?.includes('permission')) {
+        return sendErrorResponse(res, error.message, 404);
+      }
+      
+      if (error.message?.includes('already cancelled')) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+      
+      throw new GenericError(error, `Error from cancelContract ${__filename}`);
+    }
+  };
+
+  createHelpRequestAgainstContract = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+
+      
+      const { id: tutorId, role } = req.user;
+      const { contractId } = req.params;
+      const { subject, message } = req.body;
+
+      const result = await this.tutorService.createHelpRequestAgainstContract(
+        tutorId,
+        role as any,
+        contractId,
+        subject,
+        message
+      );
+
+      return sendSuccessResponse(
+        res,
+        "Help request created successfully against contract",
+        201,
+        result
+      );
+    } catch (error: any) {
+      console.error('Create help request against contract error:', error);
+      
+      if (error.message?.includes('not found') || error.message?.includes('permission')) {
+        return sendErrorResponse(res, error.message, 404);
+      }
+      
+      throw new GenericError(error, `Error from createHelpRequestAgainstContract ${__filename}`);
+    }
+  };
 }

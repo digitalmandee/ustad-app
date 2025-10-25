@@ -78,6 +78,10 @@ export declare enum HelpRequestStatus {
     CLOSED = "CLOSED",
     CANCELLED = "CANCELLED"
 }
+export declare enum HelpRequestType {
+    CONTRACT = "CONTRACT",
+    GENERAL = "GENERAL"
+}
 export declare enum NotificationType {
     NEW_MESSAGE = "NEW_MESSAGE",
     OFFER_RECEIVED = "OFFER_RECEIVED",

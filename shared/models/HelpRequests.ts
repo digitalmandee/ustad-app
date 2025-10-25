@@ -1,6 +1,6 @@
 import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { User } from "./User";
-import { HelpRequestStatus, UserRole } from "../constant/enums";
+import { HelpRequestStatus, UserRole, HelpRequestType } from "../constant/enums";
 
 export interface HelpRequestsAttributes {
   id: string;
@@ -10,6 +10,8 @@ export interface HelpRequestsAttributes {
   status: HelpRequestStatus;
   message?: string;
   requester: UserRole;
+  type?: HelpRequestType;
+  data?: JSON;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -25,6 +27,8 @@ export class HelpRequests
   public status!: HelpRequestStatus;
   public message?: string;
   public requester!: UserRole;
+  public type?: HelpRequestType;
+  public data?: any;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -63,6 +67,15 @@ export function initHelpRequestsModel(
       message: {
         type: DataTypes.TEXT,
         allowNull: false,
+      },
+      type: {
+        type: DataTypes.ENUM(...Object.values(HelpRequestType)),
+        allowNull: false,
+        defaultValue: HelpRequestType.GENERAL,
+      },
+      data: {
+        type: DataTypes.JSONB,
+        allowNull: true,
       },
     },
     {

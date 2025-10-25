@@ -1,5 +1,5 @@
 import { Model, Sequelize } from "sequelize";
-import { HelpRequestStatus, UserRole } from "../constant/enums";
+import { HelpRequestStatus, UserRole, HelpRequestType } from "../constant/enums";
 export interface HelpRequestsAttributes {
     id: string;
     requesterId: string;
@@ -8,6 +8,8 @@ export interface HelpRequestsAttributes {
     status: HelpRequestStatus;
     message?: string;
     requester: UserRole;
+    type?: HelpRequestType;
+    data?: JSON;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -19,6 +21,8 @@ export declare class HelpRequests extends Model<HelpRequestsAttributes> implemen
     status: HelpRequestStatus;
     message?: string;
     requester: UserRole;
+    type?: HelpRequestType;
+    data?: any;
     readonly createdAt: Date;
     readonly updatedAt: Date;
 }

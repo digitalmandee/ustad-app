@@ -92,6 +92,11 @@ export enum HelpRequestStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum HelpRequestType {
+  CONTRACT = 'CONTRACT',
+  GENERAL = 'GENERAL',
+}
+
 export enum NotificationType {
   // Chat
   NEW_MESSAGE = 'NEW_MESSAGE',
