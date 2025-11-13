@@ -128,3 +128,9 @@ export enum NotificationType {
   // System
   SYSTEM_NOTIFICATION = 'SYSTEM_NOTIFICATION',
 }
+
+
+export enum TutorTransactionType {
+  PAYMENT = 'PAYMENT',
+  WITHDRAWAL = 'WITHDRAWAL',
+}

@@ -1,11 +1,12 @@
 import { Model, Sequelize, Optional } from "sequelize";
-import { TutorPaymentStatus } from "../constant/enums";
+import { TutorPaymentStatus, TutorTransactionType } from "../constant/enums";
 export interface TutorTransactionAttributes {
     id: string;
     tutorId: string;
     subscriptionId: string;
     status: TutorPaymentStatus;
     amount: number;
+    transactionType: TutorTransactionType;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -16,6 +17,7 @@ export declare class TutorTransaction extends Model<TutorTransactionAttributes, 
     subscriptionId: string;
     status: TutorPaymentStatus;
     amount: number;
+    transactionType: TutorTransactionType;
     readonly createdAt: Date;
     readonly updatedAt: Date;
 }

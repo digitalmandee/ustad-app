@@ -100,3 +100,7 @@ export declare enum NotificationType {
     REVIEW_RECEIVED_CHILD = "REVIEW_RECEIVED_CHILD",
     SYSTEM_NOTIFICATION = "SYSTEM_NOTIFICATION"
 }
+export declare enum TutorTransactionType {
+    PAYMENT = "PAYMENT",
+    WITHDRAWAL = "WITHDRAWAL"
+}

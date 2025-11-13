@@ -1,8 +1,6 @@
 import { Service } from 'typedi';
 import { GenericError } from '../../errors/generic-error';
 import { Op } from 'sequelize';
-// import { Message } from '../../models/message.model';
-// import { ConversationParticipant } from '../../models/conversation_participant.model';
 import {
   ICreateMessageDto,
   IUpdateMessageDto,
@@ -12,7 +10,6 @@ import {
   ConversationResponseDto,
   OfferData,
 } from './chat.dto';
-// import { ICreateMessageDto, IUpdateMessageDto, IMessageResponseDto, PaginatedMessagesDto, CreateConversationDto, ConversationResponseDto, UpdateConversationDto, JoinConversationDto } from './chat.dto';
 import {
   ConversationStatus,
   ConversationType,
@@ -21,14 +18,9 @@ import {
   OfferStatus,
   UserRole,
 } from '../../constant/enums';
-// import { Conversation } from '../../models/conversation.model';
 import { ForbiddenError } from '../../errors/forbidden-error';
 import { BadRequestError } from '../../errors/bad-request-error';
-// import { Offer } from '../../models/offer.model';
-
-// import { sequelize } from '../../connection/postgres';
 import { Transaction } from 'sequelize';
-// import { User } from '../../models/user.model';
 
 import {
   User,

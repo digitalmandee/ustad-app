@@ -6,7 +6,7 @@ import path from "path";
 import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
 import { ITutorOnboardingDTO } from "./tutor.dto";
 import bcrypt from "bcrypt";
-import { Op } from "sequelize";
+import { Op, Sequelize } from "sequelize";
 import geohash from "ngeohash";
 
 import {
@@ -28,11 +28,16 @@ import {
   sendNotificationToUser,
   NotificationType,
   ParentSubscription,
+  sequelize,
   HelpRequestType,
+  TutorTransactionType,
+  
 } from "@ustaad/shared";
 import { HelpRequests } from "@ustaad/shared";
 import { TutorPaymentStatus, TutorSessionStatus } from "@ustaad/shared";
 import { UserRole, HelpRequestStatus, OfferStatus } from "@ustaad/shared";
+import { QueryTypes } from "sequelize";
+
 
 interface TutorProfileData extends ITutorOnboardingDTO {
   resume: Express.Multer.File;
@@ -70,7 +75,6 @@ interface EducationData {
 
 interface PaymentRequestData {
   tutorId: string;
-  txnId: string;
   amount: number;
 }
 
@@ -974,28 +978,26 @@ export default class TutorService {
       // Create payment request
       const paymentRequest = await TutorTransaction.findOne({
         where: {
-          id: data.txnId,
           tutorId: data.tutorId,
+          status: TutorPaymentStatus.PENDING || TutorPaymentStatus.REQUESTED || TutorPaymentStatus.IN_REVIEW,
+          transactionType: TutorTransactionType.WITHDRAWAL,
         },
       });
 
-      if (!paymentRequest) {
-        throw new UnProcessableEntityError("Payment request not found");
+      if (paymentRequest) {
+        throw new UnProcessableEntityError("Payment request already exists");
       }
+      
 
-      if (paymentRequest.status === TutorPaymentStatus.REQUESTED) {
-        throw new UnProcessableEntityError(
-          "Payment request is already requested"
-        );
-      }
-
-      if (paymentRequest.status === TutorPaymentStatus.PAID) {
-        throw new UnProcessableEntityError("Payment request is already paid");
-      }
-
-      await paymentRequest.update({
+      await TutorTransaction.create({
+        tutorId: data.tutorId,
         status: TutorPaymentStatus.REQUESTED,
+        transactionType: TutorTransactionType.WITHDRAWAL,
+        amount: data.amount,
       });
+
+      tutor.balance -= data.amount;
+      await tutor.save();
 
       return paymentRequest;
     } catch (error) {
@@ -1024,73 +1026,137 @@ export default class TutorService {
     }
   }
 
-  // Tutor Sessions Methods
-  async getTutorSessions(userId: string, role: UserRole) {
-    console.log("userId", userId, "role", role);
-
-    let sessionWhereClause: any = {};
-    let runningSessionWhereClause: any = { status: TutorSessionStatus.CREATED };
+async getTutorSessions(userId: string, role: UserRole) {
+  try {
+    let sessionsQuery = "";
+    let runningSessionsQuery = "";
 
     if (role === "TUTOR") {
-      sessionWhereClause.tutorId = userId;
-      runningSessionWhereClause.tutorId = userId;
+      // Tutor → get parent info from tutorSessions
+      sessionsQuery = `
+        SELECT 
+          ts.*, 
+          u.id AS "parentId",
+          u."fullName" AS "parentName"
+        FROM "tutorSessions" ts
+        JOIN "users" u ON u.id = ts."parentId"
+        WHERE ts."tutorId" = :userId;
+      `;
+
+      // Running sessions from tutorSessionsDetail (with parent info)
+      runningSessionsQuery = `
+        SELECT 
+          tsd.*, 
+          u.id AS "parentId",
+          u."fullName" AS "parentName"
+        FROM "tutorSessionsDetail" tsd
+        JOIN "users" u ON u.id = tsd."parentId"
+        WHERE tsd."tutorId" = :userId
+          AND tsd."status" = 'CREATED';
+      `;
+
     } else if (role === "PARENT") {
-      sessionWhereClause.parentId = userId;
-      runningSessionWhereClause.parentId = userId;
+      // Parent → get tutor info from tutorSessions
+      sessionsQuery = `
+        SELECT 
+          ts.*, 
+          u.id AS "tutorId",
+          u."fullName" AS "tutorName"
+        FROM "tutorSessions" ts
+        JOIN "users" u ON u.id = ts."tutorId"
+        WHERE ts."parentId" = :userId;
+      `;
+
+      // Running sessions from tutorSessionsDetail (with tutor info)
+      runningSessionsQuery = `
+        SELECT 
+          tsd.*, 
+          u.id AS "tutorId",
+          u."fullName" AS "tutorName"
+        FROM "tutorSessionsDetail" tsd
+        JOIN "users" u ON u.id = tsd."tutorId"
+        WHERE tsd."parentId" = :userId
+          AND tsd."status" = 'CREATED';
+      `;
     } else {
       throw new UnProcessableEntityError("Invalid user role");
     }
 
-    const sessions = await TutorSessions.findAll({
-      where: sessionWhereClause,
-      include: [
-        {
-          model: User,
-          attributes: ["id", "fullName"],
-        },
-      ],
+    // Execute queries
+    const sessions = await sequelize.query(sessionsQuery, {
+      replacements: { userId },
+      type: QueryTypes.SELECT,
     });
 
-    console.log("sessions", sessions);
-
-    const runningSessions = await TutorSessionsDetail.findAll({
-      where: runningSessionWhereClause,
-      include: [
-        {
-          model: User,
-          attributes: ["id", "fullName"],
-        },
-      ],
+    const runningSessions = await sequelize.query(runningSessionsQuery, {
+      replacements: { userId },
+      type: QueryTypes.SELECT,
     });
 
     return { sessions, runningSessions };
+  } catch (error) {
+    console.error("Error in getTutorSessions:", error);
+    throw error;
   }
+}
+
+
+
+
+
+
+
+
   async getTutorSession(userId: string, sessionId: string, role: UserRole) {
-    let sessionWhereClause: any = {};
+    try {
+      let query = "";
 
-    if (role === "PARENT") {
-      sessionWhereClause.parentId = userId;
-    } else {
-      sessionWhereClause.tutorId = userId;
+      if (role === UserRole.TUTOR) {
+        // Tutor → fetch parent info
+        query = `
+          SELECT 
+            tsd.*, 
+            u.id AS "parentId",
+            u."fullName" AS "parentName"
+          FROM "tutorSessionsDetail" tsd
+          JOIN "users" u ON u.id = tsd."parentId"
+          WHERE tsd."tutorId" = :userId AND tsd."sessionId" = :sessionId
+          LIMIT 1;
+        `;
+      } else if (role === UserRole.PARENT) {
+        // Parent → fetch tutor info
+        query = `
+          SELECT 
+            tsd.*, 
+            u.id AS "tutorId",
+            u."fullName" AS "tutorName"
+          FROM "tutorSessionsDetail" tsd
+          JOIN "users" u ON u.id = tsd."tutorId"
+          WHERE tsd."parentId" = :userId AND tsd."sessionId" = :sessionId
+          LIMIT 1;
+        `;
+      } else {
+        throw new UnProcessableEntityError("Invalid user role");
+      }
+
+      if (!sequelize || typeof sequelize.query !== "function") {
+        throw new Error("Database connection is not available");
+      }
+      if (typeof QueryTypes === "undefined") {
+        throw new Error("QueryTypes is not defined");
+      }
+
+      const result = await sequelize.query(query, {
+        replacements: { userId, sessionId },
+        type: QueryTypes.SELECT,
+      });
+
+      const session = Array.isArray(result) ? result[0] : null;
+      return session || null;
+    } catch (error) {
+      console.error("Error in getTutorSession:", error);
+      throw error;
     }
-
-    if (sessionId) {
-      sessionWhereClause.sessionId = sessionId;
-    }
-
-    console.log("sessionWhereClause", sessionWhereClause);
-
-    const session = await TutorSessionsDetail.findAll({
-      where: sessionWhereClause,
-      include: [
-        {
-          model: User,
-          attributes: ["id", "fullName"],
-        },
-      ],
-    });
-
-    return session;
   }
 
   async addTutorSession(userId: string, data: TutorSessionsDetail) {
@@ -1464,118 +1530,153 @@ export default class TutorService {
       const offset = (page - 1) * limit;
 
       let whereCondition: any;
+      let includeCondition: any;
 
       if (userRole === UserRole.TUTOR) {
-        // For tutors, get subscriptions where they are the tutor
+        // If user is PARENT, get offers where they are the sender and status is ACCEPTED
         whereCondition = {
-          tutorId: userId,
+          senderId: userId,
         };
+
+        // Include receiver (tutor) details
+        includeCondition = [
+          {
+            model: User,
+            as: "receiver",
+            attributes: ["id", "fullName", "email", "image", "role"],
+            include: [
+              {
+                model: Parent,
+                attributes: ["userId"],
+                required: false,
+              },
+            ],
+          },
+        ];
       } else if (userRole === UserRole.PARENT) {
-        // For parents, get subscriptions where they are the parent
+        // If user is TUTOR, get offers where they are the receiver and status is ACCEPTED
         whereCondition = {
-          parentId: userId,
+          receiverId: userId,
         };
+
+        // Include sender (parent) details
+        includeCondition = [
+          {
+            model: User,
+            as: "sender",
+            attributes: ["id", "fullName", "email", "image", "role"],
+            include: [
+              {
+                model: Tutor,
+                attributes: [
+                  "bankName",
+                  "accountNumber",
+                  "resumeUrl",
+                  "subjects",
+                  "about",
+                  "grade",
+                ],
+                required: false,
+              },
+            ],
+          },
+        ];
       } else {
-        // For admins, return all subscriptions
-        whereCondition = {};
+        // For ADMIN/SUPER_ADMIN, return all accepted offers
+        whereCondition = {
+          status: OfferStatus.ACCEPTED,
+        };
+
+        includeCondition = [
+          {
+            model: User,
+            as: "sender",
+            attributes: ["id", "fullName", "email", "image", "role"],
+            include: [
+              {
+                model: Tutor,
+                attributes: [
+                  "bankName",
+                  "accountNumber",
+                  "resumeUrl",
+                  "subjects",
+                  "about",
+                  "grade",
+                ],
+                required: false,
+              },
+            ],
+          },
+          {
+            model: User,
+            as: "receiver",
+            attributes: ["id", "fullName", "email", "image", "role"],
+            include: [
+              {
+                model: Tutor,
+                attributes: [
+                  "bankName",
+                  "accountNumber",
+                  "resumeUrl",
+                  "subjects",
+                  "about",
+                  "grade",
+                ],
+                required: false,
+              },
+            ],
+          },
+        ];
       }
 
-      console.log("whereCondition", whereCondition);
-      
-      // Get contracts with offer data only
-      const { rows: rawContracts, count } =
-        await ParentSubscription.findAndCountAll({
-          where: whereCondition,
-          include: [
-            {
-              model: Offer,
-              attributes: [
-                "id",
-                "childName",
-                "subject",
-                "startDate",
-                "startTime",
-                "endTime",
-                "description",
-                "daysOfWeek",
-              ],
-              required: false,
-            },
-          ],
-          order: [["createdAt", "DESC"]],
-          limit,
-          offset,
-        });
-
-      // Get user data separately to avoid association conflicts
-      const contractIds = rawContracts.map(contract => contract.id);
-      const userIds = [...new Set([
-        ...rawContracts.map(contract => contract.parentId),
-        ...rawContracts.map(contract => contract.tutorId)
-      ])];
-      
-      const users = await User.findAll({
-        where: { id: { [Op.in]: userIds } },
-        attributes: ["id", "fullName", "email", "image", "role"],
-        include: [
-          {
-            model: Tutor,
-            attributes: ["subjects", "about", "grade"],
-            required: false,
-          },
-          {
-            model: Parent,
-            attributes: ["userId"],
-            required: false,
-          },
-        ],
-      });
-
-      // Create user lookup map
-      const userMap = new Map();
-      users.forEach(user => {
-        userMap.set(user.id, user);
+      const { rows: rawContracts, count } = await Offer.findAndCountAll({
+        where: whereCondition,
+        include: includeCondition,
+        order: [["createdAt", "DESC"]],
+        limit,
+        offset,
       });
 
       // Transform the data to have consistent structure for all roles
       const contracts = rawContracts.map((contract) => {
         const contractData = contract.toJSON() as any;
-        const parentUser = userMap.get(contractData.parentId);
-        const tutorUser = userMap.get(contractData.tutorId);
 
         // Determine the other party based on user role
         let otherParty;
         if (userRole === UserRole.PARENT) {
-          // For parents, the other party is the tutor
-          otherParty = tutorUser;
+          // For parents, the other party is the receiver (tutor)
+          otherParty = contractData.receiver;
         } else if (userRole === UserRole.TUTOR) {
-          // For tutors, the other party is the parent
-          otherParty = parentUser;
+          // For tutors, the other party is the sender (parent)
+          otherParty = contractData.sender;
         } else {
-          // For admins, include both
-          otherParty = tutorUser;
+          // For admins, include both but prioritize receiver for consistency
+          otherParty = contractData.receiver;
         }
 
         // Return consistent structure
         return {
           id: contractData.id,
-          parentId: contractData.parentId,
-          tutorId: contractData.tutorId,
-          offerId: contractData.offerId,
-          stripeSubscriptionId: contractData.stripeSubscriptionId,
-          status: contractData.status,
-          planType: contractData.planType,
+          conversationId: contractData.conversationId,
+          senderId: contractData.senderId,
+          receiverId: contractData.receiverId,
+          messageId: contractData.messageId,
+          childName: contractData.childName,
+          amountMonthly: contractData.amountMonthly,
+          subject: contractData.subject,
           startDate: contractData.startDate,
-          endDate: contractData.endDate,
-          amount: contractData.amount,
+          startTime: contractData.startTime,
+          endTime: contractData.endTime,
+          description: contractData.description,
+          status: contractData.status,
+          daysOfWeek: contractData.daysOfWeek,
           createdAt: contractData.createdAt,
           updatedAt: contractData.updatedAt,
           user: otherParty, // Consistent key for the other party
-          offer: contractData.Offer, // Include offer details
           ...(userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN
             ? {
-                parent: parentUser,
-                tutor: tutorUser,
+                sender: contractData.sender,
+                receiver: contractData.receiver,
               }
             : {}),
         };
@@ -1633,18 +1734,18 @@ export default class TutorService {
           tutorId: tutorId,
         },
       });
-
+  
       if (!contract) {
         throw new NotFoundError(
           "Contract not found or you don't have permission to cancel this contract"
         );
       }
-
+  
       // Check if contract is already cancelled
       if (contract.status === "cancelled") {
         throw new BadRequestError("Contract is already cancelled");
       }
-
+  
       // Update the contract status to cancelled
       await ParentSubscription.update(
         {
@@ -1658,7 +1759,7 @@ export default class TutorService {
           },
         }
       );
-
+  
       // Get the updated contract with related data
       const updatedContract = await ParentSubscription.findOne({
         where: { id: contractId },
@@ -1685,14 +1786,14 @@ export default class TutorService {
           },
         ],
       });
-
+  
       return updatedContract;
     } catch (error) {
       console.error("Error in cancelContract:", error);
       throw error;
     }
   }
-
+  
   async createHelpRequestAgainstContract(
     tutorId: string,
     requesterRole: UserRole,
@@ -1702,11 +1803,11 @@ export default class TutorService {
   ) {
     try {
       let contract: any;
-
+  
       console.log("requesterRole", requesterRole);
       console.log("contractId", contractId);
       console.log("tutorId", tutorId);
-
+  
       if (requesterRole === UserRole.TUTOR) {
         contract = await ParentSubscription.findOne({
           where: {
@@ -1722,19 +1823,19 @@ export default class TutorService {
           },
         });
       }
-
+  
       if (!contract) {
         throw new NotFoundError(
           "Contract not found or you don't have permission to create help request for this contract"
         );
       }
-
+  
       const data: any = {
         parentId: contract.parentId,
         tutorId: contract.tutorId,
         contractId: contract.id,
       };
-
+  
       // Create help request against the parent from this contract
       const helpRequest = await HelpRequests.create({
         requesterId:
@@ -1748,9 +1849,9 @@ export default class TutorService {
         type: HelpRequestType.CONTRACT,
         data,
       });
-
+  
       const contractData = contract.toJSON() as any;
-
+  
       return {
         helpRequest,
         contract: {
@@ -1765,4 +1866,6 @@ export default class TutorService {
       throw error;
     }
   }
+
 }
+

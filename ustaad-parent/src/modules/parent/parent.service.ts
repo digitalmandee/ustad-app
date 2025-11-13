@@ -22,6 +22,7 @@ import {
   TutorReview,
   sendNotificationToUser,
   NotificationType,
+  TutorTransactionType,
 } from "@ustaad/shared";
 import Stripe from "stripe";
 import { TutorPaymentStatus, OfferStatus } from "@ustaad/shared";
@@ -525,6 +526,13 @@ export default class ParentService {
         throw new UnProcessableEntityError("Invalid offer status");
       }
 
+
+
+      const tutor = await Tutor.findOne({where: {userId: offer.senderId}});
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor not found");
+      }
+
       // const parent = await Parent.findOne({
       //   where: { userId: offer.receiverId },
       // });
@@ -626,7 +634,7 @@ export default class ParentService {
       if (status === OfferStatus.ACCEPTED) {
         // Check if subscription already exists for this offer
         const existingSubscription = await ParentSubscription.findOne({
-          where: { offerId: offerId },
+          where: { offerId: offerId, status: "active" },
         });
 
         if (existingSubscription) {
@@ -667,9 +675,17 @@ export default class ParentService {
         await TutorTransaction.create({
           tutorId: offer.senderId,
           subscriptionId: parentSubscription.id,
-          status: TutorPaymentStatus.PENDING,
+          status: TutorPaymentStatus.PAID,
           amount: offer.amountMonthly,
+          transactionType: TutorTransactionType.PAYMENT,
         });
+
+
+
+
+
+        tutor.balance += offer.amountMonthly;
+        await tutor.save();
 
         // 4. Create TutorSessions entry
         // Generate current month in yyyy-mm format

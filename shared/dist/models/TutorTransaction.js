@@ -41,6 +41,11 @@ function initTutorTransactionModel(sequelize) {
             allowNull: false,
             defaultValue: enums_1.TutorPaymentStatus.PENDING,
         },
+        transactionType: {
+            type: sequelize_1.DataTypes.ENUM(...Object.values(enums_1.TutorTransactionType)),
+            allowNull: false,
+            defaultValue: enums_1.TutorTransactionType.PAYMENT,
+        },
     }, {
         sequelize,
         tableName: "tutor_transactions",

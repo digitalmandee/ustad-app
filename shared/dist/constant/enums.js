@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.NotificationType = exports.HelpRequestType = exports.HelpRequestStatus = exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
+exports.TutorTransactionType = exports.NotificationType = exports.HelpRequestType = exports.HelpRequestStatus = exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
 var UserRole;
 (function (UserRole) {
     UserRole["ADMIN"] = "ADMIN";
@@ -128,3 +128,8 @@ var NotificationType;
     // System
     NotificationType["SYSTEM_NOTIFICATION"] = "SYSTEM_NOTIFICATION";
 })(NotificationType || (exports.NotificationType = NotificationType = {}));
+var TutorTransactionType;
+(function (TutorTransactionType) {
+    TutorTransactionType["PAYMENT"] = "PAYMENT";
+    TutorTransactionType["WITHDRAWAL"] = "WITHDRAWAL";
+})(TutorTransactionType || (exports.TutorTransactionType = TutorTransactionType = {}));

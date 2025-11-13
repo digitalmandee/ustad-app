@@ -2,44 +2,41 @@ import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { User } from "./User";
 import { ParentSubscription } from "./ParentSubscription";
 import { TutorPaymentStatus, TutorTransactionType } from "../constant/enums";
+import { TutorTransaction, TutorTransactionAttributes, TutorTransactionCreationAttributes } from "./TutorTransaction";
 
-export interface TutorTransactionAttributes {
+export interface PaymentRequestsAttributes {
   id: string;
   tutorId: string;
-  subscriptionId: string;
   status: TutorPaymentStatus;
   amount: number;
-  transactionType: TutorTransactionType;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-export type TutorTransactionCreationAttributes = Optional<
-  TutorTransactionAttributes,
+export type PaymentRequestsCreationAttributes = Optional<
+  PaymentRequestsAttributes,
   "id"
 >;
 
-export class TutorTransaction
+export class PaymentRequests
   extends Model<
-    TutorTransactionAttributes,
-    TutorTransactionCreationAttributes
+    PaymentRequestsAttributes,
+    PaymentRequestsCreationAttributes
   >
-  implements TutorTransactionAttributes
+  implements PaymentRequestsAttributes
 {
   public id!: string;
   public tutorId!: string;
-  public subscriptionId!: string;
   public status!: TutorPaymentStatus;
   public amount!: number;
-  public transactionType!: TutorTransactionType;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
-export function initTutorTransactionModel(
+export function initPaymentRequestsModel(
   sequelize: Sequelize
-): typeof TutorTransaction {
-  TutorTransaction.init(
+): typeof PaymentRequests {
+  PaymentRequests.init(
     {
       id: {
         type: DataTypes.UUID,
@@ -54,14 +51,6 @@ export function initTutorTransactionModel(
           key: "id",
         },
       },
-      subscriptionId: {
-        type: DataTypes.UUID,
-        allowNull: false,
-        references: {
-          model: "parent_subscriptions",
-          key: "id",
-        },
-      },
       amount: {
         type: DataTypes.FLOAT,
         allowNull: false,
@@ -71,11 +60,6 @@ export function initTutorTransactionModel(
         allowNull: false,
         defaultValue: TutorPaymentStatus.PENDING,
       },
-      transactionType: {
-        type: DataTypes.ENUM(...Object.values(TutorTransactionType)),
-        allowNull: false,
-        defaultValue: TutorTransactionType.PAYMENT,
-      },
     },
     {
       sequelize,
@@ -84,15 +68,8 @@ export function initTutorTransactionModel(
   );
 
   // Define associations
-  TutorTransaction.belongsTo(User, { foreignKey: "tutorId" });
-  User.hasMany(TutorTransaction, { foreignKey: "tutorId" });
+  PaymentRequests.belongsTo(User, { foreignKey: "tutorId" });
+  User.hasMany(PaymentRequests, { foreignKey: "tutorId" });
 
-  TutorTransaction.belongsTo(ParentSubscription, {
-    foreignKey: "subscriptionId",
-  });
-  ParentSubscription.hasMany(TutorTransaction, {
-    foreignKey: "subscriptionId",
-  });
-
-  return TutorTransaction;
+  return PaymentRequests;
 }
