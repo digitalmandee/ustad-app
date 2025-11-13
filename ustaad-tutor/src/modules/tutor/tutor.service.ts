@@ -32,7 +32,7 @@ import {
   HelpRequestType,
   TutorTransactionType,
   PaymentRequests,
-  
+
 } from "@ustaad/shared";
 import { HelpRequests } from "@ustaad/shared";
 import { TutorPaymentStatus, TutorSessionStatus } from "@ustaad/shared";
@@ -114,14 +114,14 @@ export default class TutorService {
       const formattedSubjects = Array.isArray(data.subjects)
         ? data.subjects.map((s: string) => s.toLowerCase())
         : (data.subjects as string)
-            .replace(/^\[|\]$/g, "")
-            .split(",")
-            .map((s: string) =>
-              s
-                .trim()
-                .replace(/^['"]|['"]$/g, "")
-                .toLowerCase()
-            );
+          .replace(/^\[|\]$/g, "")
+          .split(",")
+          .map((s: string) =>
+            s
+              .trim()
+              .replace(/^['"]|['"]$/g, "")
+              .toLowerCase()
+          );
 
       const tutor = await Tutor.create({
         userId: data.userId,
@@ -889,9 +889,9 @@ export default class TutorService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(toRad(lat1)) *
-        Math.cos(toRad(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -969,6 +969,9 @@ export default class TutorService {
         throw new UnProcessableEntityError("Tutor not found");
       }
 
+      console.log("11111");
+
+
       // Check if tutor has sufficient balance
       if (tutor.balance < data.amount) {
         throw new BadRequestError(
@@ -979,18 +982,22 @@ export default class TutorService {
       // Create payment request
       const paymentRequest = await PaymentRequests.findOne({
         where: {
-          tutorId: data.tutorId,
+          tutorId: tutor.userId,
           status: TutorPaymentStatus.PENDING || TutorPaymentStatus.REQUESTED || TutorPaymentStatus.IN_REVIEW,
         },
       });
 
+
+
+      console.log("22222");
+
       if (paymentRequest) {
         throw new UnProcessableEntityError("Payment request already exists");
       }
-      
+
 
       await PaymentRequests.create({
-        tutorId: data.tutorId,
+        tutorId: tutor.userId,
         status: TutorPaymentStatus.REQUESTED,
         amount: data.amount,
       });
@@ -1025,14 +1032,14 @@ export default class TutorService {
     }
   }
 
-async getTutorSessions(userId: string, role: UserRole) {
-  try {
-    let sessionsQuery = "";
-    let runningSessionsQuery = "";
+  async getTutorSessions(userId: string, role: UserRole) {
+    try {
+      let sessionsQuery = "";
+      let runningSessionsQuery = "";
 
-    if (role === "TUTOR") {
-      // Tutor → get parent info from tutorSessions
-      sessionsQuery = `
+      if (role === "TUTOR") {
+        // Tutor → get parent info from tutorSessions
+        sessionsQuery = `
         SELECT 
           ts.*, 
           u.id AS "parentId",
@@ -1042,8 +1049,8 @@ async getTutorSessions(userId: string, role: UserRole) {
         WHERE ts."tutorId" = :userId;
       `;
 
-      // Running sessions from tutorSessionsDetail (with parent info)
-      runningSessionsQuery = `
+        // Running sessions from tutorSessionsDetail (with parent info)
+        runningSessionsQuery = `
         SELECT 
           tsd.*, 
           u.id AS "parentId",
@@ -1054,9 +1061,9 @@ async getTutorSessions(userId: string, role: UserRole) {
           AND tsd."status" = 'CREATED';
       `;
 
-    } else if (role === "PARENT") {
-      // Parent → get tutor info from tutorSessions
-      sessionsQuery = `
+      } else if (role === "PARENT") {
+        // Parent → get tutor info from tutorSessions
+        sessionsQuery = `
         SELECT 
           ts.*, 
           u.id AS "tutorId",
@@ -1066,8 +1073,8 @@ async getTutorSessions(userId: string, role: UserRole) {
         WHERE ts."parentId" = :userId;
       `;
 
-      // Running sessions from tutorSessionsDetail (with tutor info)
-      runningSessionsQuery = `
+        // Running sessions from tutorSessionsDetail (with tutor info)
+        runningSessionsQuery = `
         SELECT 
           tsd.*, 
           u.id AS "tutorId",
@@ -1077,27 +1084,27 @@ async getTutorSessions(userId: string, role: UserRole) {
         WHERE tsd."parentId" = :userId
           AND tsd."status" = 'CREATED';
       `;
-    } else {
-      throw new UnProcessableEntityError("Invalid user role");
+      } else {
+        throw new UnProcessableEntityError("Invalid user role");
+      }
+
+      // Execute queries
+      const sessions = await sequelize.query(sessionsQuery, {
+        replacements: { userId },
+        type: QueryTypes.SELECT,
+      });
+
+      const runningSessions = await sequelize.query(runningSessionsQuery, {
+        replacements: { userId },
+        type: QueryTypes.SELECT,
+      });
+
+      return { sessions, runningSessions };
+    } catch (error) {
+      console.error("Error in getTutorSessions:", error);
+      throw error;
     }
-
-    // Execute queries
-    const sessions = await sequelize.query(sessionsQuery, {
-      replacements: { userId },
-      type: QueryTypes.SELECT,
-    });
-
-    const runningSessions = await sequelize.query(runningSessionsQuery, {
-      replacements: { userId },
-      type: QueryTypes.SELECT,
-    });
-
-    return { sessions, runningSessions };
-  } catch (error) {
-    console.error("Error in getTutorSessions:", error);
-    throw error;
   }
-}
 
 
 
@@ -1459,7 +1466,7 @@ async getTutorSessions(userId: string, role: UserRole) {
           where: {
             id: againstId,
             ...(requesterRole !== UserRole.ADMIN &&
-            requesterRole !== UserRole.SUPER_ADMIN
+              requesterRole !== UserRole.SUPER_ADMIN
               ? { role: expectedRole }
               : {}),
           },
@@ -1674,9 +1681,9 @@ async getTutorSessions(userId: string, role: UserRole) {
           user: otherParty, // Consistent key for the other party
           ...(userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN
             ? {
-                sender: contractData.sender,
-                receiver: contractData.receiver,
-              }
+              sender: contractData.sender,
+              receiver: contractData.receiver,
+            }
             : {}),
         };
       });
@@ -1733,18 +1740,18 @@ async getTutorSessions(userId: string, role: UserRole) {
           tutorId: tutorId,
         },
       });
-  
+
       if (!contract) {
         throw new NotFoundError(
           "Contract not found or you don't have permission to cancel this contract"
         );
       }
-  
+
       // Check if contract is already cancelled
       if (contract.status === "cancelled") {
         throw new BadRequestError("Contract is already cancelled");
       }
-  
+
       // Update the contract status to cancelled
       await ParentSubscription.update(
         {
@@ -1758,7 +1765,7 @@ async getTutorSessions(userId: string, role: UserRole) {
           },
         }
       );
-  
+
       // Get the updated contract with related data
       const updatedContract = await ParentSubscription.findOne({
         where: { id: contractId },
@@ -1785,14 +1792,14 @@ async getTutorSessions(userId: string, role: UserRole) {
           },
         ],
       });
-  
+
       return updatedContract;
     } catch (error) {
       console.error("Error in cancelContract:", error);
       throw error;
     }
   }
-  
+
   async createHelpRequestAgainstContract(
     tutorId: string,
     requesterRole: UserRole,
@@ -1802,11 +1809,11 @@ async getTutorSessions(userId: string, role: UserRole) {
   ) {
     try {
       let contract: any;
-  
+
       console.log("requesterRole", requesterRole);
       console.log("contractId", contractId);
       console.log("tutorId", tutorId);
-  
+
       if (requesterRole === UserRole.TUTOR) {
         contract = await ParentSubscription.findOne({
           where: {
@@ -1822,19 +1829,19 @@ async getTutorSessions(userId: string, role: UserRole) {
           },
         });
       }
-  
+
       if (!contract) {
         throw new NotFoundError(
           "Contract not found or you don't have permission to create help request for this contract"
         );
       }
-  
+
       const data: any = {
         parentId: contract.parentId,
         tutorId: contract.tutorId,
         contractId: contract.id,
       };
-  
+
       // Create help request against the parent from this contract
       const helpRequest = await HelpRequests.create({
         requesterId:
@@ -1848,9 +1855,9 @@ async getTutorSessions(userId: string, role: UserRole) {
         type: HelpRequestType.CONTRACT,
         data,
       });
-  
+
       const contractData = contract.toJSON() as any;
-  
+
       return {
         helpRequest,
         contract: {

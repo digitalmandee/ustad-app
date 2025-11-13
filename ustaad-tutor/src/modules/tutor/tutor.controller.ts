@@ -581,7 +581,7 @@ export default class TutorController {
         );
       }
 
-      const result = await this.tutorService.getPaymentRequests(tutor.id);
+      const result = await this.tutorService.getPaymentRequests(tutor.userId);
 
       return sendSuccessResponse(
         res,
