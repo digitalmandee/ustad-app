@@ -63,7 +63,7 @@ export function initPaymentRequestsModel(
     },
     {
       sequelize,
-      tableName: "tutor_transactions",
+      tableName: "payment_requests",
     }
   );
 
