@@ -1,4 +1,4 @@
-import { IsOnBaord, UserRole } from "@ustaad/shared";
+import { IsOnBaord, PaymentRequests, UserRole } from "@ustaad/shared";
 import {
   User,
   Parent,
@@ -213,12 +213,12 @@ export default class AdminService {
   }
 
   async getAllPaymentRequests() {
-    const paymentRequests = await TutorTransaction.findAll();
+    const paymentRequests = await PaymentRequests.findAll();
     return paymentRequests;
   }
 
   async getPaymentRequestById(id: string) {
-    const paymentRequest = await TutorTransaction.findByPk(id);
+    const paymentRequest = await PaymentRequests.findByPk(id);
     if (!paymentRequest) {
       throw new Error("Payment request not found");
     }
@@ -247,7 +247,7 @@ export default class AdminService {
   }
 
   async updatePaymentRequestStatus(id: string, status: string) {
-    const paymentRequest = await TutorTransaction.findByPk(id);
+    const paymentRequest = await PaymentRequests.findByPk(id);
 
 
     console.log(paymentRequest, status, "paymentRequest, status");

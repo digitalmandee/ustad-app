@@ -31,6 +31,7 @@ import {
   sequelize,
   HelpRequestType,
   TutorTransactionType,
+  PaymentRequests,
   
 } from "@ustaad/shared";
 import { HelpRequests } from "@ustaad/shared";
@@ -976,11 +977,10 @@ export default class TutorService {
       }
 
       // Create payment request
-      const paymentRequest = await TutorTransaction.findOne({
+      const paymentRequest = await PaymentRequests.findOne({
         where: {
           tutorId: data.tutorId,
           status: TutorPaymentStatus.PENDING || TutorPaymentStatus.REQUESTED || TutorPaymentStatus.IN_REVIEW,
-          transactionType: TutorTransactionType.WITHDRAWAL,
         },
       });
 
@@ -989,10 +989,9 @@ export default class TutorService {
       }
       
 
-      await TutorTransaction.create({
+      await PaymentRequests.create({
         tutorId: data.tutorId,
         status: TutorPaymentStatus.REQUESTED,
-        transactionType: TutorTransactionType.WITHDRAWAL,
         amount: data.amount,
       });
 
@@ -1014,7 +1013,7 @@ export default class TutorService {
       }
 
       // Get all payment requests for the tutor
-      const paymentRequests = await TutorTransaction.findAll({
+      const paymentRequests = await PaymentRequests.findAll({
         where: { tutorId },
         order: [["createdAt", "DESC"]],
       });
