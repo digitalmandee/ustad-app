@@ -30,6 +30,7 @@ import { initTutorTransactionModel, TutorTransaction } from "./TutorTransaction"
 import { initFileModel, File } from "./File";
 import { initHelpRequestsModel, HelpRequests } from "./HelpRequests";
 import { initPaymentRequestsModel, PaymentRequests } from "./PaymentRequests";
+import { initContractReviewModel, ContractReview } from "./ContractReview";
 
 export function initAllModels(sequelize: Sequelize) {
   initUserModel(sequelize);
@@ -68,6 +69,7 @@ export function initAllModels(sequelize: Sequelize) {
   initNotificationModel(sequelize);
 
   initPaymentRequestsModel(sequelize);
+  initContractReviewModel(sequelize);
   // Initialize remaining chat models
 }
 
@@ -96,6 +98,7 @@ export {
   File,
   HelpRequests,
   Notification,
+  ContractReview,
   // Chat models
   Conversation,
   ConversationParticipant,

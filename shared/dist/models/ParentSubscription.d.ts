@@ -10,6 +10,9 @@ export interface ParentSubscriptionAttributes {
     startDate: Date;
     endDate?: Date;
     amount: number;
+    disputeReason?: string;
+    disputedBy?: string;
+    disputedAt?: Date;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -25,6 +28,9 @@ export declare class ParentSubscription extends Model<ParentSubscriptionAttribut
     startDate: Date;
     endDate?: Date;
     amount: number;
+    disputeReason?: string;
+    disputedBy?: string;
+    disputedAt?: Date;
     readonly createdAt: Date;
     readonly updatedAt: Date;
 }

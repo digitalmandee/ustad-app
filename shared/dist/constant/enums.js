@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TutorTransactionType = exports.NotificationType = exports.HelpRequestType = exports.HelpRequestStatus = exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
+exports.TutorTransactionType = exports.ParentSubscriptionStatus = exports.NotificationType = exports.HelpRequestType = exports.HelpRequestStatus = exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
 var UserRole;
 (function (UserRole) {
     UserRole["ADMIN"] = "ADMIN";
@@ -125,9 +125,25 @@ var NotificationType;
     // Reviews
     NotificationType["REVIEW_RECEIVED_TUTOR"] = "REVIEW_RECEIVED_TUTOR";
     NotificationType["REVIEW_RECEIVED_CHILD"] = "REVIEW_RECEIVED_CHILD";
+    // Contract Disputes
+    NotificationType["CONTRACT_DISPUTED"] = "CONTRACT_DISPUTED";
+    NotificationType["CONTRACT_DISPUTE_RESOLVED"] = "CONTRACT_DISPUTE_RESOLVED";
+    // Contract Completion
+    NotificationType["CONTRACT_RATING_SUBMITTED"] = "CONTRACT_RATING_SUBMITTED";
+    NotificationType["CONTRACT_COMPLETED"] = "CONTRACT_COMPLETED";
     // System
     NotificationType["SYSTEM_NOTIFICATION"] = "SYSTEM_NOTIFICATION";
 })(NotificationType || (exports.NotificationType = NotificationType = {}));
+var ParentSubscriptionStatus;
+(function (ParentSubscriptionStatus) {
+    ParentSubscriptionStatus["ACTIVE"] = "ACTIVE";
+    ParentSubscriptionStatus["CANCELLED"] = "CANCELLED";
+    ParentSubscriptionStatus["EXPIRED"] = "EXPIRED";
+    ParentSubscriptionStatus["CREATED"] = "CREATED";
+    ParentSubscriptionStatus["DISPUTE"] = "DISPUTE";
+    ParentSubscriptionStatus["COMPLETED"] = "COMPLETED";
+    ParentSubscriptionStatus["PENDING_COMPLETION"] = "PENDING_COMPLETION";
+})(ParentSubscriptionStatus || (exports.ParentSubscriptionStatus = ParentSubscriptionStatus = {}));
 var TutorTransactionType;
 (function (TutorTransactionType) {
     TutorTransactionType["PAYMENT"] = "PAYMENT";

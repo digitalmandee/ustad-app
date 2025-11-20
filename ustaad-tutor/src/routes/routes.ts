@@ -42,7 +42,10 @@ const routes = {
   
   // Contracts
   GET_CONTRACTS: "/tutor/contracts",
+  GET_ACTIVE_CONTRACTS: "/tutor/contracts",
   CANCEL_CONTRACT: "/tutor/contracts/:contractId/cancel",
+  TERMINATE_CONTRACT: "/tutor/contracts/:contractId",
+  SUBMIT_CONTRACT_RATING: "/tutor/contracts/:contractId/rating",
   HELP_REQUEST_CONTRACT: "/tutor/contracts/:contractId/help-request",
 
 

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.Notification = exports.HelpRequests = exports.File = exports.PaymentRequests = exports.TutorTransaction = exports.PaymentMethod = exports.TutorSessionsDetail = exports.TutorSessions = exports.ParentTransaction = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorReview = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
+exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.ContractReview = exports.Notification = exports.HelpRequests = exports.File = exports.PaymentRequests = exports.TutorTransaction = exports.PaymentMethod = exports.TutorSessionsDetail = exports.TutorSessions = exports.ParentTransaction = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorReview = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
 exports.initAllModels = initAllModels;
 const Child_1 = require("./Child");
 Object.defineProperty(exports, "Child", { enumerable: true, get: function () { return Child_1.Child; } });
@@ -59,6 +59,8 @@ const HelpRequests_1 = require("./HelpRequests");
 Object.defineProperty(exports, "HelpRequests", { enumerable: true, get: function () { return HelpRequests_1.HelpRequests; } });
 const PaymentRequests_1 = require("./PaymentRequests");
 Object.defineProperty(exports, "PaymentRequests", { enumerable: true, get: function () { return PaymentRequests_1.PaymentRequests; } });
+const ContractReview_1 = require("./ContractReview");
+Object.defineProperty(exports, "ContractReview", { enumerable: true, get: function () { return ContractReview_1.ContractReview; } });
 function initAllModels(sequelize) {
     (0, User_1.initUserModel)(sequelize);
     (0, Otp_1.initOtpModel)(sequelize);
@@ -90,5 +92,6 @@ function initAllModels(sequelize) {
     (0, ChildNotes_1.initChildNotesModel)(sequelize);
     (0, Notification_1.initNotificationModel)(sequelize);
     (0, PaymentRequests_1.initPaymentRequestsModel)(sequelize);
+    (0, ContractReview_1.initContractReviewModel)(sequelize);
     // Initialize remaining chat models
 }

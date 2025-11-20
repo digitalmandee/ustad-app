@@ -19,7 +19,7 @@ async function startServer() {
       `);
       
       // Start session reminder cron job
-      SessionReminderService.startReminderCron();
+      // SessionReminderService.startReminderCron();
     });
 
     // Handle server errors

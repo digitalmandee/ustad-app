@@ -9,6 +9,13 @@ import {
   ParentTransaction,
   ParentSubscription,
   TutorTransaction,
+  Offer,
+  TutorSessionsDetail,
+  TutorSessions,
+  sendNotificationToUser,
+  NotificationType,
+  TutorSessionStatus,
+  PaymentRequests,
 } from "@ustaad/shared";
 import { TutorPaymentStatus } from "@ustaad/shared";
 import { Op } from "sequelize";
@@ -402,5 +409,194 @@ export default class AdminService {
     });
 
     return updatedUser;
+  }
+
+  async getDisputedContracts(page = 1, limit = 20) {
+    const offset = (page - 1) * limit;
+    
+    const { rows, count } = await ParentSubscription.findAndCountAll({
+      where: {
+        status: 'dispute',
+      },
+      include: [
+        {
+          model: User,
+          as: 'parent',
+          attributes: ['id', 'fullName', 'email', 'phone'],
+        },
+        {
+          model: User,
+          as: 'tutor',
+          attributes: ['id', 'fullName', 'email', 'phone'],
+        },
+        {
+          model: Offer,
+          attributes: ['id', 'childName', 'subject', 'amountMonthly'],
+        },
+      ],
+      order: [['disputedAt', 'DESC']],
+      limit,
+      offset,
+    });
+
+    // Calculate completed sessions for each contract
+    const contractsWithDetails = await Promise.all(
+      rows.map(async (contract) => {
+        const completedSessions = await TutorSessionsDetail.count({
+          where: {
+            tutorId: contract.tutorId,
+            parentId: contract.parentId,
+            status: TutorSessionStatus.COMPLETED,
+          },
+          include: [
+            {
+              model: TutorSessions,
+              where: { offerId: contract.offerId },
+              required: true,
+            },
+          ],
+        });
+
+        // Get disputed by user info
+        let disputedByUser = null;
+        if (contract.disputedBy) {
+          disputedByUser = await User.findByPk(contract.disputedBy, {
+            attributes: ['id', 'fullName', 'email', 'role'],
+          });
+        }
+
+        return {
+          ...contract.toJSON(),
+          completedSessions,
+          disputedByUser,
+        };
+      })
+    );
+
+    return {
+      items: contractsWithDetails,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+        hasNext: page * limit < count,
+        hasPrev: page > 1,
+      },
+    };
+  }
+
+  async resolveDispute(
+    contractId: string,
+    finalStatus: 'cancelled' | 'active' | 'completed',
+    adminNotes?: string
+  ) {
+    const contract = await ParentSubscription.findByPk(contractId, {
+      include: [
+        {
+          model: User,
+          as: 'parent',
+          attributes: ['id', 'fullName', 'email'],
+        },
+        {
+          model: User,
+          as: 'tutor',
+          attributes: ['id', 'fullName', 'email'],
+        },
+        {
+          model: Offer,
+          attributes: ['id', 'childName', 'subject'],
+        },
+      ],
+    });
+    
+    if (!contract) {
+      throw new Error("Contract not found");
+    }
+
+    if (contract.status !== 'dispute') {
+      throw new Error("Contract is not in dispute status");
+    }
+
+    // Update contract
+    await contract.update({
+      status: finalStatus,
+      endDate: finalStatus === 'cancelled' ? new Date() : contract.endDate,
+    });
+
+    // If cancelled, ensure tutor gets paid for completed days
+    if (finalStatus === 'cancelled') {
+      // Calculate completed sessions
+      const completedSessions = await TutorSessionsDetail.findAll({
+        where: {
+          tutorId: contract.tutorId,
+          parentId: contract.parentId,
+          status: TutorSessionStatus.COMPLETED,
+        },
+        include: [
+          {
+            model: TutorSessions,
+            where: { offerId: contract.offerId },
+            required: true,
+          },
+        ],
+      });
+
+      // Calculate total payment amount
+      const totalAmount = completedSessions.reduce((sum, session) => {
+        const sessionData = session.toJSON() as any;
+        return sum + (sessionData.TutorSession?.price || 0);
+      }, 0);
+
+      // Create payment request for tutor if there are completed sessions
+      if (completedSessions.length > 0 && totalAmount > 0) {
+        try {
+          await PaymentRequests.create({
+            tutorId: contract.tutorId,
+            subscriptionId: contract.id,
+            amount: totalAmount / 100, // Convert from cents to dollars if needed
+            status: TutorPaymentStatus.REQUESTED,
+          });
+          console.log(`✅ Created payment request for tutor ${contract.tutorId} for ${completedSessions.length} completed sessions`);
+        } catch (paymentError) {
+          console.error('❌ Error creating payment request:', paymentError);
+        }
+      }
+    }
+
+    // Notify both parties
+    try {
+      await sendNotificationToUser({
+        userId: contract.parentId,
+        type: NotificationType.CONTRACT_DISPUTE_RESOLVED,
+        title: '📋 Dispute Resolved',
+        body: `Your contract dispute has been resolved. Final status: ${finalStatus}${adminNotes ? `. Notes: ${adminNotes.substring(0, 50)}` : ''}`,
+        relatedEntityId: contract.id,
+        relatedEntityType: 'contract',
+        actionUrl: `/contracts/${contract.id}`,
+        metadata: {
+          finalStatus,
+          adminNotes: adminNotes || '',
+        },
+      });
+
+      await sendNotificationToUser({
+        userId: contract.tutorId,
+        type: NotificationType.CONTRACT_DISPUTE_RESOLVED,
+        title: '📋 Dispute Resolved',
+        body: `Your contract dispute has been resolved. Final status: ${finalStatus}${adminNotes ? `. Notes: ${adminNotes.substring(0, 50)}` : ''}`,
+        relatedEntityId: contract.id,
+        relatedEntityType: 'contract',
+        actionUrl: `/contracts/${contract.id}`,
+        metadata: {
+          finalStatus,
+          adminNotes: adminNotes || '',
+        },
+      });
+    } catch (notificationError) {
+      console.error('❌ Error sending dispute resolution notifications:', notificationError);
+    }
+
+    return contract;
   }
 }

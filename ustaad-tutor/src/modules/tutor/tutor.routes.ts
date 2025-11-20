@@ -238,11 +238,32 @@ router.get(
   tutorController.getContracts
 );
 
+router.get(
+  routes.GET_ACTIVE_CONTRACTS,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.getActiveContractsForDispute
+);
+
 router.patch(
   routes.CANCEL_CONTRACT,
   authenticateJwt,
   authorizeRoles("TUTOR", "PARENT"),
   tutorController.cancelContract
+);
+
+router.post(
+  routes.TERMINATE_CONTRACT,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.terminateContract
+);
+
+router.post(
+  routes.SUBMIT_CONTRACT_RATING,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.submitContractRating
 );
 
 router.post(

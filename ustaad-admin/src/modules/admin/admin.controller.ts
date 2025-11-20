@@ -200,5 +200,55 @@ export default class AdminController {
       throw new GenericError(e, ` Error from approveOnboarding ${__filename}`);
     }
   };
+
+  getDisputedContracts = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      const result = await this.adminService.getDisputedContracts(page, limit);
+      
+      return sendSuccessResponse(
+        res,
+        "Disputed contracts retrieved successfully",
+        200,
+        result
+      );
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from getDisputedContracts ${__filename}`);
+    }
+  };
+
+  resolveDispute = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { contractId } = req.params;
+      const { finalStatus, adminNotes } = req.body;
+
+      if (!finalStatus || !['cancelled', 'active', 'completed'].includes(finalStatus)) {
+        return sendErrorResponse(res, "Invalid final status. Must be one of: cancelled, active, completed", 400);
+      }
+
+      const result = await this.adminService.resolveDispute(
+        contractId,
+        finalStatus,
+        adminNotes
+      );
+
+      return sendSuccessResponse(
+        res,
+        "Dispute resolved successfully",
+        200,
+        result
+      );
+    } catch (e: any) {
+      if (e.message === 'Contract not found') {
+        return sendErrorResponse(res, e.message, 404);
+      }
+      if (e.message === 'Contract is not in dispute status') {
+        return sendErrorResponse(res, e.message, 400);
+      }
+      throw new GenericError(e, ` Error from resolveDispute ${__filename}`);
+    }
+  };
   
 }

@@ -16,6 +16,10 @@ const routes = {
   CREATE_ADMIN: '/admin/users/create',
   GET_ALL_ADMINS: '/admin/users/admins',
   DELETE_ADMIN: '/admin/users/admins',
+  
+  // Contract dispute management
+  DISPUTED_CONTRACTS: '/admin/contracts/disputed',
+  RESOLVE_DISPUTE: '/admin/contracts/:contractId/resolve',
 };
 
 export default routes;

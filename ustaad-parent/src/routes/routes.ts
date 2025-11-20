@@ -32,6 +32,11 @@ const routes = {
   // tutor reviews
   ADD_TUTOR_REVIEW: '/parent/tutor/review',
   
+  // Contract termination and completion
+  GET_ACTIVE_CONTRACTS: '/parent/contracts',
+  TERMINATE_CONTRACT: '/parent/contracts/:contractId',
+  SUBMIT_CONTRACT_RATING: '/parent/contracts/:contractId/rating',
+  
   // Analytics
   MONTHLY_SPENDING: '/parent/monthly-spending',
   

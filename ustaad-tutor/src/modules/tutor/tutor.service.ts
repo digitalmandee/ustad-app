@@ -28,10 +28,12 @@ import {
   sendNotificationToUser,
   NotificationType,
   ParentSubscription,
+  ContractReview,
   sequelize,
   HelpRequestType,
   TutorTransactionType,
   PaymentRequests,
+  ParentSubscriptionStatus,
 
 } from "@ustaad/shared";
 import { HelpRequests } from "@ustaad/shared";
@@ -1796,6 +1798,453 @@ export default class TutorService {
       return updatedContract;
     } catch (error) {
       console.error("Error in cancelContract:", error);
+      throw error;
+    }
+  }
+
+  async terminateContract(
+    tutorId: string,
+    contractId: string,
+    status: ParentSubscriptionStatus.DISPUTE | ParentSubscriptionStatus.PENDING_COMPLETION,
+    reason?: string
+  ) {
+    try {
+      // 1. Verify contract exists and belongs to tutor
+      const contract = await ParentSubscription.findOne({
+        where: {
+          id: contractId,
+          tutorId: tutorId,
+        },
+        include: [
+          {
+            model: Offer,
+            attributes: ["id", "childName", "subject"],
+          },
+        ],
+      });
+
+      if (!contract) {
+        throw new NotFoundError("Contract not found");
+      }
+
+
+      console.log("we here 11");
+      
+
+      // 2. Check if contract can be terminated (not already completed/disputed/cancelled)
+      if ([ParentSubscriptionStatus.COMPLETED, ParentSubscriptionStatus.DISPUTE, ParentSubscriptionStatus.CANCELLED].includes(contract.status as any)) {
+        throw new BadRequestError(`Contract is already ${contract.status}`);
+      }
+
+      // 3. Validate reason if status is dispute
+      if (status === ParentSubscriptionStatus.DISPUTE && (!reason || reason.trim().length === 0)) {
+        throw new BadRequestError("Cancellation reason is required for dispute");
+      }
+
+      // 4. Calculate completed days for payment
+      // const completedSessions = await TutorSessionsDetail.count({
+      //   where: {
+      //     tutorId: contract.tutorId,
+      //     parentId: contract.parentId,
+      //     status,
+      //   },
+      //   include: [
+      //     {
+      //       model: TutorSessions,
+      //       where: { offerId: contract.offerId },
+      //       required: true,
+      //     },
+      //   ],
+      // });
+
+
+      console.log("we here 22");
+
+      // 5. Update contract based on status
+      if (status === ParentSubscriptionStatus.DISPUTE) {
+        await contract.update({
+          status: ParentSubscriptionStatus.DISPUTE,
+          disputeReason: reason,
+          disputedBy: tutorId,
+          disputedAt: new Date(),
+          endDate: new Date(), // Set end date to now
+        } as any);
+      } else if (status === ParentSubscriptionStatus.PENDING_COMPLETION) {
+        await contract.update({
+          status: ParentSubscriptionStatus.PENDING_COMPLETION,
+          endDate: new Date(), // Set end date to now
+        } as any);
+      }
+
+      // 6. Send notification to parent
+      try {
+        const tutor = await User.findByPk(tutorId);
+        const offer = await Offer.findByPk(contract.offerId);
+        
+        if (status === ParentSubscriptionStatus.DISPUTE) {
+          await sendNotificationToUser({
+            userId: contract.parentId,
+            type: NotificationType.CONTRACT_DISPUTED,
+            title: '⚠️ Contract Disputed',
+            body: `${tutor?.fullName || 'Your tutor'} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ''}. Reason: ${reason?.substring(0, 50) || ''}${reason && reason.length > 50 ? '...' : ''}`,
+            relatedEntityId: contract.id,
+            relatedEntityType: 'contract',
+            actionUrl: `/contracts/${contract.id}`,
+            metadata: {
+              contractId: contract.id,
+              disputedBy: tutorId,
+              reason: reason?.substring(0, 100) || '',
+            },
+          });
+          console.log(`✅ Sent dispute notification to parent ${contract.parentId}`);
+        } else if (status === ParentSubscriptionStatus.PENDING_COMPLETION) {
+          await sendNotificationToUser({
+            userId: contract.parentId,
+            type: NotificationType.CONTRACT_COMPLETED,
+            title: '✅ Contract Completed',
+            body: `${tutor?.fullName || 'Your tutor'} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ''} as completed.`,
+            relatedEntityId: contract.id,
+            relatedEntityType: 'contract',
+            actionUrl: `/contracts/${contract.id}`,
+            metadata: {
+              contractId: contract.id,
+              completedBy: tutorId,
+            },
+          });
+          console.log(`✅ Sent completion notification to parent ${contract.parentId}`);
+        }
+      } catch (notificationError) {
+        console.error('❌ Error sending notification:', notificationError);
+      }
+
+      // 7. Return contract with completed sessions count
+      return {
+        contract,
+        // completedSessions,
+        message: status === ParentSubscriptionStatus.DISPUTE 
+          ? 'Contract has been disputed and forwarded to admin for review'
+          : 'Contract has been marked as completed',
+      };
+    } catch (error) {
+      console.error("Error in terminateContract:", error);
+      throw error;
+    }
+  }
+
+  async submitContractRating(
+    tutorId: string,
+    contractId: string,
+    rating: number,
+    review: string
+  ) {
+    try {
+      // 1. Verify contract
+      const contract = await ParentSubscription.findOne({
+        where: {
+          id: contractId,
+          tutorId: tutorId,
+        },
+      });
+
+      if (!contract) {
+        throw new NotFoundError("Contract not found");
+      }
+
+      if (contract.status !== ParentSubscriptionStatus.PENDING_COMPLETION) {
+        throw new BadRequestError("Contract against this id is not completed");
+      }
+
+      // 3. Check if tutor already rated
+      const existingReview = await ContractReview.findOne({
+        where: {
+          contractId: contractId,
+          reviewerId: tutorId,
+        },
+      });
+
+      if (existingReview) {
+        throw new ConflictError("You have already rated this contract");
+      }
+
+      // 4. Create contract review
+      await ContractReview.create({
+        contractId: contractId,
+        reviewerId: tutorId,
+        reviewedId: contract.parentId,
+        reviewerRole: 'TUTOR',
+        rating,
+        review: review || undefined,
+      });
+
+      // 5. Check if parent has also rated
+      const parentReview = await ContractReview.findOne({
+        where: {
+          contractId: contractId,
+          reviewerId: contract.parentId,
+        },
+      });
+
+      // 6. Update contract status
+      if (parentReview) {
+        // Both have rated - mark as completed
+        await contract.update({
+          status: ParentSubscriptionStatus.COMPLETED,
+          endDate: new Date(),
+        });
+
+        await TutorSessions.update({
+          status: "cancelled",
+        }, {
+          where: {
+            offerId: contract.offerId,
+            tutorId: contract.tutorId,
+            parentId: contract.parentId,
+            status: "active",
+          },
+        });
+
+        // Notify both parties
+        try {
+          const tutor = await User.findByPk(tutorId);
+          const parent = await User.findByPk(contract.parentId);
+          
+          await sendNotificationToUser({
+            userId: contract.parentId,
+            type: NotificationType.CONTRACT_COMPLETED,
+            title: '✅ Contract Completed',
+            body: 'Both parties have submitted their ratings. Contract is now completed.',
+            relatedEntityId: contract.id,
+            relatedEntityType: 'contract',
+            actionUrl: `/contracts/${contract.id}`,
+          });
+
+          await sendNotificationToUser({
+            userId: tutorId,
+            type: NotificationType.CONTRACT_COMPLETED,
+            title: '✅ Contract Completed',
+            body: 'Both parties have submitted their ratings. Contract is now completed.',
+            relatedEntityId: contract.id,
+            relatedEntityType: 'contract',
+            actionUrl: `/contracts/${contract.id}`,
+          });
+        } catch (notificationError) {
+          console.error('❌ Error sending completion notification:', notificationError);
+        }
+      } else {
+        // Only tutor rated - mark as pending_completion
+        await contract.update({
+          status: ParentSubscriptionStatus.PENDING_COMPLETION,
+        });
+        
+
+        // Notify parent to submit rating
+        try {
+          const tutor = await User.findByPk(tutorId);
+          
+          await sendNotificationToUser({
+            userId: contract.parentId,
+            type: NotificationType.CONTRACT_RATING_SUBMITTED,
+            title: '⭐ Rating Request',
+            body: `${tutor?.fullName || 'The tutor'} has submitted their rating. Please submit yours to complete the contract.`,
+            relatedEntityId: contract.id,
+            relatedEntityType: 'contract',
+            actionUrl: `/contracts/${contract.id}`,
+            metadata: {
+              contractId: contract.id,
+              rating: rating.toString(),
+            },
+          });
+        } catch (notificationError) {
+          console.error('❌ Error sending rating notification:', notificationError);
+        }
+      }
+
+      return {
+        contract,
+        message: parentReview 
+          ? 'Contract completed! Both parties have rated.' 
+          : 'Rating submitted. Waiting for parent to rate.',
+      };
+    } catch (error) {
+      console.error("Error in submitContractRating:", error);
+      throw error;
+    }
+  }
+
+  async getActiveContractsForDispute(tutorId: string, page = 1, limit = 20) {
+    try {
+      const offset = (page - 1) * limit;
+
+      // Get all active contracts that can be disputed
+      // Statuses that can be disputed: 'active', 'pending_completion'
+      const { rows, count } = await ParentSubscription.findAndCountAll({
+        where: {
+          tutorId: tutorId,
+        },
+        include: [
+          {
+            model: User,
+            foreignKey: 'parentId',
+            attributes: ['id', 'fullName', 'email', 'image', 'phone'],
+          },
+          {
+            model: Offer,
+            attributes: [
+              'id',
+              'childName',
+              'subject',
+              'amountMonthly',
+              'startDate',
+              'startTime',
+              'endTime',
+              'daysOfWeek',
+              'description',
+            ],
+          },
+        ],
+        order: [['createdAt', 'DESC']],
+        limit,
+        offset,
+      });
+
+      // Calculate completed sessions and get all related data for each contract
+      const contractsWithDetails = await Promise.all(
+        rows.map(async (contract) => {
+          // Get completed sessions count
+          const completedSessions = await TutorSessionsDetail.count({
+            where: {
+              tutorId: contract.tutorId,
+              parentId: contract.parentId,
+              status: TutorSessionStatus.COMPLETED,
+            },
+            include: [
+              {
+                model: TutorSessions,
+                where: { offerId: contract.offerId },
+                required: true,
+              },
+            ],
+          });
+
+          // Get total active sessions count
+          const totalSessions = await TutorSessions.count({
+            where: {
+              offerId: contract.offerId,
+              tutorId: contract.tutorId,
+              parentId: contract.parentId,
+              status: 'active',
+            },
+          });
+
+          // Get all contract reviews (both parent and tutor reviews)
+          const contractReviews = await ContractReview.findAll({
+            where: {
+              contractId: contract.id,
+            },
+            include: [
+              {
+                model: User,
+                as: 'reviewer',
+                attributes: ['id', 'fullName', 'email', 'image'],
+              },
+              {
+                model: User,
+                as: 'reviewed',
+                attributes: ['id', 'fullName', 'email', 'image'],
+              },
+            ],
+            order: [['createdAt', 'DESC']],
+          });
+
+          // Get parent user details
+          const parent = await User.findByPk(contract.parentId, {
+            attributes: ['id', 'fullName', 'email', 'image', 'phone'],
+          });
+
+          // Check if parent has already reviewed
+          const parentReview = contractReviews.find(
+            (review) => review.reviewerId === contract.parentId
+          );
+
+          // Check if tutor has already reviewed
+          const tutorReview = contractReviews.find(
+            (review) => review.reviewerId === tutorId
+          );
+
+          // Get payment requests for this tutor (PaymentRequests doesn't have subscriptionId field)
+          const paymentRequests = await PaymentRequests.findAll({
+            where: {
+              tutorId: tutorId,
+            },
+            order: [['createdAt', 'DESC']],
+            limit: 10, // Limit to recent payment requests
+          });
+
+          return {
+            ...contract.toJSON(),
+            parent: parent,
+            completedSessions,
+            totalSessions,
+            reviews: contractReviews.map((review) => {
+              const reviewData = review.toJSON() as any;
+              return {
+                id: review.id,
+                reviewerId: review.reviewerId,
+                reviewedId: review.reviewedId,
+                reviewerRole: review.reviewerRole,
+                rating: review.rating,
+                review: review.review,
+                reviewer: reviewData.reviewer || null,
+                reviewed: reviewData.reviewed || null,
+                createdAt: review.createdAt,
+                updatedAt: review.updatedAt,
+              };
+            }),
+            hasParentReview: !!parentReview,
+            hasTutorReview: !!tutorReview,
+            parentReview: parentReview ? {
+              id: parentReview.id,
+              reviewerId: parentReview.reviewerId,
+              reviewedId: parentReview.reviewedId,
+              reviewerRole: parentReview.reviewerRole,
+              rating: parentReview.rating,
+              review: parentReview.review,
+              createdAt: parentReview.createdAt,
+            } : null,
+            tutorReview: tutorReview ? {
+              id: tutorReview.id,
+              reviewerId: tutorReview.reviewerId,
+              reviewedId: tutorReview.reviewedId,
+              reviewerRole: tutorReview.reviewerRole,
+              rating: tutorReview.rating,
+              review: tutorReview.review,
+              createdAt: tutorReview.createdAt,
+            } : null,
+            paymentRequests: paymentRequests.map((pr) => ({
+              id: pr.id,
+              amount: pr.amount,
+              status: pr.status,
+              createdAt: pr.createdAt,
+              updatedAt: pr.updatedAt,
+            })),
+            canDispute: true, // All contracts returned can be disputed
+          };
+        })
+      );
+
+      return {
+        contracts: contractsWithDetails,
+        pagination: {
+          page,
+          limit,
+          total: count,
+          totalPages: Math.ceil(count / limit),
+          hasNext: page * limit < count,
+          hasPrev: page > 1,
+        },
+      };
+    } catch (error) {
+      console.error('Error in getActiveContractsForDispute:', error);
       throw error;
     }
   }

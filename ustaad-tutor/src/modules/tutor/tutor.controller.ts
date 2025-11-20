@@ -5,7 +5,7 @@ import InfoMessages from "../../constant/messages";
 import TutorService from "./tutor.service";
 import { AuthenticatedRequest } from "../../middlewares/auth";
 // import { User } from "../../models/User";
-import { IsOnBaord } from "@ustaad/shared";
+import { IsOnBaord, ParentSubscriptionStatus } from "@ustaad/shared";
 import { User } from "@ustaad/shared";
 import { FindTutorsByLocationDto } from "./tutor.dto";
 
@@ -820,6 +820,116 @@ export default class TutorController {
       }
       
       throw new GenericError(error, `Error from createHelpRequestAgainstContract ${__filename}`);
+    }
+  };
+
+  terminateContract = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: tutorId } = req.user;
+      const { contractId } = req.params;
+      const { status, reason } = req.body;
+
+      // Validate status
+      if (!status || ![ParentSubscriptionStatus.DISPUTE, ParentSubscriptionStatus.PENDING_COMPLETION].includes(status as any)) {
+        return sendErrorResponse(res, "Status must be either 'dispute' or 'completed'", 400);
+      }
+
+      // Validate reason only if status is dispute
+      if (status === ParentSubscriptionStatus.DISPUTE && (!reason || reason.trim().length === 0)) {
+        return sendErrorResponse(res, "Cancellation reason is required for dispute", 400);
+      }
+
+      const result = await this.tutorService.terminateContract(
+        tutorId,
+        contractId,
+        status,
+        reason
+      );
+
+      const successMessage = status === ParentSubscriptionStatus.DISPUTE 
+        ? "Contract terminated and forwarded to admin"
+        : "Contract marked as completed";
+
+      return sendSuccessResponse(
+        res,
+        successMessage,
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error('Terminate contract error:', error);
+      
+      if (error.message?.includes('not found') || error.message?.includes('permission')) {
+        return sendErrorResponse(res, error.message, 404);
+      }
+      
+      if (error.message?.includes('already') || error.message?.includes('required')) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+      
+      throw new GenericError(error, `Error from terminateContract ${__filename}`);
+    }
+  };
+
+  submitContractRating = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: tutorId } = req.user;
+      const { contractId } = req.params;
+      const { rating, review } = req.body;
+
+      if (!rating || rating < 1 || rating > 5) {
+        return sendErrorResponse(res, "Rating must be between 1 and 5", 400);
+      }
+
+      const result = await this.tutorService.submitContractRating(
+        tutorId,
+        contractId,
+        rating,
+        review || ''
+      );
+
+      return sendSuccessResponse(
+        res,
+        result.message,
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error('Submit contract rating error:', error);
+      
+      if (error.message?.includes('not found')) {
+        return sendErrorResponse(res, error.message, 404);
+      }
+      
+      if (error.message?.includes('already') || error.message?.includes('cannot be rated')) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+      
+      throw new GenericError(error, `Error from submitContractRating ${__filename}`);
+    }
+  };
+
+  getActiveContractsForDispute = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: tutorId } = req.user;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+
+      const result = await this.tutorService.getActiveContractsForDispute(
+        tutorId,
+        page,
+        limit
+      );
+
+      return sendSuccessResponse(
+        res,
+        "Active contracts retrieved successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error('Get active contracts error:', error);
+      throw new GenericError(error, `Error from getActiveContractsForDispute ${__filename}`);
     }
   };
 }

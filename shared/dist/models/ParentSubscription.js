@@ -5,6 +5,7 @@ exports.initParentSubscriptionModel = initParentSubscriptionModel;
 const sequelize_1 = require("sequelize");
 const User_1 = require("./User");
 const Offer_1 = require("./Offer");
+const enums_1 = require("../constant/enums");
 class ParentSubscription extends sequelize_1.Model {
 }
 exports.ParentSubscription = ParentSubscription;
@@ -44,9 +45,25 @@ function initParentSubscriptionModel(sequelize) {
             allowNull: false,
         },
         status: {
-            type: sequelize_1.DataTypes.ENUM('active', 'cancelled', 'expired', 'created'),
+            type: sequelize_1.DataTypes.ENUM(enums_1.ParentSubscriptionStatus.ACTIVE, enums_1.ParentSubscriptionStatus.CANCELLED, enums_1.ParentSubscriptionStatus.EXPIRED, enums_1.ParentSubscriptionStatus.CREATED, enums_1.ParentSubscriptionStatus.DISPUTE, enums_1.ParentSubscriptionStatus.COMPLETED, enums_1.ParentSubscriptionStatus.PENDING_COMPLETION),
             allowNull: false,
-            defaultValue: 'active',
+            defaultValue: enums_1.ParentSubscriptionStatus.ACTIVE.toLowerCase(),
+        },
+        disputeReason: {
+            type: sequelize_1.DataTypes.TEXT,
+            allowNull: true,
+        },
+        disputedBy: {
+            type: sequelize_1.DataTypes.UUID,
+            allowNull: true,
+            references: {
+                model: "users",
+                key: "id",
+            },
+        },
+        disputedAt: {
+            type: sequelize_1.DataTypes.DATE,
+            allowNull: true,
         },
         planType: {
             type: sequelize_1.DataTypes.STRING,

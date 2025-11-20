@@ -8,7 +8,7 @@ import { AuthenticatedRequest } from "../../middlewares/auth";
 import { IsOnBaord, OfferStatus } from "@ustaad/shared";
 import Stripe from "stripe";
 
-import { User } from "@ustaad/shared";
+import { User, ParentSubscriptionStatus } from "@ustaad/shared";
 
 export default class ParentController {
   private parentService: ParentService;
@@ -478,6 +478,119 @@ export default class ParentController {
     } catch (error: any) {
       console.error('Get monthly spending error:', error);
       throw new GenericError(error, `Error from getMonthlySpending ${__filename}`);
+    }
+  };
+
+  terminateContract = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: parentId } = req.user;
+      const { contractId } = req.params;
+      const { status, reason } = req.body;
+
+      // Validate status
+      if (!status || ![ParentSubscriptionStatus.DISPUTE, ParentSubscriptionStatus.PENDING_COMPLETION].includes(status as any)) {
+        return sendErrorResponse(res, "Status must be either 'dispute' or 'completed'", 400);
+      }
+
+      // Validate reason only if status is dispute
+      if (status === ParentSubscriptionStatus.DISPUTE && (!reason || reason.trim().length === 0)) {
+        return sendErrorResponse(res, "Cancellation reason is required for dispute", 400);
+      }
+
+      const result = await this.parentService.terminateContract(
+        parentId,
+        contractId,
+        status,
+        reason
+      );
+
+      const successMessage = status === ParentSubscriptionStatus.DISPUTE 
+        ? "Contract terminated and forwarded to admin"
+        : "Contract marked as completed";
+
+      return sendSuccessResponse(
+        res,
+        successMessage,
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Terminate contract error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Failed to terminate contract";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  submitContractRating = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: parentId } = req.user;
+      const { contractId } = req.params;
+      const { rating, review } = req.body;
+
+      if (!rating || rating < 1 || rating > 5) {
+        return sendErrorResponse(res, "Rating must be between 1 and 5", 400);
+      }
+
+      const result = await this.parentService.submitContractRating(
+        parentId,
+        contractId,
+        rating,
+        review || ''
+      );
+
+      return sendSuccessResponse(
+        res,
+        result.message,
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Submit contract rating error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Failed to submit rating";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  getActiveContractsForDispute = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: parentId } = req.user;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 20;
+
+      const result = await this.parentService.getActiveContractsForDispute(
+        parentId,
+        page,
+        limit
+      );
+
+      return sendSuccessResponse(
+        res,
+        "Active contracts retrieved successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Get active contracts error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Failed to retrieve active contracts";
+      return sendErrorResponse(res, errorMessage, 400);
     }
   };
 }

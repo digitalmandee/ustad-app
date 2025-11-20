@@ -2,6 +2,7 @@ import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { Parent } from "./Parent";
 import { User } from "./User";
 import { Offer } from "./Offer";
+import { ParentSubscriptionStatus } from "../constant/enums";
 
 export interface ParentSubscriptionAttributes {
   id: string;
@@ -9,11 +10,14 @@ export interface ParentSubscriptionAttributes {
   tutorId: string;
   offerId: string; // Added offerId
   stripeSubscriptionId: string;
-  status: string; // 'active', 'cancelled', 'expired'
+  status: string; // 'active', 'cancelled', 'expired', 'created', 'dispute', 'completed', 'pending_completion'
   planType: string; // 'monthly', 'yearly', etc.
   startDate: Date;
   endDate?: Date;
   amount: number;
+  disputeReason?: string;
+  disputedBy?: string;
+  disputedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -34,6 +38,9 @@ export class ParentSubscription
   public startDate!: Date;
   public endDate?: Date;
   public amount!: number;
+  public disputeReason?: string;
+  public disputedBy?: string;
+  public disputedAt?: Date;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date; 
 }
@@ -75,9 +82,25 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
         allowNull: false,
       },
       status: {
-        type: DataTypes.ENUM('active', 'cancelled', 'expired', 'created'),
+        type: DataTypes.ENUM(ParentSubscriptionStatus.ACTIVE, ParentSubscriptionStatus.CANCELLED, ParentSubscriptionStatus.EXPIRED, ParentSubscriptionStatus.CREATED, ParentSubscriptionStatus.DISPUTE, ParentSubscriptionStatus.COMPLETED, ParentSubscriptionStatus.PENDING_COMPLETION),
         allowNull: false,
-        defaultValue: 'active',
+        defaultValue: ParentSubscriptionStatus.ACTIVE.toLowerCase(),
+      },
+      disputeReason: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      disputedBy: {
+        type: DataTypes.UUID,
+        allowNull: true,
+        references: {
+          model: "users",
+          key: "id",
+        },
+      },
+      disputedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
       },
       planType: {
         type: DataTypes.STRING,

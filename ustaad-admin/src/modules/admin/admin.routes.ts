@@ -115,4 +115,19 @@ router.put(
   adminController.approveOnboarding
 );
 
+// Contract dispute management
+router.get(
+  routes.DISPUTED_CONTRACTS,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
+  adminController.getDisputedContracts
+);
+
+router.put(
+  routes.RESOLVE_DISPUTE,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
+  adminController.resolveDispute
+);
+
 export { router as adminRouter };

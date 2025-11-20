@@ -133,6 +133,28 @@ router.get(
   parentController.getMonthlySpending
 );
 
+// Contract termination and completion routes
+router.get(
+  routes.GET_ACTIVE_CONTRACTS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.getActiveContractsForDispute
+);
+
+router.post(
+  routes.TERMINATE_CONTRACT,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.terminateContract
+);
+
+router.post(
+  routes.SUBMIT_CONTRACT_RATING,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.submitContractRating
+);
+
 // Stripe webhook route (no authentication required for webhooks)
 // router.post(
 //   routes.STRIPE_WEBHOOK,
