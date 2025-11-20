@@ -498,7 +498,8 @@ export default class TutorService {
   }
 
   async getTutorByUserId(userId: string) {
-    return await Tutor.findOne({ where: { userId } });
+    
+    return await Tutor.findOne({ where: { userId: userId } });
   }
 
   async setTutorSettings(
