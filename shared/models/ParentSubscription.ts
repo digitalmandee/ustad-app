@@ -84,7 +84,7 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
       status: {
         type: DataTypes.ENUM(ParentSubscriptionStatus.ACTIVE, ParentSubscriptionStatus.CANCELLED, ParentSubscriptionStatus.EXPIRED, ParentSubscriptionStatus.CREATED, ParentSubscriptionStatus.DISPUTE, ParentSubscriptionStatus.COMPLETED, ParentSubscriptionStatus.PENDING_COMPLETION),
         allowNull: false,
-        defaultValue: ParentSubscriptionStatus.ACTIVE.toLowerCase(),
+        defaultValue: ParentSubscriptionStatus.ACTIVE,
       },
       disputeReason: {
         type: DataTypes.TEXT,

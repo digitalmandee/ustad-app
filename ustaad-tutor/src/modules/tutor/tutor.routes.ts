@@ -231,12 +231,12 @@ router.get(
 );
 
 // Contracts routes
-router.get(
-  routes.GET_CONTRACTS,
-  authenticateJwt,
-  authorizeRoles("TUTOR", "PARENT"),
-  tutorController.getContracts
-);
+// router.get(
+//   routes.GET_CONTRACTS,
+//   authenticateJwt,
+//   authorizeRoles("TUTOR", "PARENT"),
+//   tutorController.getContracts
+// );
 
 router.get(
   routes.GET_ACTIVE_CONTRACTS,

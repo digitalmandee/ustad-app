@@ -641,7 +641,7 @@ export default class ParentService {
       if (status === OfferStatus.ACCEPTED) {
         // Check if subscription already exists for this offer
         const existingSubscription = await ParentSubscription.findOne({
-          where: { offerId: offerId, status: "active" },
+          where: { offerId: offerId, status: ParentSubscriptionStatus.ACTIVE },
         });
 
         if (existingSubscription) {
@@ -659,7 +659,7 @@ export default class ParentService {
           parentId: offer.receiverId,
           tutorId: offer.senderId,
           stripeSubscriptionId: randomStripeSubscriptionId,
-          status: "active",
+          status: ParentSubscriptionStatus.ACTIVE,
           planType: "monthly",
           startDate: new Date(),
           amount: offer.amountMonthly,
@@ -821,7 +821,7 @@ export default class ParentService {
       where: { offerId: offer.id },
     });
     if (parentSubscription) {
-      parentSubscription.status = "active";
+      parentSubscription.status = ParentSubscriptionStatus.ACTIVE;
       await parentSubscription.save();
     }
 
@@ -901,7 +901,7 @@ export default class ParentService {
 
       // Update subscription status in database
       await subscription.update({
-        status: "cancelled",
+          status: ParentSubscriptionStatus.CANCELLED,
         endDate: new Date(),
       });
 

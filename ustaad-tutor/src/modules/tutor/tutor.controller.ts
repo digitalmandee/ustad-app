@@ -570,9 +570,9 @@ export default class TutorController {
   getPaymentRequests = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-
-      // Get tutor by userId
+      
       const tutor = await this.tutorService.getTutorByUserId(userId);
+
       if (!tutor) {
         return sendErrorResponse(
           res,
@@ -581,7 +581,7 @@ export default class TutorController {
         );
       }
 
-      const result = await this.tutorService.getPaymentRequests(tutor.userId);
+      const result = await this.tutorService.getPaymentRequests(userId);
 
       return sendSuccessResponse(
         res,
@@ -914,6 +914,10 @@ export default class TutorController {
       const { id: tutorId } = req.user;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
+
+
+      console.log("fadsfasdfasdfasfd");
+      
 
       const result = await this.tutorService.getActiveContractsForDispute(
         tutorId,

@@ -112,8 +112,8 @@ export class OtpServices {
         // });
       } else if (type === 'phone') {
         // Send SMS OTP using VeevoTech service
-        const formattedPhone = smsService.formatPhoneNumber(user.phone);
-        await smsService.sendOtpSms(formattedPhone, otpCode, 10);
+        // const formattedPhone = smsService.formatPhoneNumber(user.phone);
+        // await smsService.sendOtpSms(formattedPhone, otpCode, 10);
       }
 
       return { userId: userId, expiry: expiryDate };

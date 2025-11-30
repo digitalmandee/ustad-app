@@ -5,6 +5,7 @@ import { GenericError } from "../../errors/generic-error";
 import { sendSuccessResponse, sendErrorResponse } from "../../helper/response";
 import InfoMessages from "../../constant/messages";
 import { AuthenticatedRequest } from "../../middlewares/auth";
+import {ChildNotes} from "@ustaad/shared"
 
 export class ChildController {
   private childService: ChildService;
@@ -157,7 +158,9 @@ export class ChildController {
   async getChildNotesByChildId(req: AuthenticatedRequest, res: Response) {  
     try {
       const { childName } = req.params;
-      const notes = await this.childService.getChildNotesByChildId(childName);
+      // const notes = await this.childService.getChildNotesByChildId(childName);
+   const notes = await ChildNotes.findAll({ where: { childName } });
+
 
       return sendSuccessResponse(
         res,

@@ -499,6 +499,8 @@ export default class TutorService {
 
   async getTutorByUserId(userId: string) {
     
+    console.log("we herere");
+    
     return await Tutor.findOne({ where: { userId: userId } });
   }
 
@@ -1017,7 +1019,7 @@ export default class TutorService {
 
   async getPaymentRequests(tutorId: string) {
     try {
-      const tutor = await Tutor.findByPk(tutorId);
+      const tutor = await Tutor.findOne({where: {userId: tutorId}});
       if (!tutor) {
         throw new UnProcessableEntityError("Tutor not found");
       }
@@ -2108,6 +2110,11 @@ export default class TutorService {
         offset,
       });
 
+
+
+    console.log("fadsfasdf");
+    
+
       // Calculate completed sessions and get all related data for each contract
       const contractsWithDetails = await Promise.all(
         rows.map(async (contract) => {
@@ -2126,6 +2133,8 @@ export default class TutorService {
               },
             ],
           });
+          console.log("we herer !");
+          
 
           // Get total active sessions count
           const totalSessions = await TutorSessions.count({
