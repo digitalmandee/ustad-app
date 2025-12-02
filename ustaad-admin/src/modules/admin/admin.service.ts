@@ -1,4 +1,4 @@
-import { IsOnBaord, PaymentRequests, UserRole } from "@ustaad/shared";
+import { IsOnBaord, UserRole } from "@ustaad/shared";
 import {
   User,
   Parent,
@@ -553,7 +553,6 @@ export default class AdminService {
         try {
           await PaymentRequests.create({
             tutorId: contract.tutorId,
-            subscriptionId: contract.id,
             amount: totalAmount / 100, // Convert from cents to dollars if needed
             status: TutorPaymentStatus.REQUESTED,
           });

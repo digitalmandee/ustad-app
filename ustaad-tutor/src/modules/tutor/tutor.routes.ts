@@ -51,6 +51,13 @@ router.post(
 
 router.get(routes.TUTOR_Profile, authenticateJwt, authorizeRoles("TUTOR"), tutorController.getProfile);
 
+router.get(
+  routes.GET_PARENT_PROFILE,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.getParentProfile
+);
+
 // Experience routes
 router.get(
   routes.ALL_EXPERIENCE,

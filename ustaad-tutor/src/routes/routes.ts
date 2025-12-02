@@ -30,6 +30,7 @@ const routes = {
 
   TUTOR_LOCATION: "/tutor/location",
   GET_TUTORS_LOCATIONS: "/tutor/locations",
+  GET_PARENT_PROFILE: "/tutor/parent/:parentId",
   ADD_PAYMENT_REQUEST: "/tutor/payment-request",
   GET_PAYMENT_REQUESTS: "/tutor/payment-request",
   

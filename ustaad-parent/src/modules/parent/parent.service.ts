@@ -507,7 +507,63 @@ export default class ParentService {
         ],
       });
 
-      return user;
+      if (!user) {
+        throw new NotFoundError("Tutor not found");
+      }
+
+      // Get all reviews for this tutor
+      const reviews = await TutorReview.findAll({
+        where: { tutorId },
+        order: [["createdAt", "DESC"]],
+      });
+
+      // Get parent information for all reviews
+      const parentIds = [...new Set(reviews.map(review => review.parentId))];
+      const parents = await User.findAll({
+        where: {
+          id: {
+            [Op.in]: parentIds,
+          },
+        },
+        attributes: ["id", "fullName", "email", "image"],
+      });
+
+      // Create a map for quick parent lookup
+      const parentMap = new Map(parents.map(parent => [parent.id, parent]));
+
+      // Calculate average rating and total reviews
+      const totalReviews = reviews.length;
+      const averageRating = totalReviews > 0
+        ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+        : 0;
+
+      // Format reviews with parent information
+      const formattedReviews = reviews.map((review) => {
+        const parent = parentMap.get(review.parentId);
+        return {
+          id: review.id,
+          rating: review.rating,
+          review: review.review,
+          parent: parent ? {
+            id: parent.id,
+            fullName: parent.fullName,
+            email: parent.email,
+            image: parent.image,
+          } : null,
+          createdAt: review.createdAt,
+          updatedAt: review.updatedAt,
+        };
+      });
+
+      // Return user data with reviews
+      return {
+        ...user.toJSON(),
+        reviews: formattedReviews,
+        reviewStats: {
+          totalReviews,
+          averageRating: parseFloat(averageRating.toFixed(1)),
+        },
+      };
     } catch (error) {
       console.error("Error in getTutorProfile:", error);
       throw error;

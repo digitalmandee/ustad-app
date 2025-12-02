@@ -18,6 +18,7 @@ import {
   TutorSettings,
   ChildNotes,
   ChildReview,
+  Child,
   TutorLocation,
   TutorSessions,
   TutorSessionsDetail,
@@ -502,6 +503,95 @@ export default class TutorService {
     console.log("we herere");
     
     return await Tutor.findOne({ where: { userId: userId } });
+  }
+
+  async getParentProfile(parentId: string) {
+    try {
+      const user = await User.findByPk(parentId, {
+        attributes: {
+          exclude: [
+            "password",
+            "isActive",
+            "isEmailVerified",
+            "isPhoneVerified",
+            "deviceId",
+          ],
+        },
+        include: [
+          {
+            model: Parent,
+            attributes: ["idFrontUrl", "idBackUrl", "customerId"],
+          },
+        ],
+      });
+
+      if (!user) {
+        throw new NotFoundError("Parent not found");
+      }
+
+      // Get all children for this parent
+      const children = await Child.findAll({
+        where: { userId: parentId },
+        order: [["createdAt", "DESC"]],
+      });
+
+      // Get all reviews given by tutors to this parent (if any exist)
+      // Note: Currently there's no ParentReview model, but we can check ContractReview
+      // where the parent is the reviewedId and reviewerRole is TUTOR
+      const reviews = await ContractReview.findAll({
+        where: {
+          reviewedId: parentId,
+          reviewerRole: "TUTOR",
+        },
+        include: [
+          {
+            model: User,
+            as: "reviewer",
+            foreignKey: "reviewerId",
+            attributes: ["id", "fullName", "email", "image"],
+          },
+        ],
+        order: [["createdAt", "DESC"]],
+      });
+
+      // Calculate average rating and total reviews
+      const totalReviews = reviews.length;
+      const averageRating = totalReviews > 0
+        ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+        : 0;
+
+      // Format reviews with tutor information
+      const formattedReviews = reviews.map((review) => {
+        const reviewData = review.toJSON() as any;
+        return {
+          id: review.id,
+          rating: review.rating,
+          review: review.review,
+          tutor: reviewData.reviewer ? {
+            id: reviewData.reviewer.id,
+            fullName: reviewData.reviewer.fullName,
+            email: reviewData.reviewer.email,
+            image: reviewData.reviewer.image,
+          } : null,
+          createdAt: review.createdAt,
+          updatedAt: review.updatedAt,
+        };
+      });
+
+      // Return user data with children and reviews
+      return {
+        ...user.toJSON(),
+        children,
+        reviews: formattedReviews,
+        reviewStats: {
+          totalReviews,
+          averageRating: parseFloat(averageRating.toFixed(1)),
+        },
+      };
+    } catch (error) {
+      console.error("Error in getParentProfile:", error);
+      throw error;
+    }
   }
 
   async setTutorSettings(

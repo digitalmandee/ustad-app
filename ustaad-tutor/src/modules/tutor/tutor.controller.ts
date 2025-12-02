@@ -121,6 +121,29 @@ export default class TutorController {
     }
   };
 
+  getParentProfile = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { parentId } = req.params;
+      const result = await this.tutorService.getParentProfile(parentId);
+
+      return sendSuccessResponse(
+        res,
+        "Parent profile retrieved successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Get parent profile error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage = error?.message || "Something went wrong while retrieving parent profile";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
   addExperience = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
