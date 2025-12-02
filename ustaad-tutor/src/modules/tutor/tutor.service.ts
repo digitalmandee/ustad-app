@@ -30,6 +30,7 @@ import {
   NotificationType,
   ParentSubscription,
   ContractReview,
+  TutorReview,
   sequelize,
   HelpRequestType,
   TutorTransactionType,
@@ -834,18 +835,90 @@ export default class TutorService {
             index === self.findIndex((t) => t.tutorId === tutor.tutorId)
         );
 
-        // Add total experience to each tutor
+        // Get all tutor IDs to fetch reviews
+        const tutorIds = uniqueTutors.map((tutor) => tutor.tutorId);
+        
+        // Fetch all reviews for these tutors
+        const allReviews = await TutorReview.findAll({
+          where: {
+            tutorId: {
+              [Op.in]: tutorIds,
+            },
+          },
+          order: [["createdAt", "DESC"]],
+        });
+
+        // Get parent information for all reviews
+        const parentIds = [...new Set(allReviews.map(review => review.parentId))];
+        const parents = await User.findAll({
+          where: {
+            id: {
+              [Op.in]: parentIds,
+            },
+          },
+          attributes: ["id", "fullName", "email", "image"],
+        });
+
+        // Create a map for quick parent lookup
+        const parentMap = new Map(parents.map(parent => [parent.id, parent]));
+
+        // Create a map of tutorId -> reviews
+        const reviewsMap = new Map<string, any[]>();
+        tutorIds.forEach((tutorId) => {
+          reviewsMap.set(tutorId, []);
+        });
+        
+        allReviews.forEach((review) => {
+          const tutorId = review.tutorId;
+          if (reviewsMap.has(tutorId)) {
+            reviewsMap.get(tutorId)!.push(review);
+          }
+        });
+
+        // Add total experience and reviews to each tutor
         const tutorsWithExperience = uniqueTutors.map((tutor) => {
           const tutorData = tutor.toJSON() as any;
           const totalExperience = this.calculateTotalExperience(
             tutorData.tutor?.TutorExperiences || []
           );
+          
+          // Get reviews for this tutor
+          const tutorReviews = reviewsMap.get(tutor.tutorId) || [];
+          
+          // Calculate review stats
+          const totalReviews = tutorReviews.length;
+          const averageRating = totalReviews > 0
+            ? tutorReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+            : 0;
+
+          // Format reviews with parent information
+          const formattedReviews = tutorReviews.map((review) => {
+            const parent = parentMap.get(review.parentId);
+            return {
+              id: review.id,
+              rating: review.rating,
+              review: review.review,
+              parent: parent ? {
+                id: parent.id,
+                fullName: parent.fullName,
+                email: parent.email,
+                image: parent.image,
+              } : null,
+              createdAt: review.createdAt,
+              updatedAt: review.updatedAt,
+            };
+          });
 
           return {
             ...tutorData,
             tutor: {
               ...tutorData.tutor,
               totalExperience,
+            },
+            reviews: formattedReviews,
+            reviewStats: {
+              totalReviews,
+              averageRating: parseFloat(averageRating.toFixed(1)),
             },
           };
         });
@@ -953,10 +1026,89 @@ export default class TutorService {
           index === self.findIndex((t) => t.tutorId === tutor.tutorId)
       );
 
+      // Get all tutor IDs to fetch reviews
+      const tutorIds = uniqueTutors.map((tutor) => tutor.tutorId);
+      
+      // Fetch all reviews for these tutors
+      const allReviews = await TutorReview.findAll({
+        where: {
+          tutorId: {
+            [Op.in]: tutorIds,
+          },
+        },
+        order: [["createdAt", "DESC"]],
+      });
+
+      // Get parent information for all reviews
+      const parentIds = [...new Set(allReviews.map(review => review.parentId))];
+      const parents = await User.findAll({
+        where: {
+          id: {
+            [Op.in]: parentIds,
+          },
+        },
+        attributes: ["id", "fullName", "email", "image"],
+      });
+
+      // Create a map for quick parent lookup
+      const parentMap = new Map(parents.map(parent => [parent.id, parent]));
+
+      // Create a map of tutorId -> reviews
+      const reviewsMap = new Map<string, any[]>();
+      tutorIds.forEach((tutorId) => {
+        reviewsMap.set(tutorId, []);
+      });
+      
+      allReviews.forEach((review) => {
+        const tutorId = review.tutorId;
+        if (reviewsMap.has(tutorId)) {
+          reviewsMap.get(tutorId)!.push(review);
+        }
+      });
+
+      // Add reviews to each tutor
+      const tutorsWithReviews = uniqueTutors.map((tutor) => {
+        // Get reviews for this tutor
+        const tutorReviews = reviewsMap.get(tutor.tutorId) || [];
+        
+        // Calculate review stats
+        const totalReviews = tutorReviews.length;
+        const averageRating = totalReviews > 0
+          ? tutorReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+          : 0;
+
+        // Format reviews with parent information
+        const formattedReviews = tutorReviews.map((review) => {
+          const parent = parentMap.get(review.parentId);
+          return {
+            id: review.id,
+            rating: review.rating,
+            review: review.review,
+            parent: parent ? {
+              id: parent.id,
+              fullName: parent.fullName,
+              email: parent.email,
+              image: parent.image,
+            } : null,
+            createdAt: review.createdAt,
+            updatedAt: review.updatedAt,
+          };
+        });
+
+        return {
+          ...tutor,
+          reviews: formattedReviews,
+          reviewStats: {
+            totalReviews,
+            averageRating: parseFloat(averageRating.toFixed(1)),
+          },
+        };
+      });
+
       // Apply pagination if we were filtering by category
       const finalResults = category
-        ? uniqueTutors.slice(offset, offset + limit)
-        : uniqueTutors;
+        ? tutorsWithReviews.slice(offset, offset + limit)
+        : tutorsWithReviews;
 
       console.log(
         "Final unique tutors:",
