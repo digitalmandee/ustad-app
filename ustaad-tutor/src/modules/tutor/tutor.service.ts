@@ -30,7 +30,6 @@ import {
   NotificationType,
   ParentSubscription,
   ContractReview,
-  TutorReview,
   sequelize,
   HelpRequestType,
   TutorTransactionType,
@@ -838,29 +837,25 @@ export default class TutorService {
         // Get all tutor IDs to fetch reviews
         const tutorIds = uniqueTutors.map((tutor) => tutor.tutorId);
         
-        // Fetch all reviews for these tutors
-        const allReviews = await TutorReview.findAll({
+        // Fetch all reviews for these tutors from ContractReview
+        // Reviews where tutor is the reviewedId and reviewerRole is PARENT
+        const allReviews = await ContractReview.findAll({
           where: {
-            tutorId: {
+            reviewedId: {
               [Op.in]: tutorIds,
             },
+            reviewerRole: "PARENT",
           },
+          include: [
+            {
+              model: User,
+              as: "reviewer",
+              foreignKey: "reviewerId",
+              attributes: ["id", "fullName", "email", "image"],
+            },
+          ],
           order: [["createdAt", "DESC"]],
         });
-
-        // Get parent information for all reviews
-        const parentIds = [...new Set(allReviews.map(review => review.parentId))];
-        const parents = await User.findAll({
-          where: {
-            id: {
-              [Op.in]: parentIds,
-            },
-          },
-          attributes: ["id", "fullName", "email", "image"],
-        });
-
-        // Create a map for quick parent lookup
-        const parentMap = new Map(parents.map(parent => [parent.id, parent]));
 
         // Create a map of tutorId -> reviews
         const reviewsMap = new Map<string, any[]>();
@@ -869,7 +864,7 @@ export default class TutorService {
         });
         
         allReviews.forEach((review) => {
-          const tutorId = review.tutorId;
+          const tutorId = review.reviewedId;
           if (reviewsMap.has(tutorId)) {
             reviewsMap.get(tutorId)!.push(review);
           }
@@ -893,16 +888,16 @@ export default class TutorService {
 
           // Format reviews with parent information
           const formattedReviews = tutorReviews.map((review) => {
-            const parent = parentMap.get(review.parentId);
+            const reviewData = review.toJSON() as any;
             return {
               id: review.id,
               rating: review.rating,
               review: review.review,
-              parent: parent ? {
-                id: parent.id,
-                fullName: parent.fullName,
-                email: parent.email,
-                image: parent.image,
+              parent: reviewData.reviewer ? {
+                id: reviewData.reviewer.id,
+                fullName: reviewData.reviewer.fullName,
+                email: reviewData.reviewer.email,
+                image: reviewData.reviewer.image,
               } : null,
               createdAt: review.createdAt,
               updatedAt: review.updatedAt,
@@ -1029,29 +1024,25 @@ export default class TutorService {
       // Get all tutor IDs to fetch reviews
       const tutorIds = uniqueTutors.map((tutor) => tutor.tutorId);
       
-      // Fetch all reviews for these tutors
-      const allReviews = await TutorReview.findAll({
+      // Fetch all reviews for these tutors from ContractReview
+      // Reviews where tutor is the reviewedId and reviewerRole is PARENT
+      const allReviews = await ContractReview.findAll({
         where: {
-          tutorId: {
+          reviewedId: {
             [Op.in]: tutorIds,
           },
+          reviewerRole: "PARENT",
         },
+        include: [
+          {
+            model: User,
+            as: "reviewer",
+            foreignKey: "reviewerId",
+            attributes: ["id", "fullName", "email", "image"],
+          },
+        ],
         order: [["createdAt", "DESC"]],
       });
-
-      // Get parent information for all reviews
-      const parentIds = [...new Set(allReviews.map(review => review.parentId))];
-      const parents = await User.findAll({
-        where: {
-          id: {
-            [Op.in]: parentIds,
-          },
-        },
-        attributes: ["id", "fullName", "email", "image"],
-      });
-
-      // Create a map for quick parent lookup
-      const parentMap = new Map(parents.map(parent => [parent.id, parent]));
 
       // Create a map of tutorId -> reviews
       const reviewsMap = new Map<string, any[]>();
@@ -1060,7 +1051,7 @@ export default class TutorService {
       });
       
       allReviews.forEach((review) => {
-        const tutorId = review.tutorId;
+        const tutorId = review.reviewedId;
         if (reviewsMap.has(tutorId)) {
           reviewsMap.get(tutorId)!.push(review);
         }
@@ -1079,16 +1070,16 @@ export default class TutorService {
 
         // Format reviews with parent information
         const formattedReviews = tutorReviews.map((review) => {
-          const parent = parentMap.get(review.parentId);
+          const reviewData = review.toJSON() as any;
           return {
             id: review.id,
             rating: review.rating,
             review: review.review,
-            parent: parent ? {
-              id: parent.id,
-              fullName: parent.fullName,
-              email: parent.email,
-              image: parent.image,
+            parent: reviewData.reviewer ? {
+              id: reviewData.reviewer.id,
+              fullName: reviewData.reviewer.fullName,
+              email: reviewData.reviewer.email,
+              image: reviewData.reviewer.image,
             } : null,
             createdAt: review.createdAt,
             updatedAt: review.updatedAt,

@@ -21,7 +21,6 @@ import {
   ParentTransaction,
   TutorTransaction,
   Child,
-  TutorReview,
   ContractReview,
   TutorSessionsDetail,
   PaymentRequests,
@@ -511,25 +510,23 @@ export default class ParentService {
         throw new NotFoundError("Tutor not found");
       }
 
-      // Get all reviews for this tutor
-      const reviews = await TutorReview.findAll({
-        where: { tutorId },
+      // Get all reviews for this tutor from ContractReview
+      // Reviews where tutor is the reviewedId and reviewerRole is PARENT
+      const reviews = await ContractReview.findAll({
+        where: {
+          reviewedId: tutorId,
+          reviewerRole: "PARENT",
+        },
+        include: [
+          {
+            model: User,
+            as: "reviewer",
+            foreignKey: "reviewerId",
+            attributes: ["id", "fullName", "email", "image"],
+          },
+        ],
         order: [["createdAt", "DESC"]],
       });
-
-      // Get parent information for all reviews
-      const parentIds = [...new Set(reviews.map(review => review.parentId))];
-      const parents = await User.findAll({
-        where: {
-          id: {
-            [Op.in]: parentIds,
-          },
-        },
-        attributes: ["id", "fullName", "email", "image"],
-      });
-
-      // Create a map for quick parent lookup
-      const parentMap = new Map(parents.map(parent => [parent.id, parent]));
 
       // Calculate average rating and total reviews
       const totalReviews = reviews.length;
@@ -539,16 +536,16 @@ export default class ParentService {
 
       // Format reviews with parent information
       const formattedReviews = reviews.map((review) => {
-        const parent = parentMap.get(review.parentId);
+        const reviewData = review.toJSON() as any;
         return {
           id: review.id,
           rating: review.rating,
           review: review.review,
-          parent: parent ? {
-            id: parent.id,
-            fullName: parent.fullName,
-            email: parent.email,
-            image: parent.image,
+          parent: reviewData.reviewer ? {
+            id: reviewData.reviewer.id,
+            fullName: reviewData.reviewer.fullName,
+            email: reviewData.reviewer.email,
+            image: reviewData.reviewer.image,
           } : null,
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
@@ -1012,68 +1009,68 @@ export default class ParentService {
     }
   }
 
-  async createTutorReview(
-    parentId: string,
-    tutorId: string,
-    rating: number,
-    review: string
-  ) {
-    try {
-      // Check if tutor exists in users table
-      const tutorUser = await User.findOne({
-        where: { id: tutorId, role: "TUTOR" },
-      });
+  // async createTutorReview(
+  //   parentId: string,
+  //   tutorId: string,
+  //   rating: number,
+  //   review: string
+  // ) {
+  //   try {
+  //     // Check if tutor exists in users table
+  //     const tutorUser = await User.findOne({
+  //       where: { id: tutorId, role: "TUTOR" },
+  //     });
 
-      if (!tutorUser) {
-        throw new UnProcessableEntityError("Tutor not found");
-      }
+  //     if (!tutorUser) {
+  //       throw new UnProcessableEntityError("Tutor not found");
+  //     }
 
-      // Check if parent already reviewed this tutor
-      const existingReview = await TutorReview.findOne({
-        where: { parentId, tutorId },
-      });
+  //     // Check if parent already reviewed this tutor
+  //     const existingReview = await TutorReview.findOne({
+  //       where: { parentId, tutorId },
+  //     });
 
-      if (existingReview) {
-        throw new ConflictError("You have already reviewed this tutor");
-      }
+  //     if (existingReview) {
+  //       throw new ConflictError("You have already reviewed this tutor");
+  //     }
 
-      // Create the review
-      const tutorReview = await TutorReview.create({
-        parentId,
-        tutorId,
-        rating,
-        review,
-      });
+  //     // Create the review
+  //     const tutorReview = await TutorReview.create({
+  //       parentId,
+  //       tutorId,
+  //       rating,
+  //       review,
+  //     });
 
-      // 🔔 SEND NOTIFICATION TO TUTOR
-      try {
-        const parent = await User.findByPk(parentId);
+  //     // 🔔 SEND NOTIFICATION TO TUTOR
+  //     try {
+  //       const parent = await User.findByPk(parentId);
         
-        await sendNotificationToUser({
-          userId: tutorId,
-          type: NotificationType.REVIEW_RECEIVED_TUTOR,
-          title: '⭐ New Review',
-          body: `${parent?.fullName || 'A parent'} gave you ${rating} stars${review ? `: "${review.substring(0, 50)}${review.length > 50 ? '...' : ''}"` : ''}`,
-          relatedEntityId: tutorReview.id,
-          relatedEntityType: 'review',
-          actionUrl: `/reviews/${tutorReview.id}`,
-          metadata: {
-            rating: rating.toString(),
-            reviewerName: parent?.fullName || 'Unknown',
-            hasReview: !!review,
-          },
-        });
-        console.log(`✅ Sent review notification to tutor ${tutorId}`);
-      } catch (notificationError) {
-        console.error('❌ Error sending review notification:', notificationError);
-      }
+  //       await sendNotificationToUser({
+  //         userId: tutorId,
+  //         type: NotificationType.REVIEW_RECEIVED_TUTOR,
+  //         title: '⭐ New Review',
+  //         body: `${parent?.fullName || 'A parent'} gave you ${rating} stars${review ? `: "${review.substring(0, 50)}${review.length > 50 ? '...' : ''}"` : ''}`,
+  //         relatedEntityId: tutorReview.id,
+  //         relatedEntityType: 'review',
+  //         actionUrl: `/reviews/${tutorReview.id}`,
+  //         metadata: {
+  //           rating: rating.toString(),
+  //           reviewerName: parent?.fullName || 'Unknown',
+  //           hasReview: !!review,
+  //         },
+  //       });
+  //       console.log(`✅ Sent review notification to tutor ${tutorId}`);
+  //     } catch (notificationError) {
+  //       console.error('❌ Error sending review notification:', notificationError);
+  //     }
 
-      return tutorReview;
-    } catch (error) {
-      console.error("Error in createTutorReview:", error);
-      throw error;
-    }
-  }
+  //     return tutorReview;
+  //   } catch (error) {
+  //     console.error("Error in createTutorReview:", error);
+  //     throw error;
+  //   }
+  // }
 
   async getMonthlySpending(parentId: string) {
     try {

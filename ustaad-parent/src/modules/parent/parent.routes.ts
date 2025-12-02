@@ -118,12 +118,12 @@ router.post(
 );
 
 // Tutor review route
-router.post(
-  routes.ADD_TUTOR_REVIEW,
-  authenticateJwt,
-  authorizeRoles("PARENT"),
-  parentController.createTutorReview
-);
+// router.post(
+//   routes.ADD_TUTOR_REVIEW,
+//   authenticateJwt,
+//   authorizeRoles("PARENT"),
+//   parentController.createTutorReview
+// );
 
 // Analytics routes
 router.get(

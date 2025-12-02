@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.ContractReview = exports.Notification = exports.HelpRequests = exports.File = exports.PaymentRequests = exports.TutorTransaction = exports.PaymentMethod = exports.TutorSessionsDetail = exports.TutorSessions = exports.ParentTransaction = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorReview = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
+exports.Offer = exports.Message = exports.ConversationParticipant = exports.Conversation = exports.ContractReview = exports.Notification = exports.HelpRequests = exports.File = exports.PaymentRequests = exports.TutorTransaction = exports.PaymentMethod = exports.TutorSessionsDetail = exports.TutorSessions = exports.ParentTransaction = exports.ParentSubscription = exports.TutorLocation = exports.Otp = exports.User = exports.TutorSettings = exports.TutorExperience = exports.TutorEducation = exports.Tutor = exports.Subject = exports.Session = exports.Parent = exports.ChildReview = exports.ChildNotes = exports.Child = void 0;
 exports.initAllModels = initAllModels;
 const Child_1 = require("./Child");
 Object.defineProperty(exports, "Child", { enumerable: true, get: function () { return Child_1.Child; } });
@@ -29,7 +29,6 @@ Object.defineProperty(exports, "TutorSettings", { enumerable: true, get: functio
 const TutorLocations_1 = require("./TutorLocations");
 Object.defineProperty(exports, "TutorLocation", { enumerable: true, get: function () { return TutorLocations_1.TutorLocation; } });
 const TutorReview_1 = require("./TutorReview");
-Object.defineProperty(exports, "TutorReview", { enumerable: true, get: function () { return TutorReview_1.TutorReview; } });
 const ParentSubscription_1 = require("./ParentSubscription");
 Object.defineProperty(exports, "ParentSubscription", { enumerable: true, get: function () { return ParentSubscription_1.ParentSubscription; } });
 const ParentTransaction_1 = require("./ParentTransaction");

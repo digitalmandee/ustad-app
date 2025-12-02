@@ -84,7 +84,7 @@ export {
   TutorEducation,
   TutorExperience,
   TutorSettings,
-  TutorReview,
+  // TutorReview,
   User,
   Otp,
   TutorLocation,
