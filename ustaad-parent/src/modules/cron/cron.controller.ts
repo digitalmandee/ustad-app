@@ -29,9 +29,9 @@ export default class CronController {
   };
 
   /**
-   * Manually trigger the payment verification cron job
+   * Manually trigger recurring payment processing
    */
-  triggerPaymentVerification = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  triggerRecurringPayments = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const cronService = (global as any).cronService;
       
@@ -39,19 +39,22 @@ export default class CronController {
         throw new GenericError(new Error('Cron service not initialized'), 'Cron service not available');
       }
       
-      console.log('🔄 Manually triggering payment verification...');
+      console.log('🔄 Manually triggering recurring payment processing...');
       
-      // Call the public method to verify completed transactions
-      await cronService.verifyCompletedTransactions();
+      const result = await cronService.processDueSubscriptions();
       
       sendSuccessResponse(
         res,
-        'Payment verification triggered successfully',
+        'Recurring payments processed successfully',
         200,
-        { message: 'Payment verification process completed' }
+        {
+          success: true,
+          message: 'Due subscriptions processed',
+          result,
+        }
       );
     } catch (error: any) {
-      throw new GenericError(error, 'Error triggering payment verification');
+      throw new GenericError(error, 'Error triggering recurring payments');
     }
   };
 
@@ -131,30 +134,6 @@ export default class CronController {
   };
 
   /**
-   * Stop specific cron job
-   */
-  stopPaymentVerificationCron = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    try {
-      const cronService = (global as any).cronService;
-      
-      if (!cronService) {
-        throw new GenericError(new Error('Cron service not initialized'), 'Cron service not available');
-      }
-      
-      cronService.stopPaymentVerificationCron();
-      
-      sendSuccessResponse(
-        res,
-        'Payment verification cron job stopped successfully',
-        200,
-        { message: 'Payment verification cron job has been stopped' }
-      );
-    } catch (error: any) {
-      throw new GenericError(error, 'Error stopping payment verification cron job');
-    }
-  };
-
-  /**
    * Stop cancelled subscription cron job
    */
   stopCancelledSubscriptionCron = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
@@ -175,30 +154,6 @@ export default class CronController {
       );
     } catch (error: any) {
       throw new GenericError(error, 'Error stopping cancelled subscription cron job');
-    }
-  };
-
-  /**
-   * Start specific cron job
-   */
-  startPaymentVerificationCron = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
-    try {
-      const cronService = (global as any).cronService;
-      
-      if (!cronService) {
-        throw new GenericError(new Error('Cron service not initialized'), 'Cron service not available');
-      }
-      
-      cronService.startPaymentVerificationCron();
-      
-      sendSuccessResponse(
-        res,
-        'Payment verification cron job started successfully',
-        200,
-        { message: 'Payment verification cron job has been started' }
-      );
-    } catch (error: any) {
-      throw new GenericError(error, 'Error starting payment verification cron job');
     }
   };
 

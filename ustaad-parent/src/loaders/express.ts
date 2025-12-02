@@ -28,7 +28,11 @@ export default ({ app }: { app: express.Application }) => {
 
 
 
-  app.use('/api/v1/parent/webhook/stripe', express.raw({ type: 'application/json' }),  (req, res) => new ParentController().handleStripeWebhook(req, res) );
+  // app.use('/api/v1/parent/webhook/stripe', express.raw({ type: 'application/json' }),  (req, res) => new ParentController().handleStripeWebhook(req, res) );
+  
+  // PayFast IPN endpoint - needs urlencoded body parser (PayFast sends form data)
+  app.use('/api/v1/parent/payfast/ipn', express.urlencoded({ extended: true, limit: '10mb' }));
+  
   // Body parser, reading data from body into req.body
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));

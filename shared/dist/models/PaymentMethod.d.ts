@@ -8,6 +8,8 @@ export interface PaymentMethodAttributes {
     cardExpMonth: number;
     cardExpYear: number;
     isDefault: boolean;
+    instrumentToken?: string;
+    paymentProvider?: string;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -21,6 +23,8 @@ export declare class PaymentMethod extends Model<PaymentMethodAttributes, Paymen
     cardExpMonth: number;
     cardExpYear: number;
     isDefault: boolean;
+    instrumentToken?: string;
+    paymentProvider?: string;
     readonly createdAt: Date;
     readonly updatedAt: Date;
 }

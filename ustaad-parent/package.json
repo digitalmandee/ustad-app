@@ -33,6 +33,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/stripe": "^8.0.417",
     "@typescript-eslint/eslint-plugin": "^8.26.0",
+    "axios": "^1.6.0",
     "@typescript-eslint/parser": "^8.26.0",
     "@ustaad/shared": "file:../shared",
     "bcrypt": "^6.0.0",

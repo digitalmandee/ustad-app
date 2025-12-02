@@ -155,10 +155,33 @@ router.post(
   parentController.submitContractRating
 );
 
-// Stripe webhook route (no authentication required for webhooks)
-// router.post(
-//   routes.STRIPE_WEBHOOK,
-//   parentController.handleStripeWebhook
-// );
+
+// PayFast routes
+router.post(
+  routes.PAYFAST_SUBSCRIPTION_INITIATE,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.initiatePayFastSubscription
+);
+
+// PayFast IPN endpoint (no authentication - called by PayFast server)
+router.post(
+  routes.PAYFAST_IPN,
+  parentController.handlePayFastIPN
+);
+
+router.get(
+  routes.SUBSCRIPTION_STATUS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.getSubscriptionStatus
+);
+
+router.post(
+  routes.SUBSCRIPTION_CHARGE,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.chargeRecurringSubscription
+);
 
 export { router as tutorRouter };

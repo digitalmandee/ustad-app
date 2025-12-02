@@ -593,4 +593,148 @@ export default class ParentController {
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
+
+  // ==================== PayFast Payment Methods ====================
+
+  /**
+   * Initiate PayFast subscription payment
+   */
+  initiatePayFastSubscription = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { id: userId } = req.user;
+      const { offerId } = req.body;
+
+      if (!offerId) {
+        return sendErrorResponse(res, "planId is required", 400);
+      }
+
+      const result = await this.parentService.initiatePayFastSubscription({
+        userId,
+        offerId
+      });
+
+      return sendSuccessResponse(
+        res,
+        "PayFast subscription initiated successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Initiate PayFast subscription error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while initiating PayFast subscription";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  /**
+   * Handle PayFast IPN (Instant Payment Notification)
+   */
+  handlePayFastIPN = async (req: Request, res: Response): Promise<void> => {
+    try {
+      // PayFast sends data as form-urlencoded
+      const ipnData = req.body;
+
+
+      console.log("ipnData", ipnData);
+
+      // Always return 200 OK immediately to prevent PayFast retries
+      res.status(200).send("OK");
+
+      // Process IPN asynchronously
+      setImmediate(async () => {
+        try {
+          await this.parentService.handlePayFastIPN(ipnData);
+        } catch (error) {
+          console.error("Error processing PayFast IPN:", error);
+        }
+      });
+    } catch (error: any) {
+      console.error("PayFast IPN handler error:", error);
+      // Still return 200 OK even on error to prevent retries
+      res.status(200).send("OK");
+    }
+  };
+
+  /**
+   * Get subscription status by basket ID
+   */
+  getSubscriptionStatus = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { basketId } = req.query;
+
+      if (!basketId || typeof basketId !== "string") {
+        return sendErrorResponse(res, "basketId is required", 400);
+      }
+
+      const result = await this.parentService.getSubscriptionStatusByBasketId(
+        basketId
+      );
+
+      return sendSuccessResponse(
+        res,
+        "Subscription status retrieved successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Get subscription status error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while retrieving subscription status";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  /**
+   * Manually trigger recurring charge for a subscription
+   */
+  chargeRecurringSubscription = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { subscriptionId } = req.body;
+
+      if (!subscriptionId) {
+        return sendErrorResponse(res, "subscriptionId is required", 400);
+      }
+
+      const result = await this.parentService.chargeRecurringSubscription(
+        subscriptionId
+      );
+
+      return sendSuccessResponse(
+        res,
+        "Recurring charge initiated successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Charge recurring subscription error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while charging subscription";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
 }

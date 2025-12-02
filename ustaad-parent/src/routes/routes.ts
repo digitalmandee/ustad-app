@@ -42,6 +42,12 @@ const routes = {
   
   // webhook
   STRIPE_WEBHOOK: '/parent/webhook/stripe',
+  
+  // PayFast routes
+  PAYFAST_SUBSCRIPTION_INITIATE: '/parent/payfast/subscription/initiate',
+  PAYFAST_IPN: '/parent/payfast/ipn',
+  SUBSCRIPTION_STATUS: '/parent/subscriptions/status',
+  SUBSCRIPTION_CHARGE: '/parent/subscriptions/charge',
 };
 
 export default routes;

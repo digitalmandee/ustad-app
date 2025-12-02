@@ -10,6 +10,9 @@ export interface ParentTransactionAttributes {
   status: string;
   amount: number;
   childName: string;
+  // PayFast fields
+  basketId?: string; // PayFast basket ID
+  orderStatus?: string; // PENDING, SUCCESS, FAILED
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -33,6 +36,9 @@ export class ParentTransaction
   public status!: string;
   public amount!: number;
   public childName!: string;
+  // PayFast fields
+  public basketId?: string;
+  public orderStatus?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -79,6 +85,19 @@ export function initParentTransactionModel(
       childName: {
         type: DataTypes.STRING,
         allowNull: false,
+      },
+      // PayFast fields
+      basketId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      orderStatus: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: "PENDING",
+        validate: {
+          isIn: [["PENDING", "SUCCESS", "FAILED"]],
+        },
       },
     },
     {

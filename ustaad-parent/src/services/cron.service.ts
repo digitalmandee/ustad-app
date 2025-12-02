@@ -1,60 +1,23 @@
 import * as cron from "node-cron";
-import Stripe from "stripe";
 import {
   ParentTransaction,
   Offer,
   TutorSessions,
   ParentSubscription,
+  ParentSubscriptionStatus,
 } from "@ustaad/shared";
+import { Op } from "sequelize";
+import PayFastService from "./payfast.service";
 
 export class CronService {
-  private stripe: Stripe | null = null;
-  private paymentVerificationCron: cron.ScheduledTask | null = null;
+  private payfastService: PayFastService;
   private cancelledSubscriptionCron: cron.ScheduledTask | null = null;
-  private lastPaymentVerificationRun: Date | null = null;
+  private recurringPaymentCron: cron.ScheduledTask | null = null;
   private lastCancelledSubscriptionRun: Date | null = null;
+  private lastRecurringPaymentRun: Date | null = null;
 
   constructor() {
-    if (process.env.STRIPE_SECRET_KEY) {
-      this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: "2025-08-27.basil",
-      });
-    }
-  }
-
-  /**
-   * Start the payment verification cron job that runs every 5 minutes
-   */
-  startPaymentVerificationCron(): void {
-    if (!this.stripe) {
-      console.error("❌ Stripe is not configured. Cron job cannot start.");
-      return;
-    }
-
-    // Run every 5 minutes
-    this.paymentVerificationCron = cron.schedule(
-      "*/5 * * * *",
-      async () => {
-        console.log("🕐 Running payment verification cron job...");
-        try {
-          this.lastPaymentVerificationRun = new Date();
-          await this.verifyCompletedTransactions();
-          console.log(
-            "✅ Payment verification cron job completed successfully"
-          );
-        } catch (error) {
-          console.error("❌ Error in payment verification cron job:", error);
-        }
-      },
-      {
-        timezone: "UTC",
-      }
-    );
-
-    this.paymentVerificationCron.start();
-    console.log(
-      "🚀 Payment verification cron job started - runs every 5 minutes"
-    );
+    this.payfastService = new PayFastService();
   }
 
   /**
@@ -88,18 +51,6 @@ export class CronService {
   }
 
   /**
-   * Stop the payment verification cron job
-   */
-  stopPaymentVerificationCron(): void {
-    if (this.paymentVerificationCron) {
-      this.paymentVerificationCron.stop();
-      this.paymentVerificationCron.destroy();
-      this.paymentVerificationCron = null;
-      console.log("🛑 Payment verification cron job stopped");
-    }
-  }
-
-  /**
    * Stop the cancelled subscription cron job
    */
   stopCancelledSubscriptionCron(): void {
@@ -115,57 +66,176 @@ export class CronService {
    * Stop all cron jobs
    */
   stopAllCronJobs(): void {
-    this.stopPaymentVerificationCron();
     this.stopCancelledSubscriptionCron();
+    this.stopRecurringPaymentCron();
     console.log("🛑 All cron jobs stopped");
+  }
+
+  /**
+   * Start recurring payment cron job for PayFast subscriptions
+   */
+  startRecurringPaymentCron(): void {
+    // Run hourly at minute 0
+    this.recurringPaymentCron = cron.schedule(
+      "0 * * * *",
+      async () => {
+        console.log("🕐 Running recurring payment cron job...");
+        try {
+          this.lastRecurringPaymentRun = new Date();
+          await this.processRecurringPayments();
+          console.log(
+            "✅ Recurring payment cron job completed successfully"
+          );
+        } catch (error) {
+          console.error("❌ Error in recurring payment cron job:", error);
+        }
+      },
+      {
+        timezone: "UTC",
+      }
+    );
+
+    this.recurringPaymentCron.start();
+    console.log(
+      "🚀 Recurring payment cron job started - runs every hour"
+    );
+  }
+
+  /**
+   * Stop recurring payment cron job
+   */
+  stopRecurringPaymentCron(): void {
+    if (this.recurringPaymentCron) {
+      this.recurringPaymentCron.stop();
+      this.recurringPaymentCron.destroy();
+      this.recurringPaymentCron = null;
+      console.log("🛑 Recurring payment cron job stopped");
+    }
+  }
+
+  /**
+   * Process recurring payments for due subscriptions
+   */
+  async processRecurringPayments(): Promise<void> {
+    try {
+      const now = new Date();
+
+      // Find all active subscriptions that are due for billing
+      const dueSubscriptions = await ParentSubscription.findAll({
+        where: {
+          status: ParentSubscriptionStatus.ACTIVE,
+          instrumentToken: { [Op.ne]: null },
+          [Op.or]: [
+            { nextBillingDate: { [Op.lte]: now } },
+            { nextBillingDate: null },
+          ],
+        },
+        include: [
+          {
+            model: Offer,
+            attributes: ["childName"],
+          },
+        ],
+      });
+
+      console.log(
+        `📊 Found ${dueSubscriptions.length} subscriptions due for billing`
+      );
+
+      if (dueSubscriptions.length === 0) {
+        return;
+      }
+
+      // Process each subscription
+      for (const subscription of dueSubscriptions) {
+        try {
+          await this.chargeRecurringSubscription(subscription);
+        } catch (error) {
+          console.error(
+            `❌ Error charging subscription ${subscription.id}:`,
+            error
+          );
+          // Continue with other subscriptions
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error in processRecurringPayments:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Charge a single recurring subscription
+   */
+  private async chargeRecurringSubscription(
+    subscription: any
+  ): Promise<void> {
+    try {
+      if (!subscription.instrumentToken) {
+        console.log(
+          `⚠️ Subscription ${subscription.id} has no instrument token, skipping...`
+        );
+        return;
+      }
+
+      // Get user for email/phone
+      const user = await require("@ustaad/shared").User.findByPk(
+        subscription.parentId
+      );
+      if (!user) {
+        console.log(
+          `⚠️ User not found for subscription ${subscription.id}, skipping...`
+        );
+        return;
+      }
+
+      // Generate recurring basket ID
+      const basketId = this.payfastService.generateBasketId("RECUR");
+
+      // Create invoice/transaction
+      const offer = subscription.offer || (await require("@ustaad/shared").Offer.findByPk(subscription.offerId));
+      const invoice = await ParentTransaction.create({
+        parentId: subscription.parentId,
+        subscriptionId: subscription.id,
+        invoiceId: basketId,
+        basketId,
+        status: "created",
+        orderStatus: "PENDING",
+        amount: subscription.amount,
+        childName: offer?.childName || "",
+      });
+
+      // Charge using PayFast
+      const result = await this.payfastService.chargeRecurringPayment({
+        instrumentToken: subscription.instrumentToken,
+        basketId,
+        amount: subscription.amount,
+        customerEmail: user.email,
+        customerMobile: user.phone || undefined,
+      });
+
+      console.log(
+        `✅ Recurring charge initiated for subscription ${subscription.id}, basketId: ${basketId}`
+      );
+
+      // Note: The actual payment confirmation will come via IPN
+      // IPN handler will update subscription nextBillingDate and invoice status
+    } catch (error) {
+      console.error(
+        `❌ Error charging subscription ${subscription.id}:`,
+        error
+      );
+      throw error;
+    }
   }
 
   /**
    * Start all cron jobs
    */
   startAllCronJobs(): void {
-    // this.startPaymentVerificationCron();
     // this.startCancelledSubscriptionCron();
+    this.startRecurringPaymentCron();
     console.log("🚀 All cron jobs started");
-  }
-
-  /**
-   * Main method to verify completed transactions
-   */
-  async verifyCompletedTransactions(): Promise<void> {
-    try {
-      // 1. Get all completed transactions
-      const completedTransactions = await ParentTransaction.findAll({
-        where: {
-          status: "created",
-          // Note: 'paid' field might not exist in the model, using status instead
-        },
-      });
-
-      console.log(
-        `📊 Found ${completedTransactions.length} completed transactions to verify`
-      );
-
-      if (completedTransactions.length === 0) {
-        return;
-      }
-
-      // 2. Check each transaction's payment status on Stripe
-      for (const transaction of completedTransactions) {
-        try {
-          await this.verifyTransactionPayment(transaction);
-        } catch (error) {
-          console.error(
-            `❌ Error verifying transaction ${transaction.id}:`,
-            error
-          );
-          // Continue with other transactions
-        }
-      }
-    } catch (error) {
-      console.error("❌ Error in verifyCompletedTransactions:", error);
-      throw error;
-    }
   }
 
   /**
@@ -276,120 +346,34 @@ export class CronService {
     }
   }
 
-  /**
-   * Verify a single transaction's payment status on Stripe
-   */
-  private async verifyTransactionPayment(transaction: any): Promise<void> {
-    try {
-      if (!transaction.invoiceId) {
-        console.log(
-          `⚠️ Transaction ${transaction.id} has no invoice ID, skipping...`
-        );
-        return;
-      }
-
-      console.log(
-        `🔍 Verifying payment for transaction ${transaction.id} with invoice ${transaction.invoiceId}`
-      );
-
-      // Get invoice from Stripe
-      const invoice = await this.stripe!.invoices.retrieve(
-        transaction.invoiceId
-      );
-
-      if (!invoice) {
-        console.log(`⚠️ Invoice ${transaction.invoiceId} not found on Stripe`);
-        return;
-      }
-
-      // Check if invoice is paid
-      if (invoice.status === "paid") {
-        console.log(
-          `✅ Invoice ${transaction.invoiceId} is paid on Stripe, processing payment...`
-        );
-
-        // Process the payment using the existing logic
-        await this.handleInvoicePaymentSucceeded(invoice);
-
-        // Update transaction status
-        await transaction.update({
-          status: "paid",
-        });
-
-        console.log(`✅ Transaction ${transaction.id} marked as paid`);
-      } else {
-        console.log(
-          `⏳ Invoice ${transaction.invoiceId} is not paid yet (status: ${invoice.status})`
-        );
-      }
-    } catch (error) {
-      console.error(`❌ Error verifying transaction ${transaction.id}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Handle successful invoice payment (copied from parent.service.ts)
-   */
-  private async handleInvoicePaymentSucceeded(invoice: any): Promise<void> {
-    console.log("Invoice payment succeeded:", invoice.id);
-    const subID = invoice?.parent?.subscription_details?.subscription;
-    const offerId = invoice?.parent?.subscription_details?.metadata?.offerId;
-
-    console.log("subID", subID);
-    console.log("offerId", offerId);
-
-    const parentTransaction = await ParentTransaction.findOne({
-      where: { invoiceId: invoice.id, status: "created" },
-    });
-
-    const parentSubscription = await ParentSubscription.findOne({
-      where: { stripeSubscriptionId: subID },
-    });
-
-    if (!parentSubscription) {
-      console.log("subscription id mismatch");
-      return;
-    }
-
-    const offer = await Offer.findOne({
-      where: { id: offerId },
-    });
-    if (parentTransaction && offer) {
-      parentTransaction.status = "paid";
-      await parentTransaction.save();
-
-      const tutorSession = await TutorSessions.create({
-        tutorId: offer?.senderId,
-        parentId: parentTransaction.parentId,
-        childName: offer?.childName,
-        startTime: offer?.startTime,
-        endTime: offer?.endTime,
-        daysOfWeek: offer?.daysOfWeek,
-        month: new Date().toISOString().split("T")[0],
-        price: parentTransaction.amount,
-        status: "active",
-      });
-      console.log("tutorsession created");
-    }
-  }
 
   /**
    * Get cron job status for all jobs
    */
   getCronStatus(): { 
-    paymentVerification: { isRunning: boolean; lastRun?: Date };
     cancelledSubscription: { isRunning: boolean; lastRun?: Date };
+    recurringPayment: { isRunning: boolean; lastRun?: Date };
   } {
     return {
-      paymentVerification: {
-        isRunning: this.paymentVerificationCron?.getStatus() === "scheduled" || false,
-        lastRun: this.lastPaymentVerificationRun,
-      },
       cancelledSubscription: {
         isRunning: this.cancelledSubscriptionCron?.getStatus() === "scheduled" || false,
         lastRun: this.lastCancelledSubscriptionRun,
       },
+      recurringPayment: {
+        isRunning: this.recurringPaymentCron?.getStatus() === "scheduled" || false,
+        lastRun: this.lastRecurringPaymentRun,
+      },
+    };
+  }
+
+  /**
+   * Manually trigger recurring payment processing (for testing)
+   */
+  async processDueSubscriptions(): Promise<{ processed: number; timestamp: Date }> {
+    await this.processRecurringPayments();
+    return {
+      processed: 0, // Will be updated by processRecurringPayments
+      timestamp: new Date(),
     };
   }
 }

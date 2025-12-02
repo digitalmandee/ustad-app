@@ -11,6 +11,9 @@ export interface PaymentMethodAttributes {
   cardExpMonth: number;
   cardExpYear: number;
   isDefault: boolean;
+  // PayFast fields
+  instrumentToken?: string; // PayFast recurring token
+  paymentProvider?: string; // STRIPE or PAYFAST
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -32,6 +35,9 @@ export class PaymentMethod
   public cardExpMonth!: number;
   public cardExpYear!: number;
   public isDefault!: boolean;
+  // PayFast fields
+  public instrumentToken?: string;
+  public paymentProvider?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -79,6 +85,18 @@ export function initPaymentMethodModel(
         type: DataTypes.BOOLEAN,
         allowNull: false,
         defaultValue: false,
+      },
+      // PayFast fields
+      instrumentToken: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: "PayFast recurring payment token",
+      },
+      paymentProvider: {
+        type: DataTypes.ENUM("STRIPE", "PAYFAST"),
+        allowNull: true,
+        defaultValue: "STRIPE",
+        comment: "Payment provider type",
       },
     },
     {

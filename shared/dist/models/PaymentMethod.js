@@ -48,6 +48,18 @@ function initPaymentMethodModel(sequelize) {
             allowNull: false,
             defaultValue: false,
         },
+        // PayFast fields
+        instrumentToken: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: true,
+            comment: "PayFast recurring payment token",
+        },
+        paymentProvider: {
+            type: sequelize_1.DataTypes.ENUM("STRIPE", "PAYFAST"),
+            allowNull: true,
+            defaultValue: "STRIPE",
+            comment: "Payment provider type",
+        },
     }, {
         sequelize,
         tableName: "payment_methods",

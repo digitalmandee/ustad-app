@@ -62,7 +62,7 @@ export function initAllModels(sequelize: Sequelize) {
   
   initTutorSessionsModel(sequelize);
   initTutorSessionsDetailModel(sequelize);
-  initPaymentMethodModel(sequelize);
+  // initPaymentMethodModel(sequelize);
   initFileModel(sequelize);
   initHelpRequestsModel(sequelize);
   initChildNotesModel(sequelize);

@@ -13,6 +13,12 @@ export interface ParentSubscriptionAttributes {
     disputeReason?: string;
     disputedBy?: string;
     disputedAt?: Date;
+    basketId?: string;
+    instrumentToken?: string;
+    nextBillingDate?: Date;
+    lastPaymentDate?: Date;
+    lastPaymentAmount?: number;
+    failureCount?: number;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -31,6 +37,12 @@ export declare class ParentSubscription extends Model<ParentSubscriptionAttribut
     disputeReason?: string;
     disputedBy?: string;
     disputedAt?: Date;
+    basketId?: string;
+    instrumentToken?: string;
+    nextBillingDate?: Date;
+    lastPaymentDate?: Date;
+    lastPaymentAmount?: number;
+    failureCount?: number;
     readonly createdAt: Date;
     readonly updatedAt: Date;
 }

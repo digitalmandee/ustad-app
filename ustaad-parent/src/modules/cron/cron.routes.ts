@@ -13,9 +13,6 @@ const cronController = new CronController();
 // Get cron job status
 router.get('/status', cronController.getCronStatus);
 
-// Manually trigger payment verification
-router.post('/trigger-payment-verification', cronController.triggerPaymentVerification);
-
 // Manually trigger cancelled subscription processing
 router.post('/trigger-cancelled-subscription', cronController.triggerCancelledSubscription);
 
@@ -26,11 +23,17 @@ router.post('/stop', cronController.stopCronJobs);
 router.post('/start', cronController.startCronJobs);
 
 // Stop specific cron jobs
-router.post('/stop-payment-verification', cronController.stopPaymentVerificationCron);
 router.post('/stop-cancelled-subscription', cronController.stopCancelledSubscriptionCron);
 
 // Start specific cron jobs
-router.post('/start-payment-verification', cronController.startPaymentVerificationCron);
 router.post('/start-cancelled-subscription', cronController.startCancelledSubscriptionCron);
+
+// Recurring payment processing route
+router.post(
+  '/process-due',
+  // authenticateJwt,
+  // authorizeRoles('ADMIN', 'SUPER_ADMIN'),
+  cronController.triggerRecurringPayments
+);
 
 export default router; 

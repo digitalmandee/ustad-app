@@ -48,6 +48,19 @@ function initParentTransactionModel(sequelize) {
             type: sequelize_1.DataTypes.STRING,
             allowNull: false,
         },
+        // PayFast fields
+        basketId: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: true,
+        },
+        orderStatus: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: true,
+            defaultValue: "PENDING",
+            validate: {
+                isIn: [["PENDING", "SUCCESS", "FAILED"]],
+            },
+        },
     }, {
         sequelize,
         tableName: "parent_transactions",

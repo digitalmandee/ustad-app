@@ -34,6 +34,7 @@ import {
 import Stripe from "stripe";
 import { TutorPaymentStatus, OfferStatus } from "@ustaad/shared";
 import { Op } from "sequelize";
+import PayFastService from "../../services/payfast.service";
 
 interface ParentProfileData {
   userId: string;
@@ -51,6 +52,7 @@ interface UpdateProfileData {
 
 export default class ParentService {
   private stripe: Stripe | null = null;
+  private payfastService: PayFastService;
 
   constructor() {
     if (process.env.STRIPE_SECRET_KEY) {
@@ -58,6 +60,7 @@ export default class ParentService {
         apiVersion: "2025-08-27.basil",
       });
     }
+    this.payfastService = new PayFastService();
   }
 
   getStripeInstance(): Stripe | null {
@@ -540,108 +543,9 @@ export default class ParentService {
         throw new UnProcessableEntityError("Tutor not found");
       }
 
-      // const parent = await Parent.findOne({
-      //   where: { userId: offer.receiverId },
-      // });
-
-      // if (!parent.customerId) {
-      //   throw new UnProcessableEntityError(
-      //     "Parent is not registered with stripe"
-      //   );
-      // }
-
-      // const stripeCustomer = await this.stripe?.customers.retrieve(
-      //   parent.customerId
-      // );
-      // if (!stripeCustomer) {
-      //   throw new UnProcessableEntityError(
-      //     "Parent is not registered with stripe"
-      //   );
-      // }
-
-      // const paymentMethod = await PaymentMethod.findOne({
-      //   where: { parentId: parent.userId, isDefault: true },
-      // });
-
-      // const stripePaymentMethod = await this.stripe?.paymentMethods.retrieve(
-      //   paymentMethod.stripePaymentMethodId
-      // );
-
-      // if (!stripePaymentMethod) {
-      //   throw new UnProcessableEntityError(
-      //     "Parent does not have a payment method"
-      //   );
-      // }
-
-      // const stripeSubscription = await this.stripe?.subscriptions.list({
-      //   customer: parent.customerId,
-      // });
-      // // console.log("stripeSubscription", stripeSubscription);
-      // if (!stripeSubscription) {
-      //   throw new UnProcessableEntityError(
-      //     "Parent is not registered with stripe"
-      //   );
-      // }
-
-      // const parentSubscription = await ParentSubscription.findOne({
-      //   where: { offerId: offerId },
-      // });
-      // if (parentSubscription) {
-      //   throw new UnProcessableEntityError(
-      //     "Parent already has a subscription against this offer"
-      //   );
-      // }
-
-      // // Create a product
-      // const product = await this.stripe?.products.create({
-      //   name: `Ustaad Subscription for ${offer.id}`,
-      //   metadata: {
-      //     offerId: offerId,
-      //   },
-      // });
-
-      // Create a monthly price
-      // const price = await this.stripe?.prices.create({
-      //   unit_amount: Math.round(offer.amountMonthly * 100),
-      //   currency: "pkr",
-      //   recurring: { interval: "month" },
-      //   product: product.id,
-      //   metadata: {
-      //     offerId: offerId,
-      //   },
-      // });
-
-      // // Create a subscription
-      // const subscription = await this.stripe?.subscriptions.create({
-      //   customer: parent.customerId,
-      //   items: [{ price: price.id }],
-      //   default_payment_method: paymentMethod.stripePaymentMethodId,
-      //   metadata: {
-      //     offerId: offerId,
-      //   },
-      // });
-
-      // if (!subscription) {
-      //   throw new UnProcessableEntityError("Failed to create subscription");
-      // }
-
-      // Create a parent subscription
-      // await ParentSubscription.create({
-      //   offerId: offerId,
-      //   parentId: parent.userId,
-      //   tutorId: offer.senderId,
-      //   stripeSubscriptionId: subscription.id,
-      //   status: "created",
-      //   planType: "monthly",
-      //   startDate: new Date(),
-      //   amount: offer.amountMonthly,
-      // });
-
-      // If status is ACCEPTED, create entries in required tables
-      if (status === OfferStatus.ACCEPTED) {
         // Check if subscription already exists for this offer
         const existingSubscription = await ParentSubscription.findOne({
-          where: { offerId: offerId, status: ParentSubscriptionStatus.ACTIVE },
+          where: { offerId: offerId, status: { [Op.in]: [ParentSubscriptionStatus.ACTIVE, ParentSubscriptionStatus.CREATED] } },
         });
 
         if (existingSubscription) {
@@ -650,115 +554,109 @@ export default class ParentService {
           );
         }
 
-        // Generate random stripe subscription ID for testing
-        const randomStripeSubscriptionId = `sub_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+        // Get parent user for email/phone
+        const parentUser = await User.findByPk(offer.receiverId);
+        if (!parentUser) {
+          throw new UnProcessableEntityError("Parent user not found");
+        }
 
-        // 1. Create ParentSubscription entry
+        // Initiate PayFast subscription payment
+        const payfastResult = await this.payfastService.initiateSubscription({
+          userId: offer.receiverId,
+          amount: offer.amountMonthly,
+          customerEmail: parentUser.email,
+          customerMobile: parentUser.phone || undefined,
+          offerId: offerId,
+          childName: offer.childName,
+        });
+
+        // Create ParentSubscription entry with CREATED status (will be activated after payment)
         const parentSubscription = await ParentSubscription.create({
           offerId: offerId,
           parentId: offer.receiverId,
           tutorId: offer.senderId,
-          stripeSubscriptionId: randomStripeSubscriptionId,
-          status: ParentSubscriptionStatus.ACTIVE,
+          stripeSubscriptionId: payfastResult.basketId, // Using basketId as subscription ID
+          basketId: payfastResult.basketId,
+          status: ParentSubscriptionStatus.CREATED, // Will be activated after IPN confirms payment
           planType: "monthly",
           startDate: new Date(),
           amount: offer.amountMonthly,
+          failureCount: 0,
         });
 
-        // Generate random invoice ID for testing
-        const randomInvoiceId = `in_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
-
-        // 2. Create ParentTransaction entry
+        // Create ParentTransaction entry with PENDING status
         await ParentTransaction.create({
           parentId: offer.receiverId,
           subscriptionId: parentSubscription.id,
-          invoiceId: randomInvoiceId,
+          invoiceId: payfastResult.basketId,
+          basketId: payfastResult.basketId,
           status: "created",
+          orderStatus: "PENDING",
           amount: offer.amountMonthly,
           childName: offer.childName,
         });
 
-        // 3. Create TutorTransaction entry
-        await TutorTransaction.create({
-          tutorId: offer.senderId,
-          subscriptionId: parentSubscription.id,
-          status: TutorPaymentStatus.PAID,
-          amount: offer.amountMonthly,
-          transactionType: TutorTransactionType.PAYMENT,
-        });
-        tutor.balance = Number(tutor.balance) + Number(offer.amountMonthly);
-        await tutor.save();
+        // Return PayFast form data to client
+        // The client will submit this form to PayFast
+        // After payment, IPN will activate the subscription
+        // return {
+        //   ...offer.toJSON(),
+        //   payfastPayment: {
+        //     payfastUrl: payfastResult.payfastUrl,
+        //     formFields: payfastResult.formFields,
+        //     basketId: payfastResult.basketId,
+        //   },
+        // };
+      
 
-        // 4. Create TutorSessions entry
-        // Generate current month in yyyy-mm format
-        const currentDate = new Date();
-        const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-01`;
 
-        await TutorSessions.create({
-          tutorId: offer.senderId,
-          parentId: offer.receiverId,
-          childName: offer.childName,
-          startTime: offer.startTime,
-          endTime: offer.endTime,
-          offerId: offerId,
-          daysOfWeek: offer.daysOfWeek,
-          price: Math.round(offer.amountMonthly * 100), // Convert to cents
-          status: "active",
-          month: currentMonth,
-          meta: {
-            createdFromOffer: true,
-            offerAcceptedAt: new Date(),
-          },
-        });
-      }
+      // // Update offer status
+      // offer.status = status as OfferStatus;
+      // await offer.save();
 
-      // Update offer status
-      offer.status = status as OfferStatus;
-      await offer.save();
-
-      // 🔔 SEND NOTIFICATION TO TUTOR
-      try {
-        const parent = await User.findByPk(userId);
-        const tutor = await User.findByPk(offer.senderId);
+      // // 🔔 SEND NOTIFICATION TO TUTOR
+      // try {
+      //   const parent = await User.findByPk(userId);
+      //   const tutor = await User.findByPk(offer.senderId);
         
-        if (status === OfferStatus.ACCEPTED) {
-          await sendNotificationToUser({
-            userId: offer.senderId, // Tutor
-            type: NotificationType.OFFER_ACCEPTED,
-            title: 'Offer Accepted! 🎉',
-            body: `${parent?.fullName || 'A parent'} has accepted your tutoring offer for ${offer.childName}`,
-            relatedEntityId: offerId,
-            relatedEntityType: 'offer',
-            actionUrl: `/offers/${offerId}`,
-            metadata: {
-              parentName: parent?.fullName || 'Unknown',
-              childName: offer.childName,
-              subject: offer.subject,
-              amountMonthly: offer.amountMonthly.toString(),
-            },
-          });
-          console.log(`✅ Sent offer accepted notification to tutor ${offer.senderId}`);
-        } else if (status === OfferStatus.REJECTED) {
-          await sendNotificationToUser({
-            userId: offer.senderId, // Tutor
-            type: NotificationType.OFFER_REJECTED,
-            title: 'Offer Declined',
-            body: `${parent?.fullName || 'A parent'} has declined your tutoring offer for ${offer.childName}`,
-            relatedEntityId: offerId,
-            relatedEntityType: 'offer',
-            actionUrl: `/offers/${offerId}`,
-            metadata: {
-              parentName: parent?.fullName || 'Unknown',
-              childName: offer.childName,
-              subject: offer.subject,
-            },
-          });
-          console.log(`✅ Sent offer rejected notification to tutor ${offer.senderId}`);
-        }
-      } catch (notificationError) {
-        // Don't fail the offer update if notification fails
-        console.error('❌ Error sending offer notification:', notificationError);
-      }
+      //   if (status === OfferStatus.ACCEPTED) {
+      //     await sendNotificationToUser({
+      //       userId: offer.senderId, // Tutor
+      //       type: NotificationType.OFFER_ACCEPTED,
+      //       title: 'Offer Accepted! 🎉',
+      //       body: `${parent?.fullName || 'A parent'} has accepted your tutoring offer for ${offer.childName}`,
+      //       relatedEntityId: offerId,
+      //       relatedEntityType: 'offer',
+      //       actionUrl: `/offers/${offerId}`,
+      //       metadata: {
+      //         parentName: parent?.fullName || 'Unknown',
+      //         childName: offer.childName,
+      //         subject: offer.subject,
+      //         amountMonthly: offer.amountMonthly.toString(),
+      //       },
+      //     });
+      //     console.log(`✅ Sent offer accepted notification to tutor ${offer.senderId}`);
+      //   } else if (status === OfferStatus.REJECTED) {
+      //     await sendNotificationToUser({
+      //       userId: offer.senderId, // Tutor
+      //       type: NotificationType.OFFER_REJECTED,
+      //       title: 'Offer Declined',
+      //       body: `${parent?.fullName || 'A parent'} has declined your tutoring offer for ${offer.childName}`,
+      //       relatedEntityId: offerId,
+      //       relatedEntityType: 'offer',
+      //       actionUrl: `/offers/${offerId}`,
+      //       metadata: {
+      //         parentName: parent?.fullName || 'Unknown',
+      //         childName: offer.childName,
+      //         subject: offer.subject,
+      //       },
+      //     });
+      //     console.log(`✅ Sent offer rejected notification to tutor ${offer.senderId}`);
+      //   }
+      // } catch (notificationError) {
+      //   // Don't fail the offer update if notification fails
+      //   console.error('❌ Error sending offer notification:', notificationError);
+      // }
 
       return offer;
     } catch (error: any) {
@@ -1650,6 +1548,561 @@ export default class ParentService {
       };
     } catch (error) {
       console.error('Error in getActiveContractsForDispute:', error);
+      throw error;
+    }
+  }
+
+  // ==================== PayFast Payment Methods ====================
+
+  /**
+   * Initiate PayFast subscription payment
+   */
+  async initiatePayFastSubscription(data: {
+    userId: string;
+    offerId: string;
+  }) {
+    try {
+      const user = await User.findByPk(data.userId);
+      if (!user) {
+        throw new UnProcessableEntityError("User not found");
+      }
+
+      const offer = await Offer.findByPk(data.offerId);
+      if (!offer) {
+        throw new NotFoundError("Offer not found");
+      }
+
+
+
+      if(offer.receiverId !== user.id) {
+        throw new UnProcessableEntityError("You are not the receiver of this offer");
+      }
+
+
+      // Get user email and phone if not provided
+      const customerEmail = user.email;
+      const customerMobile =user.phone;
+
+      // Initiate PayFast subscription
+      const payfastResult = await this.payfastService.initiateSubscription({
+        userId: user.id,
+        amount: offer.amountMonthly,
+        customerEmail,
+        customerMobile,
+        offerId: offer.id,
+        childName: offer.childName,
+      });
+
+
+      // console.log("payfastResult", payfastResult);
+      
+
+      // Create order/transaction record with PENDING status
+      // let transaction: ParentTransaction | null = null;
+      // if (data.offerId) {
+      //   // Find or create subscription record
+      //   const offer = await Offer.findByPk(data.offerId);
+      //   if (!offer) {
+      //     throw new NotFoundError("Offer not found");
+      //   }
+
+      //   // Check if subscription already exists
+      //   let subscription = await ParentSubscription.findOne({
+      //     where: { offerId: data.offerId, basketId: payfastResult.basketId },
+      //   });
+
+      //   if (!subscription) {
+      //     subscription = await ParentSubscription.create({
+      //       offerId: data.offerId,
+      //       parentId: data.userId,
+      //       tutorId: offer.senderId,
+      //       stripeSubscriptionId: payfastResult.basketId, // Using basketId as subscription ID
+      //       basketId: payfastResult.basketId,
+      //       status: ParentSubscriptionStatus.CREATED,
+      //       planType: "monthly",
+      //       startDate: new Date(),
+      //       amount: offer.amountMonthly,
+      //       failureCount: 0,
+      //     });
+      //   }
+
+      //   // Create transaction record
+      //   transaction = await ParentTransaction.create({
+      //     parentId: data.userId,
+      //     subscriptionId: subscription.id,
+      //     invoiceId: payfastResult.basketId, // Using basketId as invoice ID initially
+      //     basketId: payfastResult.basketId,
+      //     status: "created",
+      //     orderStatus: "PENDING",
+      //     amount: offer.amountMonthly,
+      //     childName: offer.childName,
+      //   });
+      // }
+
+      return {
+        success: true,
+        payfastUrl: payfastResult.payfastUrl,
+        formFields: payfastResult.formFields,
+        basketId: payfastResult.basketId,
+        // transactionId: transaction?.id,
+      };
+    } catch (error) {
+      console.error("Error in initiatePayFastSubscription:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle PayFast IPN (Instant Payment Notification)
+   */
+  async handlePayFastIPN(ipnData: any) {
+    try {
+      // Extract IPN data (PayFast sends in various formats)
+      const basketId =
+        ipnData.basket_id ||
+        ipnData.BASKET_ID ||
+        ipnData.basketId ||
+        ipnData.BasketId;
+      const errCode =
+        ipnData.err_code ||
+        ipnData.ERR_CODE ||
+        ipnData.errCode ||
+        ipnData.ErrCode ||
+        "000";
+      const errMsg =
+        ipnData.err_msg ||
+        ipnData.ERR_MSG ||
+        ipnData.errMsg ||
+        ipnData.ErrMsg;
+      const validationHash =
+        ipnData.validation_hash ||
+        ipnData.VALIDATION_HASH ||
+        ipnData.validationHash ||
+        ipnData.ValidationHash;
+      const transactionId =
+        ipnData.transaction_id ||
+        ipnData.TRANSACTION_ID ||
+        ipnData.transactionId ||
+        ipnData.TransactionId;
+      const transactionAmount =
+        ipnData.transaction_amount ||
+        ipnData.TRANSACTION_AMOUNT ||
+        ipnData.transactionAmount ||
+        ipnData.TransactionAmount;
+      const instrumentToken =
+        ipnData.Instrument_token ||
+        ipnData.instrument_token ||
+        ipnData.InstrumentToken ||
+        ipnData.instrumentToken;
+      const recurringTxn =
+        ipnData.recurring_txn ||
+        ipnData.RECURRING_TXN ||
+        ipnData.recurringTxn ||
+        ipnData.RecurringTxn;
+
+      if (!basketId) {
+        console.error("PayFast IPN: Missing basketId");
+        return;
+      }
+
+      // Validate hash
+      if (validationHash) {
+        const isValid = this.payfastService.validateIPNHash(
+          basketId,
+          errCode,
+          validationHash  
+        );
+        if (!isValid) {
+          console.error("PayFast IPN: Invalid validation hash", {
+            basketId,
+            errCode,
+            receivedHash: validationHash,
+          });
+          return;
+        }
+      }
+
+      // Check if this is a recurring charge (basket ID starts with "RECUR-")
+      const isRecurringCharge = basketId.startsWith("SUB-");
+
+
+      console.log("aaaaaa");
+      
+
+      if (isRecurringCharge) {
+        // Handle recurring payment IPN
+        await this.handleRecurringPaymentIPN({
+          basketId,
+          errCode,
+          errMsg,
+          transactionId,
+          transactionAmount,
+        });
+      } else {
+        // Handle initial subscription payment IPN
+        await this.handleInitialPaymentIPN({
+          basketId,
+          errCode,
+          errMsg,
+          transactionId,
+          transactionAmount,
+          instrumentToken,
+          recurringTxn,
+        });
+      }
+    } catch (error) {
+      console.error("Error in handlePayFastIPN:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle initial subscription payment IPN
+   */
+  private async handleInitialPaymentIPN(data: {
+    basketId: string;
+    errCode: string;
+    errMsg?: string;
+    transactionId?: string;
+    transactionAmount?: string;
+    instrumentToken?: string;
+    recurringTxn?: string;
+  }) {
+    try {
+      // Find transaction by basketId
+      const transaction = await ParentTransaction.findOne({
+        where: { basketId: data.basketId },
+        include: [{ model: ParentSubscription }],
+      });
+
+      if (!transaction) {
+        console.error(`PayFast IPN: Transaction not found for basketId: ${data.basketId}`);
+        return;
+      }
+
+      const subscription = await ParentSubscription.findOne({
+        where: { basketId: data.basketId },
+      });
+
+      if (!subscription) {
+        console.error(`PayFast IPN: Subscription not found for basketId: ${data.basketId}`);
+        return;
+      }
+
+      // Update transaction status
+      const orderStatus = data.errCode === "000" ? "SUCCESS" : "FAILED";
+      await transaction.update({
+        orderStatus,
+        invoiceId: data.transactionId || transaction.invoiceId,
+        status: data.errCode === "000" ? "paid" : "failed",
+      });
+
+      // If payment successful
+      if (data.errCode === "000") {
+        // Store instrument token if recurring is enabled
+        if (data.instrumentToken && data.recurringTxn === "TRUE") {
+          // Store in PaymentMethod
+          const paymentMethod = await PaymentMethod.create({
+            parentId: subscription.parentId,
+            stripePaymentMethodId: `payfast_${data.basketId}`, // Using basketId as identifier
+            cardBrand: "PayFast",
+            cardLast4: "****",
+            cardExpMonth: 12,
+            cardExpYear: new Date().getFullYear() + 10,
+            isDefault: true,
+            instrumentToken: data.instrumentToken,
+            paymentProvider: "PAYFAST",
+          });
+
+          // Update subscription with token and activate
+          const nextBillingDate = new Date();
+          nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+
+          await subscription.update({
+            status: ParentSubscriptionStatus.ACTIVE,
+            instrumentToken: data.instrumentToken,
+            nextBillingDate,
+            lastPaymentDate: new Date(),
+            lastPaymentAmount: parseFloat(data.transactionAmount || "0") / 100, // PayFast sends in smallest currency unit
+            failureCount: 0,
+          });
+
+          // Create TutorTransaction and TutorSessions
+          const offer = await Offer.findByPk(subscription.offerId);
+          if (offer) {
+            const tutor = await Tutor.findOne({ where: { userId: subscription.tutorId } });
+            if (tutor) {
+              await TutorTransaction.create({
+                tutorId: subscription.tutorId,
+                subscriptionId: subscription.id,
+                status: TutorPaymentStatus.PAID,
+                amount: subscription.amount,
+                transactionType: TutorTransactionType.PAYMENT,
+              });
+
+              tutor.balance = Number(tutor.balance) + Number(subscription.amount);
+              await tutor.save();
+
+              // Create TutorSessions entry
+              const currentDate = new Date();
+              const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-01`;
+
+              await TutorSessions.create({
+                tutorId: subscription.tutorId,
+                parentId: subscription.parentId,
+                childName: offer.childName,
+                startTime: offer.startTime,
+                endTime: offer.endTime,
+                offerId: subscription.offerId,
+                daysOfWeek: offer.daysOfWeek,
+                price: Math.round(subscription.amount * 100), // Convert to cents
+                status: "active",
+                month: currentMonth,
+                meta: {
+                  createdFromOffer: true,
+                  offerAcceptedAt: new Date(),
+                  paymentProvider: "PAYFAST",
+                },
+              });
+            }
+          }
+        } else {
+          // One-time payment, just activate subscription
+          await subscription.update({
+            status: ParentSubscriptionStatus.ACTIVE,
+          });
+        }
+      } else {
+        // Payment failed
+        await subscription.update({
+          status: ParentSubscriptionStatus.CANCELLED,
+        });
+      }
+    } catch (error) {
+      console.error("Error in handleInitialPaymentIPN:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle recurring payment IPN
+   */
+  private async handleRecurringPaymentIPN(data: {
+    basketId: string;
+    errCode: string;
+    errMsg?: string;
+    transactionId?: string;
+    transactionAmount?: string;
+  }) {
+    try {
+      // Find transaction/invoice by basketId
+      const transaction = await ParentTransaction.findOne({
+        where: { basketId: data.basketId },
+        include: [{ model: ParentSubscription }],
+      });
+
+      if (!transaction) {
+        console.error(`PayFast IPN: Recurring transaction not found for basketId: ${data.basketId}`);
+        return;
+      }
+
+      const subscription = transaction.subscriptionId
+        ? await ParentSubscription.findByPk(transaction.subscriptionId)
+        : null;
+
+      if (!subscription) {
+        console.error(`PayFast IPN: Subscription not found for recurring payment`);
+        return;
+      }
+
+      // Update transaction status
+      const orderStatus = data.errCode === "000" ? "SUCCESS" : "FAILED";
+      await transaction.update({
+        orderStatus,
+        invoiceId: data.transactionId || transaction.invoiceId,
+        status: data.errCode === "000" ? "paid" : "failed",
+      });
+
+      if (data.errCode === "000") {
+        // Payment successful
+        const nextBillingDate = new Date();
+        nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+
+        await subscription.update({
+          status: ParentSubscriptionStatus.ACTIVE,
+          nextBillingDate,
+          lastPaymentDate: new Date(),
+          lastPaymentAmount: parseFloat(data.transactionAmount || "0") / 100,
+          failureCount: 0,
+        });
+
+        // Create TutorTransaction
+        const tutor = await Tutor.findOne({ where: { userId: subscription.tutorId } });
+        if (tutor) {
+          await TutorTransaction.create({
+            tutorId: subscription.tutorId,
+            subscriptionId: subscription.id,
+            status: TutorPaymentStatus.PAID,
+            amount: subscription.amount,
+            transactionType: TutorTransactionType.PAYMENT,
+          });
+
+          tutor.balance = Number(tutor.balance) + Number(subscription.amount);
+          await tutor.save();
+        }
+
+        // Create TutorSessions for recurring payment if offer exists
+        const offer = await Offer.findByPk(subscription.offerId);
+        if (offer) {
+          const currentDate = new Date();
+          const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-01`;
+
+          // Check if session already exists for this month
+          const existingSession = await TutorSessions.findOne({
+            where: {
+              tutorId: subscription.tutorId,
+              parentId: subscription.parentId,
+              offerId: subscription.offerId,
+              month: currentMonth,
+              status: "active",
+            },
+          });
+
+          if (!existingSession) {
+            await TutorSessions.create({
+              tutorId: subscription.tutorId,
+              parentId: subscription.parentId,
+              childName: offer.childName,
+              startTime: offer.startTime,
+              endTime: offer.endTime,
+              offerId: subscription.offerId,
+              daysOfWeek: offer.daysOfWeek,
+              price: Math.round(subscription.amount * 100),
+              status: "active",
+              month: currentMonth,
+              meta: {
+                recurringPayment: true,
+                paymentProvider: "PAYFAST",
+                paidAt: new Date(),
+              },
+            });
+          }
+        }
+      } else {
+        // Payment failed
+        const failureCount = (subscription.failureCount || 0) + 1;
+
+        if (failureCount >= 3) {
+          // Suspend subscription after 3 failures
+          await subscription.update({
+            status: ParentSubscriptionStatus.EXPIRED, // Using EXPIRED as suspended status
+            failureCount,
+          });
+        } else {
+          await subscription.update({
+            failureCount,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error in handleRecurringPaymentIPN:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get subscription status by basket ID
+   */
+  async getSubscriptionStatusByBasketId(basketId: string) {
+    try {
+      const transaction = await ParentTransaction.findOne({
+        where: { basketId },
+        include: [{ model: ParentSubscription }],
+      });
+
+      if (!transaction) {
+        throw new NotFoundError("Order not found");
+      }
+
+      const subscription = await ParentSubscription.findOne({
+        where: { basketId },
+      });
+
+      return {
+        basketId,
+        orderStatus: transaction.orderStatus || "PENDING",
+        subscriptionStatus: subscription?.status || null,
+        subscriptionId: subscription?.id || null,
+        transactionId: transaction.invoiceId,
+        errorCode: transaction.orderStatus === "FAILED" ? "001" : null,
+        errorMessage: transaction.orderStatus === "FAILED" ? "Payment failed" : null,
+        createdAt: transaction.createdAt,
+        completedAt: transaction.orderStatus === "SUCCESS" ? transaction.updatedAt : null,
+      };
+    } catch (error) {
+      console.error("Error in getSubscriptionStatusByBasketId:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Manually charge recurring subscription
+   */
+  async chargeRecurringSubscription(subscriptionId: string) {
+    try {
+      const subscription = await ParentSubscription.findByPk(subscriptionId);
+
+      if (!subscription) {
+        throw new NotFoundError("Subscription not found");
+      }
+
+      if (subscription.status !== ParentSubscriptionStatus.ACTIVE) {
+        throw new BadRequestError(
+          `Subscription is not active. Current status: ${subscription.status}`
+        );
+      }
+
+      if (!subscription.instrumentToken) {
+        throw new BadRequestError("No instrument token available for this subscription");
+      }
+
+      // Get user for email/phone
+      const user = await User.findByPk(subscription.parentId);
+
+      // Generate recurring basket ID
+      const basketId = this.payfastService.generateBasketId("RECUR");
+
+      // Create invoice/transaction
+      const offer = await Offer.findByPk(subscription.offerId);
+      const invoice = await ParentTransaction.create({
+        parentId: subscription.parentId,
+        subscriptionId: subscription.id,
+        invoiceId: basketId,
+        basketId,
+        status: "created",
+        orderStatus: "PENDING",
+        amount: subscription.amount,
+        childName: offer?.childName || "",
+      });
+
+      // Charge using PayFast
+      const result = await this.payfastService.chargeRecurringPayment({
+        instrumentToken: subscription.instrumentToken,
+        basketId,
+        amount: subscription.amount,
+        customerEmail: user?.email,
+        customerMobile: user?.phone || undefined,
+      });
+
+      return {
+        success: true,
+        message: "Recurring charge initiated",
+        invoiceId: invoice.id,
+        basketId,
+        result,
+      };
+    } catch (error) {
+      console.error("Error in chargeRecurringSubscription:", error);
       throw error;
     }
   }

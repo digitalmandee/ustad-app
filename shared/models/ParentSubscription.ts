@@ -18,6 +18,13 @@ export interface ParentSubscriptionAttributes {
   disputeReason?: string;
   disputedBy?: string;
   disputedAt?: Date;
+  // PayFast fields
+  basketId?: string; // PayFast basket ID
+  instrumentToken?: string; // PayFast recurring payment token
+  nextBillingDate?: Date; // Next recurring charge date
+  lastPaymentDate?: Date; // Last successful payment date
+  lastPaymentAmount?: number; // Last payment amount
+  failureCount?: number; // Consecutive payment failures
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -41,6 +48,13 @@ export class ParentSubscription
   public disputeReason?: string;
   public disputedBy?: string;
   public disputedAt?: Date;
+  // PayFast fields
+  public basketId?: string;
+  public instrumentToken?: string;
+  public nextBillingDate?: Date;
+  public lastPaymentDate?: Date;
+  public lastPaymentAmount?: number;
+  public failureCount?: number;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date; 
 }
@@ -117,6 +131,38 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
       amount: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
+      },
+      // PayFast fields
+      basketId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: "PayFast basket ID for the subscription",
+      },
+      instrumentToken: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        comment: "PayFast recurring payment token",
+      },
+      nextBillingDate: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: "Next recurring payment date",
+      },
+      lastPaymentDate: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        comment: "Last successful payment date",
+      },
+      lastPaymentAmount: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true,
+        comment: "Last successful payment amount",
+      },
+      failureCount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+        comment: "Consecutive payment failures",
       },
     },
     {

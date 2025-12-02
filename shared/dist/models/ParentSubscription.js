@@ -47,7 +47,7 @@ function initParentSubscriptionModel(sequelize) {
         status: {
             type: sequelize_1.DataTypes.ENUM(enums_1.ParentSubscriptionStatus.ACTIVE, enums_1.ParentSubscriptionStatus.CANCELLED, enums_1.ParentSubscriptionStatus.EXPIRED, enums_1.ParentSubscriptionStatus.CREATED, enums_1.ParentSubscriptionStatus.DISPUTE, enums_1.ParentSubscriptionStatus.COMPLETED, enums_1.ParentSubscriptionStatus.PENDING_COMPLETION),
             allowNull: false,
-            defaultValue: enums_1.ParentSubscriptionStatus.ACTIVE.toLowerCase(),
+            defaultValue: enums_1.ParentSubscriptionStatus.ACTIVE,
         },
         disputeReason: {
             type: sequelize_1.DataTypes.TEXT,
@@ -80,6 +80,38 @@ function initParentSubscriptionModel(sequelize) {
         amount: {
             type: sequelize_1.DataTypes.DECIMAL(10, 2),
             allowNull: false,
+        },
+        // PayFast fields
+        basketId: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: true,
+            comment: "PayFast basket ID for the subscription",
+        },
+        instrumentToken: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: true,
+            comment: "PayFast recurring payment token",
+        },
+        nextBillingDate: {
+            type: sequelize_1.DataTypes.DATE,
+            allowNull: true,
+            comment: "Next recurring payment date",
+        },
+        lastPaymentDate: {
+            type: sequelize_1.DataTypes.DATE,
+            allowNull: true,
+            comment: "Last successful payment date",
+        },
+        lastPaymentAmount: {
+            type: sequelize_1.DataTypes.DECIMAL(10, 2),
+            allowNull: true,
+            comment: "Last successful payment amount",
+        },
+        failureCount: {
+            type: sequelize_1.DataTypes.INTEGER,
+            allowNull: false,
+            defaultValue: 0,
+            comment: "Consecutive payment failures",
         },
     }, {
         sequelize,

@@ -86,7 +86,7 @@ function initAllModels(sequelize) {
     (0, TutorTransaction_1.initTutorTransactionModel)(sequelize);
     (0, TutorSessions_1.initTutorSessionsModel)(sequelize);
     (0, TutorSessionsDetail_1.initTutorSessionsDetailModel)(sequelize);
-    (0, PaymentMethod_1.initPaymentMethodModel)(sequelize);
+    // initPaymentMethodModel(sequelize);
     (0, File_1.initFileModel)(sequelize);
     (0, HelpRequests_1.initHelpRequestsModel)(sequelize);
     (0, ChildNotes_1.initChildNotesModel)(sequelize);
