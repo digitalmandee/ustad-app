@@ -739,6 +739,8 @@ export default class ChatService {
     // Get the other participant (for direct chat)
     let conversationName = conversation.name;
     let participantId = null;
+    let participantImage = '';
+    let participantRegistrationTime = null;
     if (conversation.type === 'DIRECT' && participantCount === 2) {
       console.log('helooooooooo n n n');
       const otherParticipant = await ConversationParticipant.findOne({
@@ -747,12 +749,14 @@ export default class ChatService {
           userId: { [Op.ne]: currentUserId },
           isActive: true,
         },
-        include: [{ model: User, attributes: ['fullName', 'id'] }],
+        include: [{ model: User, attributes: ['fullName', 'id', 'image', 'createdAt'] }],
       });
 
       if (otherParticipant && (otherParticipant as any).User) {
         conversationName = (otherParticipant as any).User.fullName;
         participantId = (otherParticipant as any).User.id;
+        participantImage = (otherParticipant as any).User.image || '';
+        participantRegistrationTime = (otherParticipant as any).User.createdAt;
         console.log(otherParticipant, conversationName, 'hj');
       }
     }
@@ -777,6 +781,8 @@ export default class ChatService {
       maxParticipants: conversation.maxParticipants,
       participantCount,
       participantId,
+      participantImage,
+      participantRegistrationTime,
       lastMessage: lastMessage
         ? {
             id: lastMessage.id,

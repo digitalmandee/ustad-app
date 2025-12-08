@@ -269,10 +269,57 @@ export default class TutorService {
         }
       });
 
+      // Get all reviews for this tutor from ContractReview
+      // Reviews where tutor is the reviewedId and reviewerRole is PARENT
+      const reviews = await ContractReview.findAll({
+        where: {
+          reviewedId: userId,
+          reviewerRole: "PARENT",
+        },
+        include: [
+          {
+            model: User,
+            as: "reviewer",
+            foreignKey: "reviewerId",
+            attributes: ["id", "fullName", "email", "image"],
+          },
+        ],
+        order: [["createdAt", "DESC"]],
+      });
+
+      // Calculate average rating and total reviews
+      const totalReviews = reviews.length;
+      const averageRating = totalReviews > 0
+        ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+        : 0;
+
+      // Format reviews with parent information
+      const formattedReviews = reviews.map((review) => {
+        const reviewData = review.toJSON() as any;
+        return {
+          id: review.id,
+          rating: review.rating,
+          review: review.review,
+          parent: reviewData.reviewer ? {
+            id: reviewData.reviewer.id,
+            fullName: reviewData.reviewer.fullName,
+            email: reviewData.reviewer.email,
+            image: reviewData.reviewer.image,
+          } : null,
+          createdAt: review.createdAt,
+          updatedAt: review.updatedAt,
+        };
+      });
+
       return {
         user,
         totalExperience: Math.round(totalExperience * 10) / 10, // Round to 1 decimal place
         totalSessions,
+        reviews: formattedReviews,
+        reviewStats: {
+          totalReviews,
+          averageRating: parseFloat(averageRating.toFixed(1)),
+        },
       };
     } catch (error) {
       console.error("Error in getProfile:", error);

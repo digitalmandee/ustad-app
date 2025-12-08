@@ -210,9 +210,56 @@ export default class ParentService {
         }
       });
 
+      // Get all reviews for this parent from ContractReview
+      // Reviews where parent is the reviewedId and reviewerRole is TUTOR
+      const reviews = await ContractReview.findAll({
+        where: {
+          reviewedId: userId,
+          reviewerRole: "TUTOR",
+        },
+        include: [
+          {
+            model: User,
+            as: "reviewer",
+            foreignKey: "reviewerId",
+            attributes: ["id", "fullName", "email", "image"],
+          },
+        ],
+        order: [["createdAt", "DESC"]],
+      });
+
+      // Calculate average rating and total reviews
+      const totalReviews = reviews.length;
+      const averageRating = totalReviews > 0
+        ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+        : 0;
+
+      // Format reviews with tutor information
+      const formattedReviews = reviews.map((review) => {
+        const reviewData = review.toJSON() as any;
+        return {
+          id: review.id,
+          rating: review.rating,
+          review: review.review,
+          tutor: reviewData.reviewer ? {
+            id: reviewData.reviewer.id,
+            fullName: reviewData.reviewer.fullName,
+            email: reviewData.reviewer.email,
+            image: reviewData.reviewer.image,
+          } : null,
+          createdAt: review.createdAt,
+          updatedAt: review.updatedAt,
+        };
+      });
+
       return {
         user,
         totalSessions,
+        reviews: formattedReviews,
+        reviewStats: {
+          totalReviews,
+          averageRating: parseFloat(averageRating.toFixed(1)),
+        },
       };
     } catch (error) {
       console.error("Error in getProfile:", error);
@@ -490,6 +537,12 @@ export default class ParentService {
           {
             model: Tutor,
             attributes: ["subjects", "about", "grade"],
+            include: [
+              {
+                model: TutorExperience,
+                attributes: ["id", "company", "startDate", "endDate", "description"],
+              },
+            ],
           },
           {
             model: TutorSettings,
@@ -501,7 +554,7 @@ export default class ParentService {
           },
           {
             model: TutorExperience,
-            attributes: ["company", "startDate", "endDate", "description"],
+            attributes: ["id", "company", "startDate", "endDate", "description"],
           },
         ],
       });
@@ -552,9 +605,18 @@ export default class ParentService {
         };
       });
 
-      // Return user data with reviews
+      // Extract user data and ensure TutorExperience is included
+      const userData = user.toJSON() as any;
+      // TutorExperience might be directly on User or nested under Tutor
+      const experience = userData.TutorExperiences || 
+                         userData.TutorExperience || 
+                         (userData.Tutor && (userData.Tutor.TutorExperiences || userData.Tutor.TutorExperience)) || 
+                         [];
+
+      // Return user data with reviews and experience
       return {
-        ...user.toJSON(),
+        ...userData,
+        experience: experience,
         reviews: formattedReviews,
         reviewStats: {
           totalReviews,
