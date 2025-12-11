@@ -6,7 +6,8 @@ import {
   ISignInCreateDTO,
   IVerifyEmailOtpDTO,
 } from "./auth.dto";
-import { User, Otp, Session, sendNotification } from "@ustaad/shared";
+import { User, Otp, Session, NotificationType } from "@ustaad/shared";
+import { sendNotificationToUser } from "../../services/notification.service";
 import {
   comparePassword,
   generateOtp,
@@ -140,12 +141,27 @@ export default class AuthService implements IAuthService {
       delete sanitizedUser.password;
       delete sanitizedUser.isActive;
 
-
-      console.log("user.deviceId", user.deviceId, user.id);
-      
-
-
-      await sendNotification(user.id, user.deviceId, 'Login Success', 'You have successfully logged in to your account');
+      // Send login notification
+      try {
+        await sendNotificationToUser({
+          userId: user.id,
+          type: NotificationType.SYSTEM_NOTIFICATION,
+          title: "Login Success",
+          body: `Welcome back, ${user.fullName || 'User'}! You have successfully logged in to your account.`,
+          relatedEntityId: user.id,
+          relatedEntityType: "user",
+          actionUrl: "/profile",
+          metadata: {
+            loginTime: new Date().toISOString(),
+            deviceId: deviceId,
+            role: user.role,
+          },
+        });
+        console.log("✅ Login notification sent successfully to user:", user.id);
+      } catch (notificationError) {
+        // Don't fail login if notification fails
+        console.error("❌ Error sending login notification:", notificationError);
+      }
 
       return { ...sanitizedUser, token };
     } catch (err: any) {
