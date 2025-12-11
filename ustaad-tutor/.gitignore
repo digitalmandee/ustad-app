@@ -28,3 +28,5 @@ yarn.lock
 .yarn/install-state.json
 .yarn/install-state.json.lock
 
+noti.json
+app/config/ustaad.json
