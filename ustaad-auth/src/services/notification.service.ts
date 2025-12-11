@@ -1,17 +1,6 @@
 import * as admin from "firebase-admin";
 import { getFirebaseApp } from "./firebase-con";
-import { Notification, User, NotificationType } from "@ustaad/shared";
-
-export interface SendNotificationParams {
-  userId: string;
-  type: NotificationType;
-  title: string;
-  body: string;
-  relatedEntityId?: string;
-  relatedEntityType?: string;
-  actionUrl?: string;
-  metadata?: Record<string, any>;
-}
+import { Notification, NotificationType } from "@ustaad/shared";
 
 export interface NotificationResult {
   success: boolean;
@@ -20,93 +9,48 @@ export interface NotificationResult {
 }
 
 /**
- * Send notification to a user with enhanced metadata
- * @param params - Notification parameters including user ID, type, title, body, etc.
+ * Send notification to a user
+ * @param userId - User ID
+ * @param token - Firebase device token
+ * @param headline - Notification title/headline
+ * @param message - Notification body message
+ * @param data - Optional additional data
+ * @param imageUrl - Optional image URL
+ * @param clickAction - Optional click action URL
  * @returns Promise<NotificationResult>
  */
 export async function sendNotificationToUser(
-  params: SendNotificationParams
+  userId: string,
+  token: string,
+  headline: string,
+  message: string,
+  data?: any,
+  imageUrl?: string,
+  clickAction?: string
 ): Promise<NotificationResult> {
-  const {
-    userId,
-    type,
-    title,
-    body,
-    relatedEntityId,
-    relatedEntityType,
-    actionUrl,
-    metadata,
-  } = params;
-
   try {
-    // Get user's device token
-    const user = await User.findByPk(userId);
-    if (!user || !user.deviceId) {
-      console.log(`⚠️ User ${userId} has no device token`);
-
-      // Still create notification in DB for in-app viewing
-      await Notification.create({
-        userId,
-        type,
-        title,
-        body,
-        status: "failed",
-        isRead: false,
-        relatedEntityId,
-        relatedEntityType,
-        actionUrl,
-        metadata,
-        sentAt: new Date(),
-      });
-
-      return { success: false, error: "No device token" };
-    }
-
-    // Create notification record in DB
-    const notification = await Notification.create({
-      userId,
-      type,
-      title,
-      body,
-      deviceToken: user.deviceId,
-      status: "pending",
-      isRead: false,
-      relatedEntityId,
-      relatedEntityType,
-      actionUrl,
-      metadata,
-      sentAt: new Date(),
-    });
-
-    // Prepare data payload for Firebase
-    const dataPayload: Record<string, string> = {
-      notificationId: notification.id,
-      type: type,
-      relatedEntityId: relatedEntityId || "",
-      relatedEntityType: relatedEntityType || "",
-      actionUrl: actionUrl || "",
-    };
-
-    // Add metadata to data payload
-    if (metadata) {
-      Object.keys(metadata).forEach((key) => {
-        dataPayload[key] = String(metadata[key]);
-      });
-    }
-
     // Get Firebase app and send notification
     const firebaseApp = getFirebaseApp();
 
+    // Convert data to Firebase format (all values must be strings)
+    const dataPayload: Record<string, string> = {};
+    if (data) {
+      Object.keys(data).forEach((key) => {
+        dataPayload[key] = String(data[key]);
+      });
+    }
+
     const notificationMessage: admin.messaging.Message = {
-      token: user.deviceId,
+      token: token,
       notification: {
-        title: title,
-        body: body,
+        title: headline,
+        body: message,
+        imageUrl: imageUrl,
       },
       data: dataPayload,
       android: {
         notification: {
-          clickAction: actionUrl,
+          clickAction: clickAction,
           icon: "ic_notification",
           color: "#4CAF50",
           sound: "default",
@@ -122,12 +66,26 @@ export async function sendNotificationToUser(
       },
     };
 
+    // Create notification record in DB
+    const notification = await Notification.create({
+      userId: userId,
+      type: NotificationType.SYSTEM_NOTIFICATION,
+      title: headline,
+      body: message,
+      deviceToken: token,
+      status: "pending",
+      isRead: false,
+      sentAt: new Date(),
+    });
+
     const response = await firebaseApp.messaging().send(notificationMessage);
 
     console.log("✅ Notification sent successfully:", response);
 
     // Update notification status
-    await notification.update({ status: "sent", sentAt: new Date() });
+    notification.status = "sent";
+    notification.sentAt = new Date();
+    await notification.save();
 
     return {
       success: true,
@@ -139,7 +97,7 @@ export async function sendNotificationToUser(
     // Update notification status to failed if it was created
     try {
       const notification = await Notification.findOne({
-        where: { userId, title, body },
+        where: { userId, title: headline, body: message },
         order: [["createdAt", "DESC"]],
       });
       if (notification && notification.status === "pending") {

@@ -6,7 +6,7 @@ import {
   ISignInCreateDTO,
   IVerifyEmailOtpDTO,
 } from "./auth.dto";
-import { User, Otp, Session, NotificationType } from "@ustaad/shared";
+import { User, Otp, Session } from "@ustaad/shared";
 import { sendNotificationToUser } from "../../services/notification.service";
 import {
   comparePassword,
@@ -143,21 +143,25 @@ export default class AuthService implements IAuthService {
 
       // Send login notification
       try {
-        await sendNotificationToUser({
-          userId: user.id,
-          type: NotificationType.SYSTEM_NOTIFICATION,
-          title: "Login Success",
-          body: `Welcome back, ${user.fullName || 'User'}! You have successfully logged in to your account.`,
-          relatedEntityId: user.id,
-          relatedEntityType: "user",
-          actionUrl: "/profile",
-          metadata: {
-            loginTime: new Date().toISOString(),
-            deviceId: deviceId,
-            role: user.role,
-          },
-        });
-        console.log("✅ Login notification sent successfully to user:", user.id);
+        if (user.deviceId) {
+          await sendNotificationToUser(
+            user.id,
+            user.deviceId,
+            "Login Success",
+            `Welcome back, ${user.fullName || 'User'}! You have successfully logged in to your account.`,
+            {
+              loginTime: new Date().toISOString(),
+              deviceId: deviceId,
+              role: user.role,
+              userId: user.id,
+            },
+            undefined, // imageUrl
+            "/profile" // clickAction
+          );
+          console.log("✅ Login notification sent successfully to user:", user.id);
+        } else {
+          console.log("⚠️ User has no device token, skipping notification");
+        }
       } catch (notificationError) {
         // Don't fail login if notification fails
         console.error("❌ Error sending login notification:", notificationError);
