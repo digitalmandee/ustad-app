@@ -9,7 +9,6 @@ export interface ParentSubscriptionAttributes {
   parentId: string;
   tutorId: string;
   offerId: string; // Added offerId
-  stripeSubscriptionId: string;
   status: string; // 'active', 'cancelled', 'expired', 'created', 'dispute', 'completed', 'pending_completion'
   planType: string; // 'monthly', 'yearly', etc.
   startDate: Date;
@@ -39,7 +38,6 @@ export class ParentSubscription
   public parentId!: string;
   public tutorId!: string;
   public offerId!: string; // Added offerId
-  public stripeSubscriptionId!: string;
   public status!: string;
   public planType!: string;
   public startDate!: Date;
@@ -90,10 +88,6 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
           model: "offers",
           key: "id",
         },
-      },
-      stripeSubscriptionId: {
-        type: DataTypes.STRING,
-        allowNull: false,
       },
       status: {
         type: DataTypes.ENUM(ParentSubscriptionStatus.ACTIVE, ParentSubscriptionStatus.CANCELLED, ParentSubscriptionStatus.EXPIRED, ParentSubscriptionStatus.CREATED, ParentSubscriptionStatus.DISPUTE, ParentSubscriptionStatus.COMPLETED, ParentSubscriptionStatus.PENDING_COMPLETION),

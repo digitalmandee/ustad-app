@@ -89,7 +89,7 @@ function initAllModels(sequelize) {
     (0, File_1.initFileModel)(sequelize);
     (0, HelpRequests_1.initHelpRequestsModel)(sequelize);
     (0, ChildNotes_1.initChildNotesModel)(sequelize);
-    (0, Notification_1.initNotificationModel)(sequelize);
+    // initNotificationModel(sequelize);
     (0, PaymentRequests_1.initPaymentRequestsModel)(sequelize);
     (0, ContractReview_1.initContractReviewModel)(sequelize);
     // Initialize remaining chat models

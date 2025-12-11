@@ -52,16 +52,6 @@ router.get(
   tutorController.getProfile
 );
 
-// Payment Method routes
-router.post(
-  routes.PARENT_PAYMENT_METHODS,
-  authenticateJwt,
-  authorizeRoles("PARENT"),
-  createPaymentMethodValidationRules(),
-  validateRequest,
-  parentController.createPaymentMethod
-);
-
 router.get(
   routes.PARENT_PAYMENT_METHODS,
   authenticateJwt,
@@ -69,23 +59,6 @@ router.get(
   parentController.getPaymentMethods
 );
 
-router.put(
-  routes.PARENT_PAYMENT_METHODS,
-  authenticateJwt,
-  authorizeRoles("PARENT"),
-  updatePaymentMethodValidationRules(),
-  validateRequest,
-  parentController.updatePaymentMethod
-);
-
-router.delete(
-  routes.PARENT_PAYMENT_METHODS,
-  authenticateJwt,
-  authorizeRoles("PARENT"),
-  deletePaymentMethodValidationRules(),
-  validateRequest,
-  parentController.deletePaymentMethod
-);
 
 router.patch(
   routes.OFFER_UPDATE_STATUS,
@@ -182,6 +155,34 @@ router.post(
   authenticateJwt,
   authorizeRoles("PARENT"),
   parentController.chargeRecurringSubscription
+);
+
+// PayFast Tokenization routes
+router.get(
+  routes.PAYFAST_GET_INSTRUMENTS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.getListsOfInstruments
+);
+
+router.post(
+  routes.PAYFAST_RECURRING_OTP,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.recurringTransactionOTP
+);
+
+router.post(
+  routes.PAYFAST_INITIATE_RECURRING,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.initiateRecurringPayment
+);
+
+// PayFast Success Callback (no authentication - called by PayFast redirect)
+router.get(
+  routes.PAYFAST_SUCCESS,
+  parentController.handlePayFastSuccess
 );
 
 export { router as tutorRouter };

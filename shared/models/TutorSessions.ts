@@ -19,6 +19,8 @@ export interface TutorSessionsAttributes {
   createdAt?: Date;
   updatedAt?: Date;
   month: string; // yyyy-mm-dd format
+  totalSessions: number;
+  sessionsCompleted: number; // yyyy-mm-dd format
 }
 
 export type TutorSessionsCreationAttributes = Optional<TutorSessionsAttributes, "id">;
@@ -41,6 +43,8 @@ export class TutorSessions
   public readonly updatedAt!: Date;
   public status!: 'active' | 'cancelled';
   public month!: string; // yyyy-mm-dd format
+  public totalSessions!: number;
+  public sessionsCompleted!: number;
 }
 
 export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessions {
@@ -110,6 +114,14 @@ export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessio
         type: DataTypes.STRING,
         allowNull: false,
         comment: "Month in yyyy-mm-dd format",
+      },
+      totalSessions: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      sessionsCompleted: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
       },
     },
     {

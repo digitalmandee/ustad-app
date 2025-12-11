@@ -75,6 +75,14 @@ function initTutorSessionsModel(sequelize) {
             allowNull: false,
             comment: "Month in yyyy-mm-dd format",
         },
+        totalSessions: {
+            type: sequelize_1.DataTypes.INTEGER,
+            allowNull: false,
+        },
+        sessionsCompleted: {
+            type: sequelize_1.DataTypes.INTEGER,
+            allowNull: false,
+        },
     }, {
         sequelize,
         tableName: "tutorSessions",

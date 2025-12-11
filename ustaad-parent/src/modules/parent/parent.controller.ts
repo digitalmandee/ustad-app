@@ -148,34 +148,6 @@ export default class ParentController {
     }
   };
 
-  createPaymentMethod = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { id: userId } = req.user;
-      const { paymentMethodId } = req.body;
-
-      const result = await this.parentService.createPaymentMethod(
-        userId,
-        paymentMethodId
-      );
-
-      return sendSuccessResponse(
-        res,
-        "Payment method added successfully",
-        201,
-        result
-      );
-    } catch (error: any) {
-      console.error("Create payment method error:", error);
-
-      if (error instanceof GenericError) {
-        return sendErrorResponse(res, error.message, 400);
-      }
-
-      const errorMessage =
-        error?.message || "Something went wrong while adding payment method";
-      return sendErrorResponse(res, errorMessage, 400);
-    }
-  };
 
   getPaymentMethods = async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -203,64 +175,6 @@ export default class ParentController {
     }
   };
 
-  updatePaymentMethod = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { id: userId } = req.user;
-      const { isDefault, paymentMethodId } = req.body;
-
-      const result = await this.parentService.updatePaymentMethod(
-        userId,
-        paymentMethodId,
-        isDefault
-      );
-
-      return sendSuccessResponse(
-        res,
-        "Payment method updated successfully",
-        200,
-        result
-      );
-    } catch (error: any) {
-      console.error("Update payment method error:", error);
-
-      if (error instanceof GenericError) {
-        return sendErrorResponse(res, error.message, 400);
-      }
-
-      const errorMessage =
-        error?.message || "Something went wrong while updating payment method";
-      return sendErrorResponse(res, errorMessage, 400);
-    }
-  };
-
-  deletePaymentMethod = async (req: AuthenticatedRequest, res: Response) => {
-    try {
-      const { id: userId } = req.user;
-      const { paymentMethodId } = req.body;
-
-      const result = await this.parentService.deletePaymentMethod(
-        userId,
-        paymentMethodId
-      );
-
-      return sendSuccessResponse(
-        res,
-        "Payment method deleted successfully",
-        200,
-        result
-      );
-    } catch (error: any) {
-      console.error("Delete payment method error:", error);
-
-      if (error instanceof GenericError) {
-        return sendErrorResponse(res, error.message, 400);
-      }
-
-      const errorMessage =
-        error?.message || "Something went wrong while deleting payment method";
-      return sendErrorResponse(res, errorMessage, 400);
-    }
-  };
   getTutorProfile = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { tutorId } = req.params;
@@ -318,58 +232,6 @@ export default class ParentController {
     }
   };
 
-  handleStripeWebhook = async (req: Request, res: Response) => {
-    try {
-      const sig = req.headers["stripe-signature"] as string;
-
-      if (!sig) {
-        return sendErrorResponse(res, "Missing Stripe signature", 400);
-      }
-
-      if (!this.stripeWebhookSecret) {
-        return sendErrorResponse(
-          res,
-          "Stripe webhook secret not configured",
-          400
-        );
-      }
-
-      const stripe = this.parentService.getStripeInstance();
-      if (!stripe) {
-        return sendErrorResponse(res, "Stripe not configured", 400);
-      }
-
-      let event: Stripe.Event;
-
-      try {
-        event = stripe.webhooks.constructEvent(
-          req.body,
-          sig,
-          this.stripeWebhookSecret
-        );
-      } catch (err: any) {
-        console.error("Webhook signature verification failed:", err.message);
-        return sendErrorResponse(res, "Invalid signature", 400);
-      }
-
-      // Process the event
-      await this.parentService.handleStripeWebhook(event);
-
-      return sendSuccessResponse(res, "Webhook processed successfully", 200, {
-        received: true,
-      });
-    } catch (error: any) {
-      console.error("Webhook processing error:", error);
-
-      if (error instanceof GenericError) {
-        return sendErrorResponse(res, error.message, 400);
-      }
-
-      const errorMessage =
-        error?.message || "Something went wrong while processing webhook";
-      return sendErrorResponse(res, errorMessage, 400);
-    }
-  };
 
   cancelSubscription = async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -734,6 +596,194 @@ export default class ParentController {
 
       const errorMessage =
         error?.message || "Something went wrong while charging subscription";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  /**
+   * Get lists of instruments for a user
+   */
+  getListsOfInstruments = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { id: userId } = req.user;
+
+      const result = await this.parentService.getListsOfInstruments(userId);
+
+      return sendSuccessResponse(
+        res,
+        "Instruments retrieved successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Get lists of instruments error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while retrieving instruments";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  /**
+   * Recurring Transaction OTP
+   */
+  recurringTransactionOTP = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { id: userId } = req.user;
+      const {
+        instrumentToken,
+        basketId,
+        orderDate,
+        txnamt,
+        cvv,
+        currencyCode,
+        data3dsCallbackUrl,
+        checkoutUrl,
+      } = req.body;
+
+      if (!instrumentToken || !basketId || !orderDate || !txnamt || !cvv) {
+        return sendErrorResponse(
+          res,
+          "instrumentToken, basketId, orderDate, txnamt, and cvv are required",
+          400
+        );
+      }
+
+      const result = await this.parentService.recurringTransactionOTP(userId, {
+        instrumentToken,
+        basketId,
+        orderDate,
+        txnamt,
+        cvv,
+        currencyCode,
+        data3dsCallbackUrl,
+        checkoutUrl,
+      });
+
+      return sendSuccessResponse(
+        res,
+        "Recurring transaction OTP initiated successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Recurring transaction OTP error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while initiating recurring transaction OTP";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  /**
+   * Initiate Recurring Payment
+   */
+  initiateRecurringPayment = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { id: userId } = req.user;
+      const {
+        instrumentToken,
+        basketId,
+        orderDate,
+        txndesc,
+        txnamt,
+        cvv,
+        transactionId,
+        currencyCode,
+        otp,
+        data3dsSecureId,
+        data3dsPares,
+        checkoutUrl,
+      } = req.body;
+
+      if (!instrumentToken || !basketId || !orderDate || !txndesc || !txnamt || !cvv) {
+        return sendErrorResponse(
+          res,
+          "instrumentToken, basketId, orderDate, txndesc, txnamt, and cvv are required",
+          400
+        );
+      }
+
+      const result = await this.parentService.initiateRecurringPayment(userId, {
+        instrumentToken,
+        basketId,
+        orderDate,
+        txndesc,
+        txnamt,
+        cvv,
+        transactionId,
+        currencyCode,
+        otp,
+        data3dsSecureId,
+        data3dsPares,
+        checkoutUrl,
+      });
+
+      return sendSuccessResponse(
+        res,
+        "Recurring payment initiated successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Initiate recurring payment error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while initiating recurring payment";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  /**
+   * Handle PayFast Success Callback
+   */
+  handlePayFastSuccess = async (
+    req: Request,
+    res: Response
+  ): Promise<void> => {
+    try {
+      // Get all query parameters
+      const queryParams = req.query as any;
+
+      const result = await this.parentService.handlePayFastSuccess(queryParams);
+
+      // Return JSON response (you can also redirect to frontend if needed)
+      return sendSuccessResponse(
+        res,
+        result.message || "Payment processed successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Handle PayFast success error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while processing payment success";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };

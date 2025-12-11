@@ -40,10 +40,6 @@ function initParentSubscriptionModel(sequelize) {
                 key: "id",
             },
         },
-        stripeSubscriptionId: {
-            type: sequelize_1.DataTypes.STRING,
-            allowNull: false,
-        },
         status: {
             type: sequelize_1.DataTypes.ENUM(enums_1.ParentSubscriptionStatus.ACTIVE, enums_1.ParentSubscriptionStatus.CANCELLED, enums_1.ParentSubscriptionStatus.EXPIRED, enums_1.ParentSubscriptionStatus.CREATED, enums_1.ParentSubscriptionStatus.DISPUTE, enums_1.ParentSubscriptionStatus.COMPLETED, enums_1.ParentSubscriptionStatus.PENDING_COMPLETION),
             allowNull: false,

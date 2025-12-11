@@ -1558,6 +1558,16 @@ export default class TutorService {
   }
 
   async editTutorSession(data: TutorSessionsDetail) {
+
+
+    const mainSession = await TutorSessions.findOne({
+      where: { id: data.sessionId, tutorId: data.tutorId, parentId: data.parentId }
+    });
+
+    if (!mainSession) {
+      throw new UnProcessableEntityError("Main Session not found");
+    }
+
     const session = await TutorSessionsDetail.findOne({
       where: {
         id: data.id,
@@ -1570,6 +1580,9 @@ export default class TutorService {
     if (!session) {
       throw new NotFoundError("Session not found");
     }
+
+
+
 
     const oldStatus = session.status;
     await session.update({ ...data });
@@ -1631,6 +1644,12 @@ export default class TutorService {
           notificationError
         );
       }
+    }
+
+    if(data.status === TutorSessionStatus.COMPLETED) {
+      await mainSession.update({
+        sessionsCompleted: mainSession.sessionsCompleted + 1,
+      });
     }
 
     return await TutorSessionsDetail.update(

@@ -20,6 +20,7 @@ export interface OfferData {
   endTime: string;
   description?: string;
   daysOfWeek: string[];
+  sessions: number;
 }
 export interface IUpdateMessageDto {
   content?: string;

@@ -28,7 +28,7 @@ import {
   NotificationType,
   TutorTransactionType,
   TutorSessionStatus,
-  ParentSubscriptionStatus
+  ParentSubscriptionStatus,
 } from "@ustaad/shared";
 import Stripe from "stripe";
 import { TutorPaymentStatus, OfferStatus } from "@ustaad/shared";
@@ -175,8 +175,6 @@ export default class ParentService {
         throw new UnProcessableEntityError("User not found");
       }
 
-
-
       const sessions = await TutorSessions.findAll({
         where: { parentId: userId, status: "active" },
       });
@@ -230,9 +228,11 @@ export default class ParentService {
 
       // Calculate average rating and total reviews
       const totalReviews = reviews.length;
-      const averageRating = totalReviews > 0
-        ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
-        : 0;
+      const averageRating =
+        totalReviews > 0
+          ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+            totalReviews
+          : 0;
 
       // Format reviews with tutor information
       const formattedReviews = reviews.map((review) => {
@@ -241,12 +241,14 @@ export default class ParentService {
           id: review.id,
           rating: review.rating,
           review: review.review,
-          tutor: reviewData.reviewer ? {
-            id: reviewData.reviewer.id,
-            fullName: reviewData.reviewer.fullName,
-            email: reviewData.reviewer.email,
-            image: reviewData.reviewer.image,
-          } : null,
+          tutor: reviewData.reviewer
+            ? {
+                id: reviewData.reviewer.id,
+                fullName: reviewData.reviewer.fullName,
+                email: reviewData.reviewer.email,
+                image: reviewData.reviewer.image,
+              }
+            : null,
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
         };
@@ -285,101 +287,6 @@ export default class ParentService {
     }
   }
 
-  async createPaymentMethod(userId: string, paymentMethodId: string) {
-    if (!this.stripe) {
-      throw new Error(
-        "Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable."
-      );
-    }
-
-    try {
-      // Find parent by userId
-      let user = await User.findOne({
-        where: { id: userId },
-      });
-
-      if (!user) {
-        throw new UnProcessableEntityError("Parent profile not found");
-      }
-
-      let parent = await Parent.findOne({
-        where: { userId: userId },
-      });
-
-      if (!parent) {
-        throw new UnProcessableEntityError("Parent profile not found");
-      }
-
-      // If parent does not have a customerId, create one in Stripe and update parent
-      if (!parent.customerId) {
-        // You can add more info to customer creation if needed (e.g., email, name)
-        const stripeCustomer = await this.stripe.customers.create({
-          email: user.email,
-          metadata: { parentId: parent.userId.toString() },
-        });
-
-        await parent.update({ customerId: stripeCustomer.id });
-        parent.customerId = stripeCustomer.id; // update local variable for further use
-      }
-
-      // Retrieve payment method from Stripe
-      const stripePaymentMethod =
-        await this.stripe.paymentMethods.retrieve(paymentMethodId);
-
-      if (!stripePaymentMethod) {
-        throw new UnProcessableEntityError(
-          "Payment method not found in Stripe"
-        );
-      }
-
-      // Check if payment method already exists
-      const existingPaymentMethod = await PaymentMethod.findOne({
-        where: { stripePaymentMethodId: paymentMethodId },
-      });
-
-      if (existingPaymentMethod) {
-        throw new ConflictError("Payment method already exists");
-      }
-
-      // Attach payment method to customer
-      await this.stripe.paymentMethods.attach(paymentMethodId, {
-        customer: parent.customerId,
-      });
-
-      // Create payment method record
-      const paymentMethod = await PaymentMethod.create({
-        parentId: parent.userId,
-        stripePaymentMethodId: paymentMethodId,
-        cardBrand: stripePaymentMethod.card?.brand || "unknown",
-        cardLast4: stripePaymentMethod.card?.last4 || "",
-        cardExpMonth: stripePaymentMethod.card?.exp_month || 0,
-        cardExpYear: stripePaymentMethod.card?.exp_year || 0,
-        isDefault: false,
-      });
-
-      // If this is the first payment method, make it default
-      const paymentMethodCount = await PaymentMethod.count({
-        where: { parentId: parent.userId },
-      });
-
-      if (paymentMethodCount === 1) {
-        await paymentMethod.update({ isDefault: true });
-
-        // Set as default payment method in Stripe
-        await this.stripe.customers.update(parent.customerId, {
-          invoice_settings: {
-            default_payment_method: paymentMethodId,
-          },
-        });
-      }
-
-      return paymentMethod;
-    } catch (error) {
-      console.error("Error in createPaymentMethod:", error);
-      throw error;
-    }
-  }
-
   async getPaymentMethods(userId: string) {
     try {
       const parent = await Parent.findOne({
@@ -402,124 +309,6 @@ export default class ParentService {
     }
   }
 
-  async updatePaymentMethod(
-    userId: string,
-    paymentMethodId: string,
-    isDefault?: boolean
-  ) {
-    try {
-      const parent = await Parent.findOne({
-        where: { userId },
-      });
-
-      if (!parent) {
-        throw new UnProcessableEntityError("Parent profile not found");
-      }
-
-      const paymentMethod = await PaymentMethod.findOne({
-        where: {
-          id: paymentMethodId,
-          parentId: parent.userId,
-        },
-      });
-
-      if (!paymentMethod) {
-        throw new UnProcessableEntityError("Payment method not found");
-      }
-
-      // If setting as default, unset other default payment methods
-      if (isDefault) {
-        await PaymentMethod.update(
-          { isDefault: false },
-          { where: { parentId: parent.userId } }
-        );
-
-        // Set as default in Stripe
-        if (parent.customerId) {
-          await this.stripe?.customers.update(parent.customerId, {
-            invoice_settings: {
-              default_payment_method: paymentMethod.stripePaymentMethodId,
-            },
-          });
-        }
-      }
-
-      // Update the payment method
-      await paymentMethod.update({ isDefault });
-
-      return paymentMethod;
-    } catch (error) {
-      console.error("Error in updatePaymentMethod:", error);
-      throw error;
-    }
-  }
-
-  async deletePaymentMethod(userId: string, paymentMethodId: string) {
-    if (!this.stripe) {
-      throw new Error(
-        "Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable."
-      );
-    }
-
-    try {
-      const parent = await Parent.findOne({
-        where: { userId },
-      });
-
-      if (!parent) {
-        throw new UnProcessableEntityError("Parent profile not found");
-      }
-
-      const paymentMethod = await PaymentMethod.findOne({
-        where: {
-          id: paymentMethodId,
-          parentId: parent.userId,
-        },
-      });
-
-      if (!paymentMethod) {
-        throw new UnProcessableEntityError("Payment method not found");
-      }
-
-      // Check if this is the default payment method
-      const isDefault = paymentMethod.isDefault;
-
-      // Delete from Stripe
-      await this.stripe.paymentMethods.detach(
-        paymentMethod.stripePaymentMethodId
-      );
-
-      // Delete from database
-      await paymentMethod.destroy();
-
-      // If this was the default payment method, set another one as default
-      if (isDefault) {
-        const remainingPaymentMethod = await PaymentMethod.findOne({
-          where: { parentId: parent.userId },
-          order: [["createdAt", "DESC"]],
-        });
-
-        if (remainingPaymentMethod) {
-          await remainingPaymentMethod.update({ isDefault: true });
-
-          // Set as default in Stripe
-          if (parent.customerId) {
-            await this.stripe.customers.update(parent.customerId, {
-              invoice_settings: {
-                default_payment_method:
-                  remainingPaymentMethod.stripePaymentMethodId,
-              },
-            });
-          }
-        }
-      }
-
-      return { message: "Payment method deleted successfully" };
-    } catch (error) {
-      console.error("Error in deletePaymentMethod:", error);
-      throw error;
-    }
-  }
   async getTutorProfile(tutorId: string) {
     try {
       const user = await User.findByPk(tutorId, {
@@ -540,7 +329,13 @@ export default class ParentService {
             include: [
               {
                 model: TutorExperience,
-                attributes: ["id", "company", "startDate", "endDate", "description"],
+                attributes: [
+                  "id",
+                  "company",
+                  "startDate",
+                  "endDate",
+                  "description",
+                ],
               },
             ],
           },
@@ -554,7 +349,13 @@ export default class ParentService {
           },
           {
             model: TutorExperience,
-            attributes: ["id", "company", "startDate", "endDate", "description"],
+            attributes: [
+              "id",
+              "company",
+              "startDate",
+              "endDate",
+              "description",
+            ],
           },
         ],
       });
@@ -583,9 +384,11 @@ export default class ParentService {
 
       // Calculate average rating and total reviews
       const totalReviews = reviews.length;
-      const averageRating = totalReviews > 0
-        ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
-        : 0;
+      const averageRating =
+        totalReviews > 0
+          ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+            totalReviews
+          : 0;
 
       // Format reviews with parent information
       const formattedReviews = reviews.map((review) => {
@@ -594,12 +397,14 @@ export default class ParentService {
           id: review.id,
           rating: review.rating,
           review: review.review,
-          parent: reviewData.reviewer ? {
-            id: reviewData.reviewer.id,
-            fullName: reviewData.reviewer.fullName,
-            email: reviewData.reviewer.email,
-            image: reviewData.reviewer.image,
-          } : null,
+          parent: reviewData.reviewer
+            ? {
+                id: reviewData.reviewer.id,
+                fullName: reviewData.reviewer.fullName,
+                email: reviewData.reviewer.email,
+                image: reviewData.reviewer.image,
+              }
+            : null,
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
         };
@@ -608,10 +413,13 @@ export default class ParentService {
       // Extract user data and ensure TutorExperience is included
       const userData = user.toJSON() as any;
       // TutorExperience might be directly on User or nested under Tutor
-      const experience = userData.TutorExperiences || 
-                         userData.TutorExperience || 
-                         (userData.Tutor && (userData.Tutor.TutorExperiences || userData.Tutor.TutorExperience)) || 
-                         [];
+      const experience =
+        userData.TutorExperiences ||
+        userData.TutorExperience ||
+        (userData.Tutor &&
+          (userData.Tutor.TutorExperiences ||
+            userData.Tutor.TutorExperience)) ||
+        [];
 
       // Return user data with reviews and experience
       return {
@@ -651,79 +459,82 @@ export default class ParentService {
         throw new UnProcessableEntityError("Invalid offer status");
       }
 
-
-
-      const tutor = await Tutor.findOne({where: {userId: offer.senderId}});
+      const tutor = await Tutor.findOne({ where: { userId: offer.senderId } });
       if (!tutor) {
         throw new UnProcessableEntityError("Tutor not found");
       }
 
-        // Check if subscription already exists for this offer
-        const existingSubscription = await ParentSubscription.findOne({
-          where: { offerId: offerId, status: { [Op.in]: [ParentSubscriptionStatus.ACTIVE, ParentSubscriptionStatus.CREATED] } },
-        });
-
-        if (existingSubscription) {
-          throw new UnProcessableEntityError(
-            "Parent already has a subscription against this offer"
-          );
-        }
-
-        // Get parent user for email/phone
-        const parentUser = await User.findByPk(offer.receiverId);
-        if (!parentUser) {
-          throw new UnProcessableEntityError("Parent user not found");
-        }
-
-        // Initiate PayFast subscription payment
-        const payfastResult = await this.payfastService.initiateSubscription({
-          userId: offer.receiverId,
-          amount: offer.amountMonthly,
-          customerEmail: parentUser.email,
-          customerMobile: parentUser.phone || undefined,
+      // Check if subscription already exists for this offer
+      const existingSubscription = await ParentSubscription.findOne({
+        where: {
           offerId: offerId,
-          childName: offer.childName,
-        });
+          status: {
+            [Op.in]: [
+              ParentSubscriptionStatus.ACTIVE,
+              ParentSubscriptionStatus.CREATED,
+            ],
+          },
+        },
+      });
 
-        // Create ParentSubscription entry with CREATED status (will be activated after payment)
-        const parentSubscription = await ParentSubscription.create({
-          offerId: offerId,
-          parentId: offer.receiverId,
-          tutorId: offer.senderId,
-          stripeSubscriptionId: payfastResult.basketId, // Using basketId as subscription ID
-          basketId: payfastResult.basketId,
-          status: ParentSubscriptionStatus.CREATED, // Will be activated after IPN confirms payment
-          planType: "monthly",
-          startDate: new Date(),
-          amount: offer.amountMonthly,
-          failureCount: 0,
-        });
+      if (existingSubscription) {
+        throw new UnProcessableEntityError(
+          "Parent already has a subscription against this offer"
+        );
+      }
 
-        // Create ParentTransaction entry with PENDING status
-        await ParentTransaction.create({
-          parentId: offer.receiverId,
-          subscriptionId: parentSubscription.id,
-          invoiceId: payfastResult.basketId,
-          basketId: payfastResult.basketId,
-          status: "created",
-          orderStatus: "PENDING",
-          amount: offer.amountMonthly,
-          childName: offer.childName,
-        });
+      // Get parent user for email/phone
+      const parentUser = await User.findByPk(offer.receiverId);
+      if (!parentUser) {
+        throw new UnProcessableEntityError("Parent user not found");
+      }
 
-        // Return PayFast form data to client
-        // The client will submit this form to PayFast
-        // After payment, IPN will activate the subscription
-        // return {
-        //   ...offer.toJSON(),
-        //   payfastPayment: {
-        //     payfastUrl: payfastResult.payfastUrl,
-        //     formFields: payfastResult.formFields,
-        //     basketId: payfastResult.basketId,
-        //   },
-        // };
-      
+      // Initiate PayFast subscription payment
+      const payfastResult = await this.payfastService.initiateSubscription({
+        userId: offer.receiverId,
+        amount: offer.amountMonthly,
+        customerEmail: parentUser.email,
+        customerMobile: parentUser.phone || undefined,
+        offerId: offerId,
+        childName: offer.childName,
+      });
 
+      // Create ParentSubscription entry with CREATED status (will be activated after payment)
+      const parentSubscription = await ParentSubscription.create({
+        offerId: offerId,
+        parentId: offer.receiverId,
+        tutorId: offer.senderId,
+        basketId: payfastResult.basketId,
+        status: ParentSubscriptionStatus.CREATED, // Will be activated after IPN confirms payment
+        planType: "sessions",
+        startDate: new Date(),
+        amount: offer.amountMonthly,
+        failureCount: 0,
+      });
+
+      // Create ParentTransaction entry with PENDING status
+      await ParentTransaction.create({
+        parentId: offer.receiverId,
+        subscriptionId: parentSubscription.id,
+        invoiceId: payfastResult.basketId,
+        basketId: payfastResult.basketId,
+        status: "created",
+        orderStatus: "PENDING",
+        amount: offer.amountMonthly,
+        childName: offer.childName,
+      });
+
+      // Return PayFast form data to client
+      // The client will submit this form to PayFast
+      // After payment, IPN will activate the subscription
+      // return {
+      //   ...offer.toJSON(),
+      //   payfastPayment: {
+      //     payfastUrl: payfastResult.payfastUrl,
+      //     formFields: payfastResult.formFields,
+      //     basketId: payfastResult.basketId,
+      //   },
+      // };
 
       // // Update offer status
       // offer.status = status as OfferStatus;
@@ -733,7 +544,7 @@ export default class ParentService {
       // try {
       //   const parent = await User.findByPk(userId);
       //   const tutor = await User.findByPk(offer.senderId);
-        
+
       //   if (status === OfferStatus.ACCEPTED) {
       //     await sendNotificationToUser({
       //       userId: offer.senderId, // Tutor
@@ -784,93 +595,6 @@ export default class ParentService {
     }
   }
 
-  async handleStripeWebhook(event: Stripe.Event) {
-    try {
-      switch (event.type) {
-        case "invoice.created":
-          await this.handleInvoiceCreated(event.data.object as Stripe.Invoice);
-          break;
-
-        case "customer.subscription.deleted":
-          await this.handleSubscriptionDeleted(
-            event.data.object as Stripe.Subscription
-          );
-          break;
-        default:
-          console.log(`Unhandled event type: ${event.type}`);
-      }
-    } catch (error) {
-      console.error("Error processing Stripe webhook:", error);
-      throw error;
-    }
-  }
-
-  private async handleInvoiceCreated(invoice: any) {
-    console.log(
-      "hello invoice payment succeeded",
-      invoice.id,
-      invoice.status,
-      invoice.customer,
-      invoice.amount_paid
-    );
-    console.log(
-      "hello invoice payment succeeded",
-      invoice?.subscription,
-      invoice?.subscription_details?.metadata?.offerId
-    );
-
-    const offer = await Offer.findOne({
-      where: {
-        id: invoice?.subscription_details?.metadata?.offerId,
-        status: OfferStatus.ACCEPTED,
-      },
-    });
-
-    if (!offer) {
-      console.log("offer not found");
-      return;
-    }
-    const parentSubscription = await ParentSubscription.findOne({
-      where: { offerId: offer.id },
-    });
-    if (parentSubscription) {
-      parentSubscription.status = ParentSubscriptionStatus.ACTIVE;
-      await parentSubscription.save();
-    }
-
-    const subscription = await ParentSubscription.findOne({
-      where: { stripeSubscriptionId: invoice?.subscription },
-    });
-
-    const parent = await Parent.findOne({
-      where: { customerId: invoice?.customer },
-    });
-
-    const tx = await ParentTransaction.findOne({
-      where: { invoiceId: invoice.id, status: "created" },
-    });
-    if (tx) {
-      return;
-    }
-
-    if (parent) {
-      const parentTransaction = await ParentTransaction.create({
-        invoiceId: invoice.id,
-        parentId: parent?.userId,
-        childName: offer.childName,
-        subscriptionId: subscription?.id,
-        amount: invoice?.amount_paid / 100,
-        status: "created",
-      });
-    }
-  }
-
-  private async handleSubscriptionDeleted(subscription: any) {
-    console.log("subscription", subscription);
-
-    // console.log("Subscription deleted:", subscription.id);
-  }
-
   async cancelSubscription(userId: string, subscriptionId: string) {
     if (!this.stripe) {
       throw new Error(
@@ -902,19 +626,9 @@ export default class ParentService {
         throw new ConflictError("Subscription is already cancelled");
       }
 
-      // Cancel subscription in Stripe
-      const stripeSubscription = await this.stripe.subscriptions.update(
-        subscription.stripeSubscriptionId,
-        {
-          cancel_at_period_end: true,
-        }
-      );
-
-      console.log("stripeSubscription", stripeSubscription);
-
       // Update subscription status in database
       await subscription.update({
-          status: ParentSubscriptionStatus.CANCELLED,
+        status: ParentSubscriptionStatus.CANCELLED,
         endDate: new Date(),
       });
 
@@ -922,26 +636,31 @@ export default class ParentService {
       try {
         const parentUser = await User.findByPk(userId);
         const offer = await Offer.findByPk(subscription.offerId);
-        
+
         if (offer) {
           await sendNotificationToUser({
             userId: subscription.tutorId,
             type: NotificationType.SUBSCRIPTION_CANCELLED_BY_PARENT,
-            title: '❌ Subscription Cancelled',
-            body: `${parentUser?.fullName || 'A parent'} has cancelled the subscription for ${offer.childName}`,
+            title: "❌ Subscription Cancelled",
+            body: `${parentUser?.fullName || "A parent"} has cancelled the subscription for ${offer.childName}`,
             relatedEntityId: subscriptionId,
-            relatedEntityType: 'subscription',
+            relatedEntityType: "subscription",
             actionUrl: `/subscriptions/${subscriptionId}`,
             metadata: {
-              parentName: parentUser?.fullName || 'Unknown',
+              parentName: parentUser?.fullName || "Unknown",
               childName: offer.childName,
               subject: offer.subject,
             },
           });
-          console.log(`✅ Sent subscription cancelled notification to tutor ${subscription.tutorId}`);
+          console.log(
+            `✅ Sent subscription cancelled notification to tutor ${subscription.tutorId}`
+          );
         }
       } catch (notificationError) {
-        console.error('❌ Error sending subscription cancellation notification:', notificationError);
+        console.error(
+          "❌ Error sending subscription cancellation notification:",
+          notificationError
+        );
       }
 
       return {
@@ -958,7 +677,7 @@ export default class ParentService {
     }
   }
 
-  async getAllSubscriptions(userId: string) {
+  async getAllSubscriptions(userId: string): Promise<any[]> {
     try {
       const parent = await Parent.findOne({
         where: { userId },
@@ -999,72 +718,7 @@ export default class ParentService {
       }
 
       // Prepare result array
-      const result = [];
-
-      for (const dbSub of dbSubscriptions) {
-        const stripeSub = stripeSubsMap.get(dbSub.stripeSubscriptionId);
-        if (!stripeSub) continue;
-
-        // Get created date
-        const createdDate =
-          dbSub.createdAt ||
-          (stripeSub.created ? new Date(stripeSub.created * 1000) : null);
-
-        // Get card details
-        let cardDetail = null;
-        if (
-          stripeSub.default_payment_method &&
-          stripeSub.default_payment_method.card
-        ) {
-          const card = stripeSub.default_payment_method.card;
-          cardDetail = {
-            brand: card.brand,
-            last4: card.last4,
-            exp_month: card.exp_month,
-            exp_year: card.exp_year,
-          };
-        }
-
-        // Get plan amount
-        let planAmount = null;
-        if (stripeSub.plan && stripeSub.plan.amount) {
-          planAmount = stripeSub.plan.amount / 100; // Stripe stores in cents
-        }
-
-        // Get offerId from plan.metadata
-        let offerId = null;
-        if (
-          stripeSub.plan &&
-          stripeSub.plan.metadata &&
-          stripeSub.plan.metadata.offerId
-        ) {
-          offerId = stripeSub.plan.metadata.offerId;
-        }
-
-        // Get childName from Offer if offerId exists
-        let childName = null;
-        if (offerId) {
-          const offer = await Offer.findOne({
-            where: { id: offerId },
-          });
-          if (offer && offer.childName) {
-            childName = offer.childName;
-          }
-        }
-
-        result.push({
-          tutorId: dbSub.tutorId,
-          subscriptionId: dbSub.id,
-          createdDate,
-          cardDetail,
-          planAmount,
-          offerId,
-          childName,
-          status: dbSub.status,
-        });
-      }
-
-      return result;
+      return [];
     } catch (error) {
       console.error("Error in getAllSubscriptions:", error);
       throw error;
@@ -1107,7 +761,7 @@ export default class ParentService {
   //     // 🔔 SEND NOTIFICATION TO TUTOR
   //     try {
   //       const parent = await User.findByPk(parentId);
-        
+
   //       await sendNotificationToUser({
   //         userId: tutorId,
   //         type: NotificationType.REVIEW_RECEIVED_TUTOR,
@@ -1149,22 +803,32 @@ export default class ParentService {
             [Op.gte]: sixMonthsAgo,
           },
           status: {
-            [Op.in]: ['created', 'paid', 'completed'], // Include successful transactions
+            [Op.in]: ["created", "paid", "completed"], // Include successful transactions
           },
         },
-        order: [['createdAt', 'ASC']],
+        order: [["createdAt", "ASC"]],
       });
 
       // Group transactions by month and calculate spending
-      const monthlyData: { [key: string]: { month: string; spending: number; count: number; children: Set<string> } } = {};
-      
+      const monthlyData: {
+        [key: string]: {
+          month: string;
+          spending: number;
+          count: number;
+          children: Set<string>;
+        };
+      } = {};
+
       // Initialize last 6 months with zero spending
       for (let i = 5; i >= 0; i--) {
         const date = new Date();
         date.setMonth(currentDate.getMonth() - i);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const monthName = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-        
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        const monthName = date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+        });
+
         monthlyData[monthKey] = {
           month: monthName,
           spending: 0,
@@ -1176,8 +840,8 @@ export default class ParentService {
       // Sum up spending by month
       transactions.forEach((transaction) => {
         const transactionDate = new Date(transaction.createdAt);
-        const monthKey = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, '0')}`;
-        
+        const monthKey = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, "0")}`;
+
         if (monthlyData[monthKey]) {
           monthlyData[monthKey].spending += transaction.amount;
           monthlyData[monthKey].count += 1;
@@ -1190,7 +854,7 @@ export default class ParentService {
       // Convert to array and sort by month, also convert Set to array length
       const result = Object.keys(monthlyData)
         .sort()
-        .map(key => ({
+        .map((key) => ({
           month: monthlyData[key].month,
           spending: parseFloat(monthlyData[key].spending.toFixed(2)),
           transactionCount: monthlyData[key].count,
@@ -1198,13 +862,19 @@ export default class ParentService {
         }));
 
       // Calculate total spending and statistics
-      const totalSpending = result.reduce((sum, month) => sum + month.spending, 0);
-      const totalTransactions = result.reduce((sum, month) => sum + month.transactionCount, 0);
+      const totalSpending = result.reduce(
+        (sum, month) => sum + month.spending,
+        0
+      );
+      const totalTransactions = result.reduce(
+        (sum, month) => sum + month.transactionCount,
+        0
+      );
       const avgMonthlySpending = totalSpending / 6;
 
       // Get unique children from all transactions
       const allChildren = new Set<string>();
-      transactions.forEach(transaction => {
+      transactions.forEach((transaction) => {
         if (transaction.childName) {
           allChildren.add(transaction.childName);
         }
@@ -1217,11 +887,11 @@ export default class ParentService {
           totalTransactions,
           averageMonthlySpending: parseFloat(avgMonthlySpending.toFixed(2)),
           totalChildren: allChildren.size,
-          period: '6 months',
+          period: "6 months",
         },
       };
     } catch (error) {
-      console.error('Error in getMonthlySpending:', error);
+      console.error("Error in getMonthlySpending:", error);
       throw error;
     }
   }
@@ -1229,7 +899,9 @@ export default class ParentService {
   async terminateContract(
     parentId: string,
     contractId: string,
-    status: ParentSubscriptionStatus.DISPUTE | ParentSubscriptionStatus.PENDING_COMPLETION,
+    status:
+      | ParentSubscriptionStatus.DISPUTE
+      | ParentSubscriptionStatus.PENDING_COMPLETION,
     reason?: string
   ) {
     try {
@@ -1252,13 +924,24 @@ export default class ParentService {
       }
 
       // 2. Check if contract can be terminated (not already completed/disputed/cancelled)
-      if ([ParentSubscriptionStatus.COMPLETED, ParentSubscriptionStatus.DISPUTE, ParentSubscriptionStatus.CANCELLED].includes(contract.status as any)) {
+      if (
+        [
+          ParentSubscriptionStatus.COMPLETED,
+          ParentSubscriptionStatus.DISPUTE,
+          ParentSubscriptionStatus.CANCELLED,
+        ].includes(contract.status as any)
+      ) {
         throw new BadRequestError(`Contract is already ${contract.status}`);
       }
 
       // 3. Validate reason if status is dispute
-      if (status === ParentSubscriptionStatus.DISPUTE && (!reason || reason.trim().length === 0)) {
-        throw new BadRequestError("Cancellation reason is required for dispute");
+      if (
+        status === ParentSubscriptionStatus.DISPUTE &&
+        (!reason || reason.trim().length === 0)
+      ) {
+        throw new BadRequestError(
+          "Cancellation reason is required for dispute"
+        );
       }
 
       // 4. Calculate completed days for payment
@@ -1280,7 +963,7 @@ export default class ParentService {
       // 5. Update contract based on status
       if (status === ParentSubscriptionStatus.DISPUTE) {
         await contract.update({
-          status: 'dispute',
+          status: "dispute",
           disputeReason: reason,
           disputedBy: parentId,
           disputedAt: new Date(),
@@ -1297,50 +980,55 @@ export default class ParentService {
       try {
         const parent = await User.findByPk(parentId);
         const offer = await Offer.findByPk(contract.offerId);
-        
+
         if (status === ParentSubscriptionStatus.DISPUTE) {
           await sendNotificationToUser({
             userId: contract.tutorId,
             type: NotificationType.CONTRACT_DISPUTED,
-            title: '⚠️ Contract Disputed',
-            body: `${parent?.fullName || 'A parent'} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ''}. Reason: ${reason?.substring(0, 50) || ''}${reason && reason.length > 50 ? '...' : ''}`,
+            title: "⚠️ Contract Disputed",
+            body: `${parent?.fullName || "A parent"} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ""}. Reason: ${reason?.substring(0, 50) || ""}${reason && reason.length > 50 ? "..." : ""}`,
             relatedEntityId: contract.id,
-            relatedEntityType: 'contract',
+            relatedEntityType: "contract",
             actionUrl: `/contracts/${contract.id}`,
             metadata: {
               contractId: contract.id,
               disputedBy: parentId,
-              reason: reason?.substring(0, 100) || '',
+              reason: reason?.substring(0, 100) || "",
             },
           });
-          console.log(`✅ Sent dispute notification to tutor ${contract.tutorId}`);
+          console.log(
+            `✅ Sent dispute notification to tutor ${contract.tutorId}`
+          );
         } else if (status === ParentSubscriptionStatus.PENDING_COMPLETION) {
           await sendNotificationToUser({
             userId: contract.tutorId,
             type: NotificationType.CONTRACT_COMPLETED,
-            title: '✅ Contract Completed',
-            body: `${parent?.fullName || 'A parent'} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ''} as completed.`,
+            title: "✅ Contract Completed",
+            body: `${parent?.fullName || "A parent"} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ""} as completed.`,
             relatedEntityId: contract.id,
-            relatedEntityType: 'contract',
+            relatedEntityType: "contract",
             actionUrl: `/contracts/${contract.id}`,
             metadata: {
               contractId: contract.id,
               completedBy: parentId,
             },
           });
-          console.log(`✅ Sent completion notification to tutor ${contract.tutorId}`);
+          console.log(
+            `✅ Sent completion notification to tutor ${contract.tutorId}`
+          );
         }
       } catch (notificationError) {
-        console.error('❌ Error sending notification:', notificationError);
+        console.error("❌ Error sending notification:", notificationError);
       }
 
       // 7. Return contract with completed sessions count
       return {
         contract,
         // completedSessions,
-        message: status === ParentSubscriptionStatus.DISPUTE 
-          ? 'Contract has been disputed and forwarded to admin for review'
-          : 'Contract has been marked as completed',
+        message:
+          status === ParentSubscriptionStatus.DISPUTE
+            ? "Contract has been disputed and forwarded to admin for review"
+            : "Contract has been marked as completed",
       };
     } catch (error) {
       console.error("Error in terminateContract:", error);
@@ -1389,7 +1077,7 @@ export default class ParentService {
         contractId: contractId,
         reviewerId: parentId,
         reviewedId: contract.tutorId,
-        reviewerRole: 'PARENT',
+        reviewerRole: "PARENT",
         rating,
         review: review || undefined,
       });
@@ -1410,44 +1098,49 @@ export default class ParentService {
           endDate: new Date(),
         });
 
-
-        await TutorSessions.update({
-          status: "cancelled",
-        }, {
-          where: {
-            offerId: contract.offerId,
-            tutorId: contract.tutorId,
-            parentId: contract.parentId,
-            status: "active",
+        await TutorSessions.update(
+          {
+            status: "cancelled",
           },
-        });
+          {
+            where: {
+              offerId: contract.offerId,
+              tutorId: contract.tutorId,
+              parentId: contract.parentId,
+              status: "active",
+            },
+          }
+        );
 
         // Notify both parties
         try {
           const parent = await User.findByPk(parentId);
           const tutor = await User.findByPk(contract.tutorId);
-          
+
           await sendNotificationToUser({
             userId: contract.tutorId,
             type: NotificationType.CONTRACT_COMPLETED,
-            title: '✅ Contract Completed',
-            body: 'Both parties have submitted their ratings. Contract is now completed.',
+            title: "✅ Contract Completed",
+            body: "Both parties have submitted their ratings. Contract is now completed.",
             relatedEntityId: contract.id,
-            relatedEntityType: 'contract',
+            relatedEntityType: "contract",
             actionUrl: `/contracts/${contract.id}`,
           });
 
           await sendNotificationToUser({
             userId: parentId,
             type: NotificationType.CONTRACT_COMPLETED,
-            title: '✅ Contract Completed',
-            body: 'Both parties have submitted their ratings. Contract is now completed.',
+            title: "✅ Contract Completed",
+            body: "Both parties have submitted their ratings. Contract is now completed.",
             relatedEntityId: contract.id,
-            relatedEntityType: 'contract',
+            relatedEntityType: "contract",
             actionUrl: `/contracts/${contract.id}`,
           });
         } catch (notificationError) {
-          console.error('❌ Error sending completion notification:', notificationError);
+          console.error(
+            "❌ Error sending completion notification:",
+            notificationError
+          );
         }
       } else {
         // Only parent rated - mark as pending_completion
@@ -1458,14 +1151,14 @@ export default class ParentService {
         // Notify tutor to submit rating
         try {
           const parent = await User.findByPk(parentId);
-          
+
           await sendNotificationToUser({
             userId: contract.tutorId,
             type: NotificationType.CONTRACT_RATING_SUBMITTED,
-            title: '⭐ Rating Request',
-            body: `${parent?.fullName || 'The parent'} has submitted their rating. Please submit yours to complete the contract.`,
+            title: "⭐ Rating Request",
+            body: `${parent?.fullName || "The parent"} has submitted their rating. Please submit yours to complete the contract.`,
             relatedEntityId: contract.id,
-            relatedEntityType: 'contract',
+            relatedEntityType: "contract",
             actionUrl: `/contracts/${contract.id}`,
             metadata: {
               contractId: contract.id,
@@ -1473,15 +1166,18 @@ export default class ParentService {
             },
           });
         } catch (notificationError) {
-          console.error('❌ Error sending rating notification:', notificationError);
+          console.error(
+            "❌ Error sending rating notification:",
+            notificationError
+          );
         }
       }
 
       return {
         contract,
-        message: tutorReview 
-          ? 'Contract completed! Both parties have rated.' 
-          : 'Rating submitted. Waiting for tutor to rate.',
+        message: tutorReview
+          ? "Contract completed! Both parties have rated."
+          : "Rating submitted. Waiting for tutor to rate.",
       };
     } catch (error) {
       console.error("Error in submitContractRating:", error);
@@ -1502,25 +1198,25 @@ export default class ParentService {
         include: [
           {
             model: User,
-            foreignKey: 'tutorId',
-            attributes: ['id', 'fullName', 'email', 'image', 'phone'],
+            foreignKey: "tutorId",
+            attributes: ["id", "fullName", "email", "image", "phone"],
           },
           {
             model: Offer,
             attributes: [
-              'id',
-              'childName',
-              'subject',
-              'amountMonthly',
-              'startDate',
-              'startTime',
-              'endTime',
-              'daysOfWeek',
-              'description',
+              "id",
+              "childName",
+              "subject",
+              "amountMonthly",
+              "startDate",
+              "startTime",
+              "endTime",
+              "daysOfWeek",
+              "description",
             ],
           },
         ],
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
         limit,
         offset,
       });
@@ -1550,7 +1246,7 @@ export default class ParentService {
               offerId: contract.offerId,
               tutorId: contract.tutorId,
               parentId: contract.parentId,
-              status: 'active',
+              status: "active",
             },
           });
 
@@ -1562,21 +1258,21 @@ export default class ParentService {
             include: [
               {
                 model: User,
-                as: 'reviewer',
-                attributes: ['id', 'fullName', 'email', 'image'],
+                as: "reviewer",
+                attributes: ["id", "fullName", "email", "image"],
               },
               {
                 model: User,
-                as: 'reviewed',
-                attributes: ['id', 'fullName', 'email', 'image'],
+                as: "reviewed",
+                attributes: ["id", "fullName", "email", "image"],
               },
             ],
-            order: [['createdAt', 'DESC']],
+            order: [["createdAt", "DESC"]],
           });
 
           // Get tutor user details
           const tutor = await User.findByPk(contract.tutorId, {
-            attributes: ['id', 'fullName', 'email', 'image', 'phone'],
+            attributes: ["id", "fullName", "email", "image", "phone"],
           });
 
           // Check if parent has already reviewed
@@ -1594,7 +1290,7 @@ export default class ParentService {
             where: {
               tutorId: contract.tutorId,
             },
-            order: [['createdAt', 'DESC']],
+            order: [["createdAt", "DESC"]],
             limit: 10, // Limit to recent payment requests
           });
 
@@ -1620,24 +1316,28 @@ export default class ParentService {
             }),
             hasParentReview: !!parentReview,
             hasTutorReview: !!tutorReview,
-            parentReview: parentReview ? {
-              id: parentReview.id,
-              reviewerId: parentReview.reviewerId,
-              reviewedId: parentReview.reviewedId,
-              reviewerRole: parentReview.reviewerRole,
-              rating: parentReview.rating,
-              review: parentReview.review,
-              createdAt: parentReview.createdAt,
-            } : null,
-            tutorReview: tutorReview ? {
-              id: tutorReview.id,
-              reviewerId: tutorReview.reviewerId,
-              reviewedId: tutorReview.reviewedId,
-              reviewerRole: tutorReview.reviewerRole,
-              rating: tutorReview.rating,
-              review: tutorReview.review,
-              createdAt: tutorReview.createdAt,
-            } : null,
+            parentReview: parentReview
+              ? {
+                  id: parentReview.id,
+                  reviewerId: parentReview.reviewerId,
+                  reviewedId: parentReview.reviewedId,
+                  reviewerRole: parentReview.reviewerRole,
+                  rating: parentReview.rating,
+                  review: parentReview.review,
+                  createdAt: parentReview.createdAt,
+                }
+              : null,
+            tutorReview: tutorReview
+              ? {
+                  id: tutorReview.id,
+                  reviewerId: tutorReview.reviewerId,
+                  reviewedId: tutorReview.reviewedId,
+                  reviewerRole: tutorReview.reviewerRole,
+                  rating: tutorReview.rating,
+                  review: tutorReview.review,
+                  createdAt: tutorReview.createdAt,
+                }
+              : null,
             paymentRequests: paymentRequests.map((pr) => ({
               id: pr.id,
               amount: pr.amount,
@@ -1662,7 +1362,7 @@ export default class ParentService {
         },
       };
     } catch (error) {
-      console.error('Error in getActiveContractsForDispute:', error);
+      console.error("Error in getActiveContractsForDispute:", error);
       throw error;
     }
   }
@@ -1672,10 +1372,7 @@ export default class ParentService {
   /**
    * Initiate PayFast subscription payment
    */
-  async initiatePayFastSubscription(data: {
-    userId: string;
-    offerId: string;
-  }) {
+  async initiatePayFastSubscription(data: { userId: string; offerId: string }) {
     try {
       const user = await User.findByPk(data.userId);
       if (!user) {
@@ -1687,16 +1384,15 @@ export default class ParentService {
         throw new NotFoundError("Offer not found");
       }
 
-
-
-      if(offer.receiverId !== user.id) {
-        throw new UnProcessableEntityError("You are not the receiver of this offer");
+      if (offer.receiverId !== user.id) {
+        throw new UnProcessableEntityError(
+          "You are not the receiver of this offer"
+        );
       }
-
 
       // Get user email and phone if not provided
       const customerEmail = user.email;
-      const customerMobile =user.phone;
+      const customerMobile = user.phone;
 
       // Initiate PayFast subscription
       const payfastResult = await this.payfastService.initiateSubscription({
@@ -1708,51 +1404,40 @@ export default class ParentService {
         childName: offer.childName,
       });
 
+      // Check if subscription already exists
+      let subscription = await ParentSubscription.findOne({
+        where: { offerId: data.offerId },
+      });
 
-      // console.log("payfastResult", payfastResult);
-      
+      if (!subscription) {
+        subscription = await ParentSubscription.create({
+          offerId: data.offerId,
+          parentId: data.userId,
+          tutorId: offer.senderId,
+          basketId: payfastResult.basketId,
+          status: ParentSubscriptionStatus.CREATED,
+          planType: "sessions",
+          startDate: new Date(),
+          amount: offer.amountMonthly,
+          failureCount: 0,
+        });
+      } else {
+        await subscription.update({
+          basketId: payfastResult.basketId,
+        });
+      }
 
-      // Create order/transaction record with PENDING status
-      // let transaction: ParentTransaction | null = null;
-      // if (data.offerId) {
-      //   // Find or create subscription record
-      //   const offer = await Offer.findByPk(data.offerId);
-      //   if (!offer) {
-      //     throw new NotFoundError("Offer not found");
-      //   }
-
-      //   // Check if subscription already exists
-      //   let subscription = await ParentSubscription.findOne({
-      //     where: { offerId: data.offerId, basketId: payfastResult.basketId },
-      //   });
-
-      //   if (!subscription) {
-      //     subscription = await ParentSubscription.create({
-      //       offerId: data.offerId,
-      //       parentId: data.userId,
-      //       tutorId: offer.senderId,
-      //       stripeSubscriptionId: payfastResult.basketId, // Using basketId as subscription ID
-      //       basketId: payfastResult.basketId,
-      //       status: ParentSubscriptionStatus.CREATED,
-      //       planType: "monthly",
-      //       startDate: new Date(),
-      //       amount: offer.amountMonthly,
-      //       failureCount: 0,
-      //     });
-      //   }
-
-      //   // Create transaction record
-      //   transaction = await ParentTransaction.create({
-      //     parentId: data.userId,
-      //     subscriptionId: subscription.id,
-      //     invoiceId: payfastResult.basketId, // Using basketId as invoice ID initially
-      //     basketId: payfastResult.basketId,
-      //     status: "created",
-      //     orderStatus: "PENDING",
-      //     amount: offer.amountMonthly,
-      //     childName: offer.childName,
-      //   });
-      // }
+      // Create transaction record
+      const transaction = await ParentTransaction.create({
+        parentId: data.userId,
+        subscriptionId: subscription.id,
+        invoiceId: payfastResult.basketId, // Using basketId as invoice ID initially
+        basketId: payfastResult.basketId,
+        status: "created",
+        orderStatus: "PENDING",
+        amount: offer.amountMonthly,
+        childName: offer.childName,
+      });
 
       return {
         success: true,
@@ -1785,10 +1470,7 @@ export default class ParentService {
         ipnData.ErrCode ||
         "000";
       const errMsg =
-        ipnData.err_msg ||
-        ipnData.ERR_MSG ||
-        ipnData.errMsg ||
-        ipnData.ErrMsg;
+        ipnData.err_msg || ipnData.ERR_MSG || ipnData.errMsg || ipnData.ErrMsg;
       const validationHash =
         ipnData.validation_hash ||
         ipnData.VALIDATION_HASH ||
@@ -1825,7 +1507,7 @@ export default class ParentService {
         const isValid = this.payfastService.validateIPNHash(
           basketId,
           errCode,
-          validationHash  
+          validationHash
         );
         if (!isValid) {
           console.error("PayFast IPN: Invalid validation hash", {
@@ -1840,9 +1522,7 @@ export default class ParentService {
       // Check if this is a recurring charge (basket ID starts with "RECUR-")
       const isRecurringCharge = basketId.startsWith("SUB-");
 
-
       console.log("aaaaaa");
-      
 
       if (isRecurringCharge) {
         // Handle recurring payment IPN
@@ -1891,7 +1571,9 @@ export default class ParentService {
       });
 
       if (!transaction) {
-        console.error(`PayFast IPN: Transaction not found for basketId: ${data.basketId}`);
+        console.error(
+          `PayFast IPN: Transaction not found for basketId: ${data.basketId}`
+        );
         return;
       }
 
@@ -1900,7 +1582,9 @@ export default class ParentService {
       });
 
       if (!subscription) {
-        console.error(`PayFast IPN: Subscription not found for basketId: ${data.basketId}`);
+        console.error(
+          `PayFast IPN: Subscription not found for basketId: ${data.basketId}`
+        );
         return;
       }
 
@@ -1919,12 +1603,6 @@ export default class ParentService {
           // Store in PaymentMethod
           const paymentMethod = await PaymentMethod.create({
             parentId: subscription.parentId,
-            stripePaymentMethodId: `payfast_${data.basketId}`, // Using basketId as identifier
-            cardBrand: "PayFast",
-            cardLast4: "****",
-            cardExpMonth: 12,
-            cardExpYear: new Date().getFullYear() + 10,
-            isDefault: true,
             instrumentToken: data.instrumentToken,
             paymentProvider: "PAYFAST",
           });
@@ -1945,7 +1623,9 @@ export default class ParentService {
           // Create TutorTransaction and TutorSessions
           const offer = await Offer.findByPk(subscription.offerId);
           if (offer) {
-            const tutor = await Tutor.findOne({ where: { userId: subscription.tutorId } });
+            const tutor = await Tutor.findOne({
+              where: { userId: subscription.tutorId },
+            });
             if (tutor) {
               await TutorTransaction.create({
                 tutorId: subscription.tutorId,
@@ -1955,7 +1635,8 @@ export default class ParentService {
                 transactionType: TutorTransactionType.PAYMENT,
               });
 
-              tutor.balance = Number(tutor.balance) + Number(subscription.amount);
+              tutor.balance =
+                Number(tutor.balance) + Number(subscription.amount);
               await tutor.save();
 
               // Create TutorSessions entry
@@ -1968,6 +1649,8 @@ export default class ParentService {
                 childName: offer.childName,
                 startTime: offer.startTime,
                 endTime: offer.endTime,
+                totalSessions: offer.sessions,
+                sessionsCompleted: 0,
                 offerId: subscription.offerId,
                 daysOfWeek: offer.daysOfWeek,
                 price: Math.round(subscription.amount * 100), // Convert to cents
@@ -2017,7 +1700,9 @@ export default class ParentService {
       });
 
       if (!transaction) {
-        console.error(`PayFast IPN: Recurring transaction not found for basketId: ${data.basketId}`);
+        console.error(
+          `PayFast IPN: Recurring transaction not found for basketId: ${data.basketId}`
+        );
         return;
       }
 
@@ -2026,7 +1711,9 @@ export default class ParentService {
         : null;
 
       if (!subscription) {
-        console.error(`PayFast IPN: Subscription not found for recurring payment`);
+        console.error(
+          `PayFast IPN: Subscription not found for recurring payment`
+        );
         return;
       }
 
@@ -2052,7 +1739,9 @@ export default class ParentService {
         });
 
         // Create TutorTransaction
-        const tutor = await Tutor.findOne({ where: { userId: subscription.tutorId } });
+        const tutor = await Tutor.findOne({
+          where: { userId: subscription.tutorId },
+        });
         if (tutor) {
           await TutorTransaction.create({
             tutorId: subscription.tutorId,
@@ -2095,6 +1784,8 @@ export default class ParentService {
               price: Math.round(subscription.amount * 100),
               status: "active",
               month: currentMonth,
+              totalSessions: offer.sessions,
+              sessionsCompleted: 0,
               meta: {
                 recurringPayment: true,
                 paymentProvider: "PAYFAST",
@@ -2150,9 +1841,11 @@ export default class ParentService {
         subscriptionId: subscription?.id || null,
         transactionId: transaction.invoiceId,
         errorCode: transaction.orderStatus === "FAILED" ? "001" : null,
-        errorMessage: transaction.orderStatus === "FAILED" ? "Payment failed" : null,
+        errorMessage:
+          transaction.orderStatus === "FAILED" ? "Payment failed" : null,
         createdAt: transaction.createdAt,
-        completedAt: transaction.orderStatus === "SUCCESS" ? transaction.updatedAt : null,
+        completedAt:
+          transaction.orderStatus === "SUCCESS" ? transaction.updatedAt : null,
       };
     } catch (error) {
       console.error("Error in getSubscriptionStatusByBasketId:", error);
@@ -2178,7 +1871,9 @@ export default class ParentService {
       }
 
       if (!subscription.instrumentToken) {
-        throw new BadRequestError("No instrument token available for this subscription");
+        throw new BadRequestError(
+          "No instrument token available for this subscription"
+        );
       }
 
       // Get user for email/phone
@@ -2218,6 +1913,287 @@ export default class ParentService {
       };
     } catch (error) {
       console.error("Error in chargeRecurringSubscription:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get lists of instruments for a user
+   */
+  async getListsOfInstruments(userId: string) {
+    try {
+      const user = await User.findByPk(userId);
+      if (!user) {
+        throw new NotFoundError("User not found");
+      }
+
+      const merchantUserId = user.phone || user.id;
+      const userMobileNumber = user.phone || "";
+
+      const result = await this.payfastService.getListsOfInstruments(
+        merchantUserId,
+        userMobileNumber
+      );
+
+      return result;
+    } catch (error) {
+      console.error("Error in getListsOfInstruments:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Recurring Transaction OTP
+   */
+  async recurringTransactionOTP(
+    userId: string,
+    data: {
+      instrumentToken: string;
+      basketId: string;
+      orderDate: string;
+      txnamt: string;
+      cvv: string;
+      currencyCode?: string;
+      data3dsCallbackUrl?: string;
+      checkoutUrl?: string;
+    }
+  ) {
+    try {
+      const user = await User.findByPk(userId);
+      if (!user) {
+        throw new NotFoundError("User not found");
+      }
+
+      const merchantUserId = user.phone || user.id;
+      const userMobileNumber = user.phone || "";
+
+      const result = await this.payfastService.recurringTransactionOTP({
+        instrumentToken: data.instrumentToken,
+        merchantUserId,
+        userMobileNumber,
+        basketId: data.basketId,
+        orderDate: data.orderDate,
+        txnamt: data.txnamt,
+        cvv: data.cvv,
+        currencyCode: data.currencyCode,
+        data3dsCallbackUrl: data.data3dsCallbackUrl,
+        checkoutUrl: data.checkoutUrl,
+      });
+
+      return result;
+    } catch (error) {
+      console.error("Error in recurringTransactionOTP:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Initiate Recurring Payment
+   */
+  async initiateRecurringPayment(
+    userId: string,
+    data: {
+      instrumentToken: string;
+      basketId: string;
+      orderDate: string;
+      txndesc: string;
+      txnamt: string;
+      cvv: string;
+      transactionId?: string;
+      currencyCode?: string;
+      otp?: string;
+      data3dsSecureId?: string;
+      data3dsPares?: string;
+      checkoutUrl?: string;
+    }
+  ) {
+    try {
+      const user = await User.findByPk(userId);
+      if (!user) {
+        throw new NotFoundError("User not found");
+      }
+
+      const merchantUserId = user.phone || user.id;
+      const userMobileNumber = user.phone || "";
+
+      const result = await this.payfastService.initiateRecurringPayment({
+        instrumentToken: data.instrumentToken,
+        merchantUserId,
+        userMobileNumber,
+        basketId: data.basketId,
+        orderDate: data.orderDate,
+        txndesc: data.txndesc,
+        txnamt: data.txnamt,
+        cvv: data.cvv,
+        transactionId: data.transactionId,
+        currencyCode: data.currencyCode,
+        otp: data.otp,
+        data3dsSecureId: data.data3dsSecureId,
+        data3dsPares: data.data3dsPares,
+        checkoutUrl: data.checkoutUrl,
+      });
+
+      return result;
+    } catch (error) {
+      console.error("Error in initiateRecurringPayment:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Handle PayFast Success Callback
+   */
+  async handlePayFastSuccess(queryParams: {
+    err_code?: string;
+    err_msg?: string;
+    transaction_id?: string;
+    basket_id?: string;
+    order_date?: string;
+    validation_hash?: string;
+    transaction_amount?: string;
+    merchant_amount?: string;
+    Recurring_txn?: string;
+    [key: string]: any;
+  }) {
+    try {
+      const basketId = queryParams.basket_id;
+      const errCode = queryParams.err_code || "000";
+      const errMsg = queryParams.err_msg || "";
+      const transactionId = queryParams.transaction_id;
+      const validationHash = queryParams.validation_hash;
+      const transactionAmount = queryParams.transaction_amount;
+      const isRecurring = queryParams.Recurring_txn === "true";
+
+      if (!basketId) {
+        throw new BadRequestError("Missing basket_id in success callback");
+      }
+
+      // Validate hash if provided
+      if (validationHash) {
+        const isValid = this.payfastService.validateIPNHash(
+          basketId,
+          errCode,
+          validationHash
+        );
+        if (!isValid) {
+          console.error("PayFast Success: Invalid validation hash", {
+            basketId,
+            errCode,
+            receivedHash: validationHash,
+          });
+          throw new BadRequestError("Invalid validation hash");
+        }
+      }
+
+      // Find transaction by basketId
+      const transaction = await ParentTransaction.findOne({
+        where: { basketId },
+        include: [{ model: ParentSubscription }],
+      });
+
+      if (!transaction) {
+        throw new NotFoundError("Transaction not found for this basket ID");
+      }
+
+      const subscription = await ParentSubscription.findOne({
+        where: { basketId },
+      });
+
+      if (!subscription) {
+        throw new NotFoundError("Subscription not found for this basket ID");
+      }
+
+      // Update transaction status
+      const orderStatus = errCode === "000" ? "SUCCESS" : "FAILED";
+      await transaction.update({
+        orderStatus,
+        invoiceId: transactionId || transaction.invoiceId,
+        status: errCode === "000" ? "paid" : "failed",
+      });
+
+      // Payment successful
+      // if (isRecurring) {
+      //   // Handle recurring payment
+      //   const nextBillingDate = new Date();
+      //   nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+
+      //   await subscription.update({
+      //     status: ParentSubscriptionStatus.ACTIVE,
+      //     nextBillingDate,
+      //     lastPaymentDate: new Date(),
+      //     lastPaymentAmount: parseFloat(transactionAmount || "0"),
+      //     failureCount: 0,
+      //   });
+      // } else {
+      // Handle initial payment
+      const nextBillingDate = new Date();
+      nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+
+      await subscription.update({
+        status: ParentSubscriptionStatus.ACTIVE,
+        instrumentToken:
+          queryParams.instrument_token || subscription.instrumentToken,
+        nextBillingDate,
+        lastPaymentDate: new Date(),
+        lastPaymentAmount: parseFloat(transactionAmount || "0"),
+        failureCount: 0,
+      });
+
+      // Create TutorTransaction and TutorSessions for initial payment
+      const offer = await Offer.findByPk(subscription.offerId);
+      if (offer) {
+        const tutor = await Tutor.findOne({
+          where: { userId: subscription.tutorId },
+        });
+        if (tutor) {
+          await TutorTransaction.create({
+            tutorId: subscription.tutorId,
+            subscriptionId: subscription.id,
+            status: TutorPaymentStatus.PAID,
+            amount: subscription.amount,
+            transactionType: TutorTransactionType.PAYMENT,
+          });
+
+          tutor.balance = Number(tutor.balance) + Number(subscription.amount);
+          await tutor.save();
+
+          // Create TutorSessions entry
+          const currentDate = new Date();
+          const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-01`;
+
+          await TutorSessions.create({
+            tutorId: subscription.tutorId,
+            parentId: subscription.parentId,
+            childName: offer.childName,
+            startTime: offer.startTime,
+            endTime: offer.endTime,
+            offerId: subscription.offerId,
+            daysOfWeek: offer.daysOfWeek,
+            price: subscription.amount,
+            status: "active",
+            month: currentMonth,
+            totalSessions: offer.sessions,
+            sessionsCompleted: 0,
+            meta: {
+              createdFromOffer: true,
+              offerAcceptedAt: new Date(),
+              paymentProvider: "PAYFAST",
+            },
+          });
+          // }
+        }
+      }
+
+      return {
+        success: errCode === "000",
+        basketId,
+        transactionId,
+        subscriptionId: subscription.id,
+        orderStatus,
+        message: errCode === "000" ? "Payment successful" : errMsg,
+      };
+    } catch (error) {
+      console.error("Error in handlePayFastSuccess:", error);
       throw error;
     }
   }

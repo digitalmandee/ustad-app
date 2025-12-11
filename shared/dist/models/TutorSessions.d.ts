@@ -14,6 +14,8 @@ export interface TutorSessionsAttributes {
     createdAt?: Date;
     updatedAt?: Date;
     month: string;
+    totalSessions: number;
+    sessionsCompleted: number;
 }
 export type TutorSessionsCreationAttributes = Optional<TutorSessionsAttributes, "id">;
 export declare class TutorSessions extends Model<TutorSessionsAttributes, TutorSessionsCreationAttributes> implements TutorSessionsAttributes {
@@ -31,5 +33,7 @@ export declare class TutorSessions extends Model<TutorSessionsAttributes, TutorS
     readonly updatedAt: Date;
     status: 'active' | 'cancelled';
     month: string;
+    totalSessions: number;
+    sessionsCompleted: number;
 }
 export declare function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessions;

@@ -48,6 +48,14 @@ const routes = {
   PAYFAST_IPN: '/parent/payfast/ipn',
   SUBSCRIPTION_STATUS: '/parent/subscriptions/status',
   SUBSCRIPTION_CHARGE: '/parent/subscriptions/charge',
+  
+  // PayFast Tokenization routes
+  PAYFAST_GET_INSTRUMENTS: '/parent/payfast/instruments',
+  PAYFAST_RECURRING_OTP: '/parent/payfast/recurring/otp',
+  PAYFAST_INITIATE_RECURRING: '/parent/payfast/recurring/initiate',
+  
+  // PayFast Callback routes
+  PAYFAST_SUCCESS: '/parent/payfast/success',
 };
 
 export default routes;

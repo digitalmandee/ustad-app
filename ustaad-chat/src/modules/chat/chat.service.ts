@@ -14,7 +14,7 @@ import {
   ConversationStatus,
   ConversationType,
   MessageStatus,
-  MessageType,
+  MessageType, 
   OfferStatus,
   UserRole,
 } from '../../constant/enums';
@@ -105,6 +105,10 @@ export default class ChatService {
           throw new BadRequestError("Offer already exists for this parent's child");
         }
 
+
+        console.log("offerData", offerData);
+        
+        
         const savedOfferdata = await Offer.create(
           {
             conversationId: messageData.conversationId,
@@ -114,15 +118,17 @@ export default class ChatService {
             childName: offerData.childName.toLowerCase(),
             amountMonthly: offerData.amountMonthly,
             subject: offerData.subject,
+            sessions: offerData.sessions,
             startDate: offerData.startDate,
             startTime: offerData.startTime,
             endTime: offerData.endTime,
             description: offerData.description || null,
             status: OfferStatus.PENDING, // Default or as needed
             daysOfWeek: offerData.daysOfWeek,
-          },
+          } as any,
           { transaction }
         );
+
         await message.update(
           {
             metadata: {

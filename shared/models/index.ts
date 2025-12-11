@@ -66,7 +66,7 @@ export function initAllModels(sequelize: Sequelize) {
   initFileModel(sequelize);
   initHelpRequestsModel(sequelize);
   initChildNotesModel(sequelize);
-  initNotificationModel(sequelize);
+  // initNotificationModel(sequelize);
 
   initPaymentRequestsModel(sequelize);
   initContractReviewModel(sequelize);

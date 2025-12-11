@@ -4,7 +4,6 @@ export interface ParentSubscriptionAttributes {
     parentId: string;
     tutorId: string;
     offerId: string;
-    stripeSubscriptionId: string;
     status: string;
     planType: string;
     startDate: Date;
@@ -28,7 +27,6 @@ export declare class ParentSubscription extends Model<ParentSubscriptionAttribut
     parentId: string;
     tutorId: string;
     offerId: string;
-    stripeSubscriptionId: string;
     status: string;
     planType: string;
     startDate: Date;

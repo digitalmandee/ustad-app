@@ -63,9 +63,12 @@ export class PayFastService {
       env: (process.env.PAYFAST_ENV as "UAT" | "LIVE") || "UAT",
       merchantName: process.env.PAYFAST_MERCHANT_NAME || "Test Merchant",
       currencyCode: process.env.PAYFAST_CURRENCY_CODE || "PKR",
-      successUrl: process.env.PAYFAST_SUCCESS_URL || "",
-      failureUrl: process.env.PAYFAST_FAILURE_URL || "",
-      checkoutUrl: process.env.PAYFAST_CHECKOUT_URL || "",
+      // successUrl: process.env.PAYFAST_SUCCESS_URL || "https://fasdfsadfasdfasdfsf.com/payfast/success",
+      successUrl: "https://583cfb3ef492.ngrok-free.app/parent/payfast/success",
+      failureUrl: "https://583cfb3ef492.ngrok-free.app/parent/payfast/failure",
+      // failureUrl: process.env.PAYFAST_FAILURE_URL || "https://fasdfsadfasdfasdfsf.com/payfast/success",
+      // checkoutUrl: `${process.env.PAYFAST_CHECKOUT_URL}/api/payfast/ipn` || "",
+      checkoutUrl: "https://583cfb3ef492.ngrok-free.app/api/payfast/ipn",
     };
 
     if (!this.config.merchantId || !this.config.securedKey) {
@@ -82,6 +85,15 @@ export class PayFastService {
       : "https://ipguat.apps.net.pk/Ecommerce/api/Transaction";
   }
 
+  /**
+   * Get PayFast Tokenization API base URL based on environment
+   */
+  // https://apipxyuat.apps.net.pk:8443
+  private getTokenizationBaseUrl(): string {
+    return this.config.env === "LIVE"
+      ? "https://apipxy.apps.net.pk:8443/api"
+      : "https://apipxyuat.apps.net.pk:8443/api";
+  }
   /**
    * Get PayFast access token
    */
@@ -117,6 +129,9 @@ export class PayFastService {
           },
         }
       );
+
+      console.log("response", response);
+      
 
       if (response.status === 200) {
         this.accessToken = response.data.ACCESS_TOKEN;
@@ -196,6 +211,10 @@ export class PayFastService {
       
       const token = await this.getAccessToken(basketId, Number(request.amount).toFixed(2));
       // Format order date
+
+
+      console.log("token", token);
+      
       const orderDate = new Date().toISOString().replace("T", " ").substring(0, 19);
 
       // Prepare form fields
@@ -313,7 +332,195 @@ export class PayFastService {
       );
     }
   }
+
+  /**
+   * 3.1 Get Access Token for Tokenization APIs
+   */
+  async getTokenizationAccessToken(): Promise<string> {
+    try {
+      const url = `${this.getTokenizationBaseUrl()}/token`;
+
+      const response = await axios.post(
+        url,
+        new URLSearchParams({
+          merchant_id: this.config.merchantId,
+          secured_key: this.config.securedKey,
+          grant_type: "client_credentials",
+        }),
+        {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+
+      if (response.status === 200 && response.data.access_token) {
+        return response.data.access_token;
+      }
+
+      throw new Error("Failed to get access token from PayFast tokenization API");
+    } catch (error: any) {
+      console.error("PayFast getTokenizationAccessToken error:", error.response?.data || error.message);
+      throw new GenericError(
+        error,
+        "Failed to get PayFast tokenization access token"
+      );
+    }
+  }
+
+  /**
+   * 3.15 Get Lists of Instruments
+   */
+  async getListsOfInstruments(
+    merchantUserId: string,
+    userMobileNumber: string
+  ): Promise<any> {
+    try {
+      const accessToken = await this.getTokenizationAccessToken();
+      const url = `${this.getTokenizationBaseUrl()}/user/instruments`;
+
+      const response = await axios.get(url, {
+        params: {
+          merchant_user_id: merchantUserId,
+          user_mobile_number: userMobileNumber,
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error("PayFast getListsOfInstruments error:", error.response?.data || error.message);
+      throw new GenericError(
+        error,
+        "Failed to get lists of instruments"
+      );
+    }
+  }
+
+  /**
+   * 3.5 Recurring Transaction OTP
+   */
+  async recurringTransactionOTP(request: {
+    instrumentToken: string;
+    merchantUserId: string;
+    userMobileNumber: string;
+    basketId: string;
+    orderDate: string;
+    txnamt: string;
+    cvv: string;
+    currencyCode?: string;
+    data3dsCallbackUrl?: string;
+    checkoutUrl?: string;
+  }): Promise<any> {
+    try {
+      const accessToken = await this.getTokenizationAccessToken();
+      const url = `${this.getTokenizationBaseUrl()}/transaction/recurring/otp`;
+
+      const formData = new URLSearchParams({
+        instrument_token: request.instrumentToken,
+        merchant_user_id: request.merchantUserId,
+        user_mobile_number: request.userMobileNumber,
+        basket_id: request.basketId,
+        order_date: request.orderDate,
+        txnamt: request.txnamt,
+        cvv: request.cvv,
+        currency_code: request.currencyCode || this.config.currencyCode,
+      });
+
+      if (request.data3dsCallbackUrl) {
+        formData.append("data_3ds_callback_url", request.data3dsCallbackUrl);
+      }
+      if (request.checkoutUrl) {
+        formData.append("checkout_url", request.checkoutUrl);
+      }
+
+      const response = await axios.post(url, formData, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error("PayFast recurringTransactionOTP error:", error.response?.data || error.message);
+      throw new GenericError(
+        error,
+        "Failed to initiate recurring transaction OTP"
+      );
+    }
+  }
+
+  /**
+   * 3.6 Initiate Recurring Payment
+   */
+  async initiateRecurringPayment(request: {
+    instrumentToken: string;
+    merchantUserId: string;
+    userMobileNumber: string;
+    basketId: string;
+    orderDate: string;
+    txndesc: string;
+    txnamt: string;
+    cvv: string;
+    transactionId?: string;
+    currencyCode?: string;
+    otp?: string;
+    data3dsSecureId?: string;
+    data3dsPares?: string;
+    checkoutUrl?: string;
+  }): Promise<any> {
+    try {
+      const accessToken = await this.getTokenizationAccessToken();
+      const url = `${this.getTokenizationBaseUrl()}/transaction/recurring`;
+
+      const formData = new URLSearchParams({
+        instrument_token: request.instrumentToken,
+        merchant_user_id: request.merchantUserId,
+        user_mobile_number: request.userMobileNumber,
+        basket_id: request.basketId,
+        order_date: request.orderDate,
+        txndesc: request.txndesc,
+        txnamt: request.txnamt,
+        cvv: request.cvv,
+        currency_code: request.currencyCode || this.config.currencyCode,
+      });
+
+      if (request.otp) {
+        formData.append("otp", request.otp);
+      }
+      if (request.transactionId) {
+        formData.append("transaction_id", request.transactionId);
+      }
+      if (request.data3dsSecureId) {
+        formData.append("data_3ds_secureid", request.data3dsSecureId);
+      }
+      if (request.data3dsPares) {
+        formData.append("data_3ds_pares", request.data3dsPares);
+      }
+      if (request.checkoutUrl) {
+        formData.append("checkout_url", request.checkoutUrl);
+      }
+
+      const response = await axios.post(url, formData, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      return response.data;
+    } catch (error: any) {
+      console.error("PayFast initiateRecurringPayment error:", error.response?.data || error.message);
+      throw new GenericError(
+        error,
+        "Failed to initiate recurring payment"
+      );
+    }
+  }
 }
 
 export default PayFastService;
-

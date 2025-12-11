@@ -19,6 +19,7 @@ interface OfferAttributes {
   description?: string;
   status: OfferStatus;
   daysOfWeek: string[];
+  sessions: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -41,6 +42,7 @@ export class Offer extends Model<OfferAttributes, OfferCreationAttributes>
   public startDate!: Date;
   public startTime!: string;
   public endTime!: string;
+  public sessions!: number;
   public description!: string;
   public status!: OfferStatus;
   public daysOfWeek!: string[];
@@ -112,6 +114,10 @@ export function initOfferModel(sequelize: Sequelize): typeof Offer {
       },
       endTime: {
         type: DataTypes.TIME,
+        allowNull: false,
+      },
+      sessions: {
+        type: DataTypes.INTEGER,
         allowNull: false,
       },
       description: {

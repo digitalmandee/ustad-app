@@ -15,6 +15,7 @@ interface OfferAttributes {
     description?: string;
     status: OfferStatus;
     daysOfWeek: string[];
+    sessions: number;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -32,6 +33,7 @@ export declare class Offer extends Model<OfferAttributes, OfferCreationAttribute
     startDate: Date;
     startTime: string;
     endTime: string;
+    sessions: number;
     description: string;
     status: OfferStatus;
     daysOfWeek: string[];

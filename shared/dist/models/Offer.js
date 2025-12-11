@@ -74,6 +74,10 @@ function initOfferModel(sequelize) {
             type: sequelize_1.DataTypes.TIME,
             allowNull: false,
         },
+        sessions: {
+            type: sequelize_1.DataTypes.INTEGER,
+            allowNull: false,
+        },
         description: {
             type: sequelize_1.DataTypes.TEXT,
             allowNull: true,

@@ -1,0 +1,303 @@
+{
+	"info": {
+		"_postman_id": "51a5b720-70ea-4e63-bc52-ab53348075e1",
+		"name": "Tokenization with CVV",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "41776497"
+	},
+	"item": [
+		{
+			"name": "3.1 Get Access Token",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "merchant_id",
+							"value": "102",
+							"type": "text"
+						},
+						{
+							"key": "secured_key",
+							"value": "zWHjBp2AlttNu1sK",
+							"type": "text"
+						},
+						{
+							"key": "grant_type",
+							"value": "client_credentials",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://apipxy.apps.net.pk:8443/api/token",
+					"protocol": "https",
+					"host": [
+						"apipxy",
+						"apps",
+						"net",
+						"pk"
+					],
+					"port": "8443",
+					"path": [
+						"api",
+						"token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3.15 GetListsOfInstruments",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "8f1825f92ab4f72ffb2eb23936d351324f76e9514f974ab5843acdc9bc8e7238",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://apipxy.apps.net.pk:8443/api/user/instruments?merchant_user_id=03000000034&user_mobile_number=03000000034",
+					"protocol": "https",
+					"host": [
+						"apipxy",
+						"apps",
+						"net",
+						"pk"
+					],
+					"port": "8443",
+					"path": [
+						"api",
+						"user",
+						"instruments"
+					],
+					"query": [
+						{
+							"key": "merchant_user_id",
+							"value": "03000000034"
+						},
+						{
+							"key": "user_mobile_number",
+							"value": "03000000034"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3.5 RecurringTransactionOTP",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "8f1825f92ab4f72ffb2eb23936d351324f76e9514f974ab5843acdc9bc8e7238",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "instrument_token",
+							"value": "97e232fd35afdb1777fe0b2a5d2dd1c020aba0c8c0dbf7b9e7b667f5e939d3c7",
+							"type": "text"
+						},
+						{
+							"key": "merchant_user_id",
+							"value": "03000000034",
+							"type": "text"
+						},
+						{
+							"key": "user_mobile_number",
+							"value": "03000000034",
+							"type": "text"
+						},
+						{
+							"key": "basket_id",
+							"value": "ITEM-0145544",
+							"type": "text"
+						},
+						{
+							"key": "order_date",
+							"value": "2024-09-14",
+							"type": "text"
+						},
+						{
+							"key": "txnamt",
+							"value": "2",
+							"type": "text"
+						},
+						{
+							"key": "cvv",
+							"value": "398",
+							"type": "text"
+						},
+						{
+							"key": "currency_code",
+							"value": "PKR",
+							"type": "text"
+						},
+						{
+							"key": "data_3ds_pagemode",
+							"value": "",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "data_3ds_callback_url",
+							"value": "https://typedwebhook.tools/webhook/79745aea-f966-48a9-903d-20d35f8aa6bf",
+							"type": "text"
+						},
+						{
+							"key": "checkout_url",
+							"value": "https://typedwebhook.tools/webhook/a44bc9ab-b34e-40fc-8f4b-285555e49796",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://apipxy.apps.net.pk:8443/api/transaction/recurring/otp",
+					"protocol": "https",
+					"host": [
+						"apipxy",
+						"apps",
+						"net",
+						"pk"
+					],
+					"port": "8443",
+					"path": [
+						"api",
+						"transaction",
+						"recurring",
+						"otp"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3.6 InitiateRecurringPayment",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "ce8f282baab4d03974566d98e92f0b1e9de2a517433ad6a425986cee3801def3",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "instrument_token",
+							"value": "635fbac841a9ebb42e4be9ab2934094e96407050c608435c40ce2dc214a3b6e1",
+							"type": "text"
+						},
+						{
+							"key": "merchant_user_id",
+							"value": "03008888184",
+							"type": "text"
+						},
+						{
+							"key": "user_mobile_number",
+							"value": "03008888184",
+							"type": "text"
+						},
+						{
+							"key": "basket_id",
+							"value": "ITEM-Z014",
+							"type": "text"
+						},
+						{
+							"key": "order_date",
+							"value": "2025-02-13",
+							"type": "text"
+						},
+						{
+							"key": "txndesc",
+							"value": "product",
+							"type": "text"
+						},
+						{
+							"key": "txnamt",
+							"value": "3",
+							"type": "text"
+						},
+						{
+							"key": "otp",
+							"value": "",
+							"type": "text",
+							"disabled": true
+						},
+						{
+							"key": "cvv",
+							"value": "123",
+							"type": "text"
+						},
+						{
+							"key": "transaction_id",
+							"value": "73b81195-b808-225a-4d53-c7a096a590ff",
+							"type": "text"
+						},
+						{
+							"key": "currency_code",
+							"value": "PKR",
+							"type": "text"
+						},
+						{
+							"key": "data_3ds_secureid",
+							"value": "73b81195-b808-225a-4d53-c7a096a590ff",
+							"type": "text"
+						},
+						{
+							"key": "data_3ds_pares",
+							"value": "73b81195-b808-225a-4d53-c7a096a590ff",
+							"type": "text"
+						},
+						{
+							"key": "checkout_url",
+							"value": "https://typedwebhook.tools/webhook/281067f9-0bf9-4627-9224-5e40f410161b",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "https://apipxyuat.apps.net.pk:8443/api/transaction/recurring",
+					"protocol": "https",
+					"host": [
+						"apipxyuat",
+						"apps",
+						"net",
+						"pk"
+					],
+					"port": "8443",
+					"path": [
+						"api",
+						"transaction",
+						"recurring"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

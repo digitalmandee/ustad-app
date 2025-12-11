@@ -22,31 +22,9 @@ function initPaymentMethodModel(sequelize) {
                 key: "id",
             },
         },
-        stripePaymentMethodId: {
+        cvv: {
             type: sequelize_1.DataTypes.STRING,
-            allowNull: false,
-            unique: true,
-        },
-        cardBrand: {
-            type: sequelize_1.DataTypes.STRING,
-            allowNull: false,
-        },
-        cardLast4: {
-            type: sequelize_1.DataTypes.STRING,
-            allowNull: false,
-        },
-        cardExpMonth: {
-            type: sequelize_1.DataTypes.INTEGER,
-            allowNull: false,
-        },
-        cardExpYear: {
-            type: sequelize_1.DataTypes.INTEGER,
-            allowNull: false,
-        },
-        isDefault: {
-            type: sequelize_1.DataTypes.BOOLEAN,
-            allowNull: false,
-            defaultValue: false,
+            allowNull: true,
         },
         // PayFast fields
         instrumentToken: {
