@@ -640,34 +640,27 @@ export default class ParentController {
   ): Promise<void> => {
     try {
       const { id: userId } = req.user;
-      const {
-        instrumentToken,
-        basketId,
-        orderDate,
-        txnamt,
-        cvv,
-        currencyCode,
-        data3dsCallbackUrl,
-        checkoutUrl,
-      } = req.body;
+      const { cvv, cardId } = req.body;
 
-      if (!instrumentToken || !basketId || !orderDate || !txnamt || !cvv) {
+      if (!cvv) {
         return sendErrorResponse(
           res,
-          "instrumentToken, basketId, orderDate, txnamt, and cvv are required",
+          "CVV is required",
+          400
+        );
+      }
+
+      if (!cardId) {
+        return sendErrorResponse(
+          res,
+          "cardId is required",
           400
         );
       }
 
       const result = await this.parentService.recurringTransactionOTP(userId, {
-        instrumentToken,
-        basketId,
-        orderDate,
-        txnamt,
         cvv,
-        currencyCode,
-        data3dsCallbackUrl,
-        checkoutUrl,
+        cardId,
       });
 
       return sendSuccessResponse(
@@ -785,6 +778,74 @@ export default class ParentController {
       const errorMessage =
         error?.message || "Something went wrong while processing payment success";
       return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  handle3DSCallback = async (req: Request, res: Response): Promise<void> => {
+    try {
+      // Log the entire request
+      console.log("=".repeat(80));
+      console.log("📥 3DS CALLBACK WEBHOOK RECEIVED");
+      console.log("=".repeat(80));
+      
+      // Log timestamp
+      console.log("⏰ Timestamp:", new Date().toISOString());
+      
+      // Log HTTP Method
+      console.log("🔹 Method:", req.method);
+      
+      // Log URL
+      console.log("🔹 URL:", req.url);
+      console.log("🔹 Original URL:", req.originalUrl);
+      console.log("🔹 Path:", req.path);
+      
+      // Log Headers
+      console.log("\n📋 Headers:");
+      console.log(JSON.stringify(req.headers, null, 2));
+      
+      // Log Query Parameters
+      console.log("\n🔍 Query Parameters:");
+      console.log(JSON.stringify(req.query, null, 2));
+      
+      // Log Body
+      console.log("\n📦 Request Body:");
+      console.log(JSON.stringify(req.body, null, 2));
+      
+      // Log Params
+      console.log("\n🎯 Route Params:");
+      console.log(JSON.stringify(req.params, null, 2));
+      
+      // Log IP Address
+      console.log("\n🌐 IP Address:", req.ip);
+      console.log("🌐 Remote Address:", req.socket.remoteAddress);
+      
+      // Log Raw Body if available
+      if ((req as any).rawBody) {
+        console.log("\n📄 Raw Body:");
+        console.log((req as any).rawBody);
+      }
+      
+      console.log("=".repeat(80));
+      console.log("✅ 3DS CALLBACK WEBHOOK LOGGED SUCCESSFULLY");
+      console.log("=".repeat(80));
+      
+      // Return success response
+      return sendSuccessResponse(
+        res,
+        "3DS callback received and logged",
+        200,
+        {
+          logged: true,
+          timestamp: new Date().toISOString(),
+        }
+      );
+    } catch (error: any) {
+      console.error("❌ Error logging 3DS callback:", error);
+      return sendErrorResponse(
+        res,
+        "Error processing 3DS callback",
+        400
+      );
     }
   };
 }

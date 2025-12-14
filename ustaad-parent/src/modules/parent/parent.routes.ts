@@ -185,4 +185,10 @@ router.get(
   parentController.handlePayFastSuccess
 );
 
+// 3DS Callback Webhook (no authentication - called by PayFast server)
+router.post(
+  routes.PAYFAST_3DS_CALLBACK,
+  parentController.handle3DSCallback
+);
+
 export { router as tutorRouter };

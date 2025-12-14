@@ -56,6 +56,9 @@ const routes = {
   
   // PayFast Callback routes
   PAYFAST_SUCCESS: '/parent/payfast/success',
+  
+  // 3DS Callback webhook
+  PAYFAST_3DS_CALLBACK: '/parent/payfast/3dscallback',
 };
 
 export default routes;

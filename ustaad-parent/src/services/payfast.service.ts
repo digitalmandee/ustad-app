@@ -64,11 +64,11 @@ export class PayFastService {
       merchantName: process.env.PAYFAST_MERCHANT_NAME || "Test Merchant",
       currencyCode: process.env.PAYFAST_CURRENCY_CODE || "PKR",
       // successUrl: process.env.PAYFAST_SUCCESS_URL || "https://fasdfsadfasdfasdfsf.com/payfast/success",
-      successUrl: "https://583cfb3ef492.ngrok-free.app/parent/payfast/success",
-      failureUrl: "https://583cfb3ef492.ngrok-free.app/parent/payfast/failure",
+      successUrl: "https://63fa2444770f.ngrok-free.app/parent/payfast/success",
+      failureUrl: "https://63fa2444770f.ngrok-free.app /parent/payfast/failure",
       // failureUrl: process.env.PAYFAST_FAILURE_URL || "https://fasdfsadfasdfasdfsf.com/payfast/success",
       // checkoutUrl: `${process.env.PAYFAST_CHECKOUT_URL}/api/payfast/ipn` || "",
-      checkoutUrl: "https://583cfb3ef492.ngrok-free.app/api/payfast/ipn",
+      checkoutUrl: "https://63fa2444770f.ngrok-free.app/api/payfast/ipn",
     };
 
     if (!this.config.merchantId || !this.config.securedKey) {
@@ -94,6 +94,20 @@ export class PayFastService {
       ? "https://apipxy.apps.net.pk:8443/api"
       : "https://apipxyuat.apps.net.pk:8443/api";
   }
+
+  /**
+   * Get checkout URL from config
+   */
+  getCheckoutUrl(): string {
+    return this.config.checkoutUrl;
+  }
+
+  /**
+   * Get currency code from config
+   */
+  getCurrencyCode(): string {
+    return this.config.currencyCode;
+  }
   /**
    * Get PayFast access token
    */
@@ -105,14 +119,6 @@ export class PayFastService {
 
     try {
       const url = `${this.getBaseUrl()}/GetAccessToken`;
-
-
-      console.log("url", url);
-      console.log("this.config.merchantId", this.config.merchantId);
-      console.log("this.config.securedKey", this.config.securedKey);
-      console.log("basketId", basketId);
-      console.log("txnAmt", txnAmt);
-      console.log("this.config.currencyCode", this.config.currencyCode);
       
       const response = await axios.post(
         url,
@@ -130,7 +136,7 @@ export class PayFastService {
         }
       );
 
-      console.log("response", response);
+      // console.log("response", response);
       
 
       if (response.status === 200) {
@@ -153,7 +159,7 @@ export class PayFastService {
   /**
    * Generate unique basket ID
    */
-  generateBasketId(prefix: string = "SUB"): string {
+  public generateBasketId(prefix: string = "SUB"): string {
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(2, 8).toUpperCase();
     return `${prefix}-${timestamp}-${random}`;
@@ -339,49 +345,56 @@ export class PayFastService {
   async getTokenizationAccessToken(): Promise<string> {
     try {
       const url = `${this.getTokenizationBaseUrl()}/token`;
+  
+      const body = new URLSearchParams();
+      body.append("merchant_id", this.config.merchantId);
+      body.append("secured_key", this.config.securedKey);
+      body.append("grant_type", "client_credentials");
+  
+      const response = await axios.post(url, body.toString(), {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
 
-      const response = await axios.post(
-        url,
-        new URLSearchParams({
-          merchant_id: this.config.merchantId,
-          secured_key: this.config.securedKey,
-          grant_type: "client_credentials",
-        }),
-        {
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-          },
-        }
-      );
 
-      if (response.status === 200 && response.data.access_token) {
-        return response.data.access_token;
+      // console.log("response", response.data);
+      
+  
+      if (response.status === 200 && response.data?.token) {
+        return response.data.token;
       }
-
+  
       throw new Error("Failed to get access token from PayFast tokenization API");
     } catch (error: any) {
-      console.error("PayFast getTokenizationAccessToken error:", error.response?.data || error.message);
+
+      console.log("error", error);
+      
+      console.error(
+        "PayFast getTokenizationAccessToken error:",
+        error.response?.data || error.message
+      );
+  
       throw new GenericError(
         error,
         "Failed to get PayFast tokenization access token"
       );
     }
   }
+  
 
   /**
    * 3.15 Get Lists of Instruments
    */
   async getListsOfInstruments(
-    merchantUserId: string,
     userMobileNumber: string
   ): Promise<any> {
     try {
       const accessToken = await this.getTokenizationAccessToken();
       const url = `${this.getTokenizationBaseUrl()}/user/instruments`;
-
       const response = await axios.get(url, {
         params: {
-          merchant_user_id: merchantUserId,
+          merchant_user_id: userMobileNumber,
           user_mobile_number: userMobileNumber,
         },
         headers: {
@@ -389,6 +402,8 @@ export class PayFastService {
           "Content-Type": "application/json",
         },
       });
+
+
 
       return response.data;
     } catch (error: any) {

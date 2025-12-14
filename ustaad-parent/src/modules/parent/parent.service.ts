@@ -1927,15 +1927,20 @@ export default class ParentService {
         throw new NotFoundError("User not found");
       }
 
-      const merchantUserId = user.phone || user.id;
       const userMobileNumber = user.phone || "";
 
       const result = await this.payfastService.getListsOfInstruments(
-        merchantUserId,
         userMobileNumber
       );
 
-      return result;
+
+      const cards = result.map((item: any) => ({
+        cardNumber: item.instrument_alias || "",
+        isExpired: item.is_expired ? true : false,
+        id: item.unique_identifier || ""
+      }));
+
+      return cards;
     } catch (error) {
       console.error("Error in getListsOfInstruments:", error);
       throw error;
@@ -1944,18 +1949,13 @@ export default class ParentService {
 
   /**
    * Recurring Transaction OTP
+   * User sends CVV and cardId, everything else is fetched from user's active subscription or instruments list
    */
   async recurringTransactionOTP(
     userId: string,
     data: {
-      instrumentToken: string;
-      basketId: string;
-      orderDate: string;
-      txnamt: string;
       cvv: string;
-      currencyCode?: string;
-      data3dsCallbackUrl?: string;
-      checkoutUrl?: string;
+      cardId: string;
     }
   ) {
     try {
@@ -1964,20 +1964,84 @@ export default class ParentService {
         throw new NotFoundError("User not found");
       }
 
-      const merchantUserId = user.phone || user.id;
+      const merchantUserId = user.phone;
       const userMobileNumber = user.phone || "";
 
+      // Find user's subscription
+      const subscription = await ParentSubscription.findOne({
+        where: {
+          parentId: userId,
+        },
+        order: [["createdAt", "DESC"]],
+      });
+
+      let instrumentToken: string;
+
+      // Check if subscription has instrumentToken
+      if (subscription && subscription.instrumentToken) {
+        // Use instrumentToken from subscription
+        instrumentToken = subscription.instrumentToken;
+      } else {
+        // Fetch instruments list and match cardId with unique_identifier
+        const instruments = await this.payfastService.getListsOfInstruments(
+          userMobileNumber
+        );
+
+        // Find the instrument matching the cardId (unique_identifier)
+        const matchedInstrument = instruments.find(
+          (item: any) => item.unique_identifier === data.cardId
+        );
+
+        if (!matchedInstrument) {
+          throw new UnProcessableEntityError(
+            `No payment instrument found with cardId: ${data.cardId}`
+          );
+        }
+
+        if (!matchedInstrument.instrument_token) {
+          throw new UnProcessableEntityError(
+            "Selected payment instrument does not have an instrument_token"
+          );
+        }
+
+        instrumentToken = matchedInstrument.instrument_token;
+      }
+
+      // Generate new basket ID for this transaction
+      const basketId = this.payfastService.generateBasketId("RECUR");
+      
+      // Generate order date (current date in required format)
+      const orderDate = new Date().toISOString().replace("T", " ").substring(0, 19);
+      
+      // Get amount from subscription if available, otherwise use a default or throw error
+      let txnamt: string;
+      if (subscription && subscription.amount) {
+        txnamt = Number(subscription.amount).toFixed(2);
+      } else {
+        // If no subscription, you might want to get amount from offer or throw error
+        throw new UnProcessableEntityError(
+          "No subscription found. Cannot determine transaction amount."
+        );
+      }
+
+      // Get callback URLs from PayFast service config
+      const data3dsCallbackUrl = `${process.env.API_BASE_URL || "https://63fa2444770f.ngrok-free.app"}/parent/payfast/3dscallback`;
+      const checkoutUrl = this.payfastService.getCheckoutUrl();
+      
+      // Get currency code from PayFast service config
+      const currencyCode = this.payfastService.getCurrencyCode();
+
       const result = await this.payfastService.recurringTransactionOTP({
-        instrumentToken: data.instrumentToken,
+        instrumentToken,
         merchantUserId,
         userMobileNumber,
-        basketId: data.basketId,
-        orderDate: data.orderDate,
-        txnamt: data.txnamt,
+        basketId,
+        orderDate,
+        txnamt,
         cvv: data.cvv,
-        currencyCode: data.currencyCode,
-        data3dsCallbackUrl: data.data3dsCallbackUrl,
-        checkoutUrl: data.checkoutUrl,
+        currencyCode: currencyCode,
+        data3dsCallbackUrl,
+        checkoutUrl,
       });
 
       return result;
@@ -2180,7 +2244,6 @@ export default class ParentService {
               paymentProvider: "PAYFAST",
             },
           });
-          // }
         }
       }
 
