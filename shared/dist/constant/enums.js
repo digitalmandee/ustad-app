@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TutorTransactionType = exports.ParentSubscriptionStatus = exports.NotificationType = exports.HelpRequestType = exports.HelpRequestStatus = exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.IsOnBaord = exports.UserRole = void 0;
+exports.TutorTransactionType = exports.ParentSubscriptionStatus = exports.NotificationType = exports.HelpRequestType = exports.HelpRequestStatus = exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.Gender = exports.IsOnBaord = exports.UserRole = void 0;
 var UserRole;
 (function (UserRole) {
     UserRole["ADMIN"] = "ADMIN";
@@ -16,6 +16,13 @@ var IsOnBaord;
     IsOnBaord["APPROVED"] = "approved";
     IsOnBaord["IN_REVIW"] = "in review";
 })(IsOnBaord || (exports.IsOnBaord = IsOnBaord = {}));
+var Gender;
+(function (Gender) {
+    Gender["MALE"] = "male";
+    Gender["FEMALE"] = "female";
+    Gender["OTHER"] = "other";
+    Gender["PREFER_NOT_TO_SAY"] = "prefer_not_to_say";
+})(Gender || (exports.Gender = Gender = {}));
 var MessageType;
 (function (MessageType) {
     MessageType["TEXT"] = "TEXT";

@@ -13,7 +13,7 @@ export default class GoogleAuthController {
   // Handle Google signup with user data from frontend
   googleSignup = async (req: Request, res: Response) => {
     try {
-      const { email, googleId, fullName, image, accessToken, role } = req.body;
+      const { email, googleId, fullName, image, accessToken, role, gender } = req.body;
       const deviceId = req.headers.deviceid as string;
 
       // Validate required fields
@@ -33,6 +33,7 @@ export default class GoogleAuthController {
         fullName,
         image,
         accessToken,
+        gender,
         role,
       };
 

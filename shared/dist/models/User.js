@@ -36,6 +36,11 @@ function initUserModel(sequelize) {
             allowNull: false,
             defaultValue: enums_2.IsOnBaord.REQUIRED,
         },
+        gender: {
+            type: sequelize_1.DataTypes.ENUM(...Object.values(enums_1.Gender)),
+            allowNull: false,
+            defaultValue: enums_1.Gender.OTHER,
+        },
         fullName: {
             type: sequelize_1.DataTypes.STRING,
             allowNull: false,

@@ -1,4 +1,4 @@
-import { IsOnBaord, UserRole } from "@ustaad/shared";
+import { Gender, IsOnBaord, UserRole } from "@ustaad/shared";
 import {
   User,
   Parent,
@@ -289,6 +289,7 @@ export default class AdminService {
       email: userData.email,
       password: hashedPassword,
       role: UserRole.ADMIN,
+      gender: Gender.OTHER,
       isActive: true,
       isAdminVerified: true,
       isOnBoard: IsOnBaord.APPROVED,

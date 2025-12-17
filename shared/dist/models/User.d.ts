@@ -1,5 +1,5 @@
 import { Model, Optional, Sequelize } from "sequelize";
-import { UserRole } from "../constant/enums";
+import { UserRole, Gender } from "../constant/enums";
 import { IsOnBaord } from "../constant/enums";
 interface UserAttributes {
     id: string;
@@ -7,6 +7,7 @@ interface UserAttributes {
     isActive: boolean;
     isAdminVerified: boolean;
     isOnBoard: IsOnBaord;
+    gender: Gender;
     fullName: string;
     password?: string | null;
     cnic?: string | null;
@@ -25,7 +26,7 @@ interface UserAttributes {
     createdAt?: Date;
     updatedAt?: Date;
 }
-interface UserCreationAttributes extends Optional<UserAttributes, "id" | "role" | "isActive" | "isAdminVerified" | "isOnBoard" | "password" | "cnic" | "address" | "city" | "state" | "country" | "image" | "isEmailVerified" | "phone" | "isPhoneVerified" | "googleId" | "deviceId" | "createdAt" | "updatedAt" | "isDeleted"> {
+interface UserCreationAttributes extends Optional<UserAttributes, "id" | "role" | "isActive" | "isAdminVerified" | "isOnBoard" | "gender" | "password" | "cnic" | "address" | "city" | "state" | "country" | "image" | "isEmailVerified" | "phone" | "isPhoneVerified" | "googleId" | "deviceId" | "createdAt" | "updatedAt" | "isDeleted"> {
 }
 export declare class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
     id: string;
@@ -33,6 +34,7 @@ export declare class User extends Model<UserAttributes, UserCreationAttributes> 
     isActive: boolean;
     isAdminVerified: boolean;
     isOnBoard: IsOnBaord;
+    gender: Gender;
     fullName: string;
     password: string | null;
     cnic: string | null;

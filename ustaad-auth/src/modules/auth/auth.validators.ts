@@ -1,6 +1,7 @@
 import { body } from 'express-validator';
 import constant from '../../constant/constant';
 import { OtpPurpose, OtpType, UserRole } from '../../constant/enums';
+import { Gender } from '@ustaad/shared';
 
 export const signupValidationRules = () => {
   return [
@@ -22,6 +23,16 @@ export const signupValidationRules = () => {
       .withMessage(
         constant.AUTH.NAME_LENGTH_MAX(constant.NAME.MIN_LENGTH, constant.NAME.MAX_LENGTH)
       ),
+
+    body('gender')
+      .exists()
+      .withMessage(constant.VALIDATION.KEY_MISSING('gender'))
+      .bail()
+      .isString()
+      .withMessage(constant.VALIDATION.VALUE_MUST_BE_STRING('gender'))
+      .bail()
+      .isIn(Object.values(Gender))
+      .withMessage('Gender must be one of: male, female, other, prefer_not_to_say'),
 
     body('password')
       .exists()
@@ -131,6 +142,14 @@ export const googleSignupValidationRules = () => {
       .bail()
       .notEmpty()
       .withMessage(constant.VALIDATION.EMPTY_VALUE('fullName')),
+    
+    body('gender')
+      .optional()
+      .isString()
+      .withMessage(constant.VALIDATION.VALUE_MUST_BE_STRING('gender'))
+      .bail()
+      .isIn(Object.values(Gender))
+      .withMessage('Gender must be one of: male, female, other, prefer_not_to_say'),
     
     body('role')
       .exists()

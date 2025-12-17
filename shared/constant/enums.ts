@@ -13,6 +13,13 @@ export enum IsOnBaord {
   IN_REVIW = 'in review',
 }
 
+export enum Gender {
+  MALE = 'male',
+  FEMALE = 'female',
+  OTHER = 'other',
+  PREFER_NOT_TO_SAY = 'prefer_not_to_say',
+}
+
 export enum MessageType {
   TEXT = 'TEXT',
   IMAGE = 'IMAGE',

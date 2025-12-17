@@ -1,12 +1,13 @@
 import { User } from "@ustaad/shared";
 import jwt from "jsonwebtoken";
-import { UserRole, IsOnBaord } from "@ustaad/shared";
+import { UserRole, IsOnBaord, Gender } from "@ustaad/shared";
 import { UnProcessableEntityError } from "src/errors/unprocessable-entity.error";
 
 export interface GoogleUserData {
   email: string;
   googleId: string;
   fullName: string;
+  gender?: Gender;
   image?: string;
   accessToken?: string;
   role: UserRole;
@@ -18,7 +19,7 @@ export class GoogleAuthService {
     deviceId?: string
   ) {
     try {
-      const { email, googleId, fullName, image, role } = googleUserData;
+      const { email, googleId, fullName, image, role, gender } = googleUserData;
 
       if (!email || !googleId) {
         throw new Error("Email and Google ID are required");
@@ -47,6 +48,7 @@ export class GoogleAuthService {
         email,
         fullName,
         role, // ideally enforce a safe default
+        gender: gender || Gender.OTHER,
         isActive: true,
         isEmailVerified: true,
         isOnBoard: IsOnBaord.REQUIRED,

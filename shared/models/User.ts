@@ -1,7 +1,7 @@
 // user.model.ts
 import { Model, DataTypes, Optional, Sequelize } from "sequelize";
 
-import { UserRole } from "../constant/enums";
+import { UserRole, Gender } from "../constant/enums";
 import { IsOnBaord } from "../constant/enums";
 
 interface UserAttributes {
@@ -10,6 +10,7 @@ interface UserAttributes {
   isActive: boolean;
   isAdminVerified: boolean;
   isOnBoard: IsOnBaord;
+  gender: Gender;
 
   fullName: string;
   password?: string | null;
@@ -44,6 +45,7 @@ interface UserCreationAttributes
     | "isActive"
     | "isAdminVerified"
     | "isOnBoard"
+    | "gender"
     | "password"
     | "cnic"
     | "address"
@@ -70,6 +72,7 @@ export class User
   public isActive!: boolean;
   public isAdminVerified!: boolean;
   public isOnBoard!: IsOnBaord;
+  public gender!: Gender;
 
   public fullName!: string;
   public password!: string | null;
@@ -124,6 +127,11 @@ export function initUserModel(sequelize: Sequelize): typeof User {
         type: DataTypes.ENUM(...Object.values(IsOnBaord)),
         allowNull: false,
         defaultValue: IsOnBaord.REQUIRED,
+      },
+      gender: {
+        type: DataTypes.ENUM(...Object.values(Gender)),
+        allowNull: false,
+        defaultValue: Gender.OTHER,
       },
       fullName: {
         type: DataTypes.STRING,
