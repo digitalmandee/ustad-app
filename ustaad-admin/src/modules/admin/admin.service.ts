@@ -1,4 +1,4 @@
-import { Gender, IsOnBaord, UserRole } from "@ustaad/shared";
+import { Gender, IsOnBaord, ParentSubscriptionStatus, UserRole } from "@ustaad/shared";
 import {
   User,
   Parent,
@@ -23,69 +23,118 @@ import bcrypt from "bcrypt";
 
 export default class AdminService {
   async getStats(days?: number) {
-    let dateFilter = {};
+    const isRange = !!days && [7, 30, 90].includes(days);
 
-    // If days parameter is provided, filter by date range
-    if (days && [7, 30, 90].includes(days)) {
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - days);
+    const now = new Date();
 
-      dateFilter = {
-        createdAt: {
-          [Op.gte]: startDate,
-        },
+    const currentStart = isRange ? new Date(now.getTime() - days * 24 * 60 * 60 * 1000) : null;
+    const previousStart = isRange
+      ? new Date(now.getTime() - 2 * days * 24 * 60 * 60 * 1000)
+      : null;
+
+    const buildDateFilter = (start: Date, end: Date) => ({
+      createdAt: {
+        [Op.gte]: start,
+        [Op.lt]: end,
+      },
+    });
+
+    const fetchStats = async (dateFilter: any) => {
+      const [
+        totalUsers,
+        totalParents,
+        totalTutors,
+        totalSubscriptions,
+        activeSubscriptions,
+        completedSubscriptions,
+        totalTransactions,
+        revenueRaw,
+      ] = await Promise.all([
+        User.count({ where: { ...dateFilter } }),
+        User.count({ where: { role: UserRole.PARENT, ...dateFilter } }),
+        User.count({ where: { role: UserRole.TUTOR, ...dateFilter } }),
+        ParentSubscription.count({ where: { ...dateFilter } }),
+        ParentSubscription.count({
+          where: { status: ParentSubscriptionStatus.ACTIVE, ...dateFilter },
+        }),
+        ParentSubscription.count({
+          where: { status: ParentSubscriptionStatus.COMPLETED, ...dateFilter },
+        }),
+        ParentTransaction.count({ where: { ...dateFilter } }),
+        ParentTransaction.sum("amount", {
+          where: {
+            status: "created", // keep existing behavior
+            ...dateFilter,
+          },
+        }),
+      ]);
+
+      const totalRevenue = parseFloat(((revenueRaw as any) || 0).toString());
+
+      return {
+        totalUsers,
+        totalParents,
+        totalTutors,
+        totalSubscriptions,
+        activeSubscriptions,
+        completedSubscriptions,
+        totalTransactions,
+        totalRevenue,
+      };
+    };
+
+    if (!isRange) {
+      const totals = await fetchStats({});
+      return {
+        ...totals,
+        period: days ? `${days} days` : "all time",
       };
     }
 
-    const totalUsers = await User.count({
-      where: {
-        ...dateFilter,
-      },
-    });
+    const currentFilter = buildDateFilter(currentStart!, now);
+    const previousFilter = buildDateFilter(previousStart!, currentStart!);
 
-    const totalParents = await User.count({
-      where: {
-        role: UserRole.PARENT,
-        ...dateFilter,
-      },
-    });
+    const [current, previous] = await Promise.all([
+      fetchStats(currentFilter),
+      fetchStats(previousFilter),
+    ]);
 
-    const totalTutors = await User.count({
-      where: {
-        role: UserRole.TUTOR,
-        ...dateFilter,
-      },
-    });
+    const pct = (curr: number, prev: number) => {
+      if (prev === 0) return curr === 0 ? 0 : 100;
+      return Number((((curr - prev) / prev) * 100).toFixed(2));
+    };
 
-    // Get additional stats for the time period
-    const totalSubscriptions = await ParentSubscription.count({
-      where: {
-        ...dateFilter,
-      },
-    });
-
-    const totalTransactions = await ParentTransaction.count({
-      where: {
-        ...dateFilter,
-      },
-    });
-
-    const totalRevenue =
-      (await ParentTransaction.sum("amount", {
-        where: {
-          status: "created", // or whatever status indicates completed transactions
-          ...dateFilter,
-        },
-      })) || 0;
+    const delta = (curr: number, prev: number) => curr - prev;
 
     return {
-      totalUsers,
-      totalParents,
-      totalTutors,
-      totalSubscriptions,
-      totalTransactions,
-      totalRevenue: parseFloat(totalRevenue.toString()),
-      period: days ? `${days} days` : "all time",
+      ...current,
+      period: `${days} days`,
+      comparison: {
+        previousPeriod: {
+          ...previous,
+          period: `${days} days`,
+        },
+        change: {
+          totalUsers: { delta: delta(current.totalUsers, previous.totalUsers), percent: pct(current.totalUsers, previous.totalUsers) },
+          totalParents: { delta: delta(current.totalParents, previous.totalParents), percent: pct(current.totalParents, previous.totalParents) },
+          totalTutors: { delta: delta(current.totalTutors, previous.totalTutors), percent: pct(current.totalTutors, previous.totalTutors) },
+          totalSubscriptions: { delta: delta(current.totalSubscriptions, previous.totalSubscriptions), percent: pct(current.totalSubscriptions, previous.totalSubscriptions) },
+          activeSubscriptions: { delta: delta(current.activeSubscriptions, previous.activeSubscriptions), percent: pct(current.activeSubscriptions, previous.activeSubscriptions) },
+          completedSubscriptions: { delta: delta(current.completedSubscriptions, previous.completedSubscriptions), percent: pct(current.completedSubscriptions, previous.completedSubscriptions) },
+          totalTransactions: { delta: delta(current.totalTransactions, previous.totalTransactions), percent: pct(current.totalTransactions, previous.totalTransactions) },
+          totalRevenue: { delta: Number((current.totalRevenue - previous.totalRevenue).toFixed(2)), percent: pct(current.totalRevenue, previous.totalRevenue) },
+        },
+        range: {
+          current: {
+            start: currentStart!.toISOString(),
+            end: now.toISOString(),
+          },
+          previous: {
+            start: previousStart!.toISOString(),
+            end: currentStart!.toISOString(),
+          },
+        },
+      },
     };
   }
 
@@ -192,6 +241,19 @@ export default class AdminService {
       where: { tutorId: tutor.userId },
     });
 
+    // How many times this tutor has been hired (ACTIVE + COMPLETED subscriptions)
+    const timesHired = await ParentSubscription.count({
+      where: {
+        tutorId: tutor.userId,
+        status: {
+          [Op.in]: [
+            ParentSubscriptionStatus.ACTIVE,
+            ParentSubscriptionStatus.COMPLETED,
+          ],
+        },
+      },
+    });
+
     // Calculate total experience in years
     const totalExperience = experience.reduce((total, exp) => {
       const startDate = new Date(exp.startDate);
@@ -216,6 +278,7 @@ export default class AdminService {
       totalExperience,
       documents,
       transactions,
+      timesHired,
     };
   }
 

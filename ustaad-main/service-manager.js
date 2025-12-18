@@ -9,8 +9,8 @@ class ServiceManager {
   }
 
   // Load environment variables from service's develop.env file
-  loadServiceEnv(servicePath) {
-    const envPath = path.join(servicePath, 'develop.env');
+  loadServiceEnv(servicePath, envFile = 'develop.env') {
+    const envPath = path.join(servicePath, envFile);
     const env = { ...process.env };
     
     if (fs.existsSync(envPath)) {
@@ -38,16 +38,36 @@ class ServiceManager {
         }
       });
       
-      console.log(`📄 Loaded environment from ${servicePath}/develop.env`);
+      console.log(`📄 Loaded environment from ${servicePath}/${envFile}`);
     } else {
-      console.log(`⚠️  No develop.env found in ${servicePath}`);
+      console.log(`⚠️  No ${envFile} found in ${servicePath}`);
     }
     
     return env;
   }
 
+  getServiceEnvFile(servicePath) {
+    // Prefer explicit override
+    const override = process.env.SERVICE_ENV_FILE;
+    if (override) return override;
+
+    // If gateway NODE_ENV is already pointing to an env filename, keep it
+    if (process.env.NODE_ENV && process.env.NODE_ENV.endsWith('.env')) {
+      return process.env.NODE_ENV;
+    }
+
+    // Conventional production flag
+    if (process.env.NODE_ENV === 'production' || process.env.ENVIRONMENT === 'production') {
+      // If the service has a production.env, use it; otherwise fall back
+      const prodPath = path.join(servicePath, 'production.env');
+      if (fs.existsSync(prodPath)) return 'production.env';
+    }
+
+    return 'develop.env';
+  }
+
   // Start a service
-  startService(serviceName, port, command = 'npm', args = ['run', 'dev']) {
+  startService(serviceName, port, command = 'npm') {
     const servicePath = path.join(this.projectRoot, serviceName);
     
     // Check if service directory exists
@@ -65,13 +85,33 @@ class ServiceManager {
 
     console.log(`🚀 Starting ${serviceName} on port ${port}...`);
 
-    // Load environment variables from service's develop.env
-    const serviceEnv = this.loadServiceEnv(servicePath);
+    const envFile = this.getServiceEnvFile(servicePath);
+
+    // Load environment variables from service env file
+    const serviceEnv = this.loadServiceEnv(servicePath, envFile);
     
     // Override PORT with the specified port
     serviceEnv.PORT = port.toString();
-    // Set NODE_ENV to development
-    serviceEnv.NODE_ENV = 'develop.env';
+    // In this repo, NODE_ENV is used as a dotenv *filename*
+    serviceEnv.NODE_ENV = envFile;
+
+    // Decide which npm script to run
+    const distEntrypoint = path.join(servicePath, 'dist', 'src', 'index.js');
+    const isProdLike =
+      envFile.includes('production') ||
+      process.env.NODE_ENV === 'production' ||
+      process.env.ENVIRONMENT === 'production' ||
+      process.env.SERVICES_MODE === 'production';
+
+    let scriptToRun = isProdLike ? 'start' : 'dev';
+    if (isProdLike && !fs.existsSync(distEntrypoint)) {
+      console.log(
+        `⚠️  ${serviceName}: dist build not found (${distEntrypoint}). Falling back to dev (slow).`
+      );
+      scriptToRun = 'dev';
+    }
+
+    const args = ['run', scriptToRun];
 
     const child = spawn(command, args, {
       cwd: servicePath,
