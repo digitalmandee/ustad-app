@@ -32,6 +32,7 @@ import {
   File,
   Child,
 } from '@ustaad/shared';
+import { sendNotificationToUser } from '../../services/notification.service';
 
 interface MessageMetadata {
   offer?: object;
@@ -186,6 +187,11 @@ export default class ChatService {
 
         if (receiver) {
           const sender = await User.findByPk(senderId);
+          const receiverUser = await User.findByPk(receiver.userId);
+          const receiverToken = receiverUser?.deviceId;
+          if (!receiverToken) {
+            console.log('⚠️ Receiver has no device token, skipping notification');
+          } else {
 
           // Determine notification body based on message type
           let notificationBody = messageData.content || '';
@@ -204,23 +210,25 @@ export default class ChatService {
             notificationBody = notificationBody.substring(0, 100) + '...';
           }
 
-          // await sendNotificationToUser({
-          //   userId: receiver.userId,
-          //   type: NotificationType.NEW_MESSAGE,
-          //   title: `${sender?.fullName || 'Someone'}`,
-          //   body: notificationBody,
-          //   relatedEntityId: message.id,
-          //   relatedEntityType: 'message',
-          //   actionUrl: `/chat/${messageData.conversationId}`,
-          //   metadata: {
-          //     conversationId: messageData.conversationId,
-          //     senderId,
-          //     senderName: sender?.fullName || 'Unknown',
-          //     messageType: messageData.type,
-          //   },
-          // });
+          await sendNotificationToUser(
+            receiver.userId,
+            receiverToken,
+            `${sender?.fullName || 'Someone'}`,
+            notificationBody,
+            {
+              type: 'NEW_MESSAGE',
+              conversationId: messageData.conversationId,
+              senderId,
+              senderName: sender?.fullName || 'Unknown',
+              messageType: messageData.type,
+              messageId: message.id,
+            },
+            undefined,
+            `/chat/${messageData.conversationId}`
+          );
 
           console.log(`✅ Sent chat notification to user ${receiver.userId}`);
+          }
         }
       } catch (notificationError) {
         // Don't fail the message creation if notification fails

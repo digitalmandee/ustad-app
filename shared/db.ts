@@ -27,7 +27,7 @@ export const connectToPostgres = async (retryCount = 0): Promise<Sequelize> => {
 
     initAllModels(sequelize);
 
-    // Ensure a super admin exists
+    // Ensure a super admin exi
     await createSuperAdmin();
 
     // Temporarily use force: true to recreate tables with new enum

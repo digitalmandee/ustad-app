@@ -26,7 +26,6 @@ import {
   Offer,
   Parent,
   Notification,
-  sendNotificationToUser,
   NotificationType,
   ParentSubscription,
   ContractReview,
@@ -41,6 +40,7 @@ import { HelpRequests } from "@ustaad/shared";
 import { TutorPaymentStatus, TutorSessionStatus } from "@ustaad/shared";
 import { UserRole, HelpRequestStatus, OfferStatus } from "@ustaad/shared";
 import { QueryTypes } from "sequelize";
+import { sendNotificationToUser } from "../../services/notification.service";
 
 
 interface TutorProfileData extends ITutorOnboardingDTO {
@@ -84,6 +84,28 @@ interface PaymentRequestData {
 
 export default class TutorService {
   tutorModel = Tutor;
+
+  private async pushToUser(
+    targetUserId: string,
+    headline: string,
+    message: string,
+    data?: any,
+    imageUrl?: string,
+    clickAction?: string
+  ) {
+    const target = await User.findByPk(targetUserId);
+    const token = target?.deviceId;
+    if (!token) return;
+    await sendNotificationToUser(
+      targetUserId,
+      token,
+      headline,
+      message,
+      data,
+      imageUrl,
+      clickAction
+    );
+  }
 
   async createTutorProfile(data: TutorProfileData) {
     try {
@@ -1522,20 +1544,22 @@ export default class TutorService {
         }
 
         if (notificationType) {
-          await sendNotificationToUser({
-            userId: data.parentId,
-            type: notificationType,
+          await this.pushToUser(
+            data.parentId,
             title,
             body,
-            relatedEntityId: sessionDetail.id,
-            relatedEntityType: "sessionDetail",
-            actionUrl: `/sessions/${data.sessionId}`,
-            metadata: {
+            {
+              type: notificationType,
+              relatedEntityId: sessionDetail.id,
+              relatedEntityType: "sessionDetail",
               tutorName: tutor?.fullName || "Unknown",
               childName: sessionInfo.childName,
               status: data.status,
+              sessionId: data.sessionId,
             },
-          });
+            undefined,
+            `/sessions/${data.sessionId}`
+          );
           console.log(
             `✅ Sent session status notification to parent ${data.parentId}`
           );
@@ -1618,21 +1642,23 @@ export default class TutorService {
           }
 
           if (notificationType) {
-            await sendNotificationToUser({
-              userId: data.parentId,
-              type: notificationType,
+            await this.pushToUser(
+              data.parentId,
               title,
               body,
-              relatedEntityId: session.id,
-              relatedEntityType: "sessionDetail",
-              actionUrl: `/sessions/${data.sessionId}`,
-              metadata: {
+              {
+                type: notificationType,
+                relatedEntityId: session.id,
+                relatedEntityType: "sessionDetail",
                 tutorName: tutor?.fullName || "Unknown",
                 childName: sessionInfo.childName,
                 oldStatus,
                 newStatus: data.status,
+                sessionId: data.sessionId,
               },
-            });
+              undefined,
+              `/sessions/${data.sessionId}`
+            );
             console.log(
               `✅ Sent session update notification to parent ${data.parentId}`
             );
@@ -2184,35 +2210,33 @@ export default class TutorService {
         const offer = await Offer.findByPk(contract.offerId);
         
         if (status === ParentSubscriptionStatus.DISPUTE) {
-          await sendNotificationToUser({
-            userId: contract.parentId,
-            type: NotificationType.CONTRACT_DISPUTED,
-            title: '⚠️ Contract Disputed',
-            body: `${tutor?.fullName || 'Your tutor'} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ''}. Reason: ${reason?.substring(0, 50) || ''}${reason && reason.length > 50 ? '...' : ''}`,
-            relatedEntityId: contract.id,
-            relatedEntityType: 'contract',
-            actionUrl: `/contracts/${contract.id}`,
-            metadata: {
+          await this.pushToUser(
+            contract.parentId,
+            '⚠️ Contract Disputed',
+            `${tutor?.fullName || 'Your tutor'} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ''}. Reason: ${reason?.substring(0, 50) || ''}${reason && reason.length > 50 ? '...' : ''}`,
+            {
+              type: NotificationType.CONTRACT_DISPUTED,
               contractId: contract.id,
               disputedBy: tutorId,
               reason: reason?.substring(0, 100) || '',
             },
-          });
+            undefined,
+            `/contracts/${contract.id}`
+          );
           console.log(`✅ Sent dispute notification to parent ${contract.parentId}`);
         } else if (status === ParentSubscriptionStatus.PENDING_COMPLETION) {
-          await sendNotificationToUser({
-            userId: contract.parentId,
-            type: NotificationType.CONTRACT_COMPLETED,
-            title: '✅ Contract Completed',
-            body: `${tutor?.fullName || 'Your tutor'} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ''} as completed.`,
-            relatedEntityId: contract.id,
-            relatedEntityType: 'contract',
-            actionUrl: `/contracts/${contract.id}`,
-            metadata: {
+          await this.pushToUser(
+            contract.parentId,
+            '✅ Contract Completed',
+            `${tutor?.fullName || 'Your tutor'} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ''} as completed.`,
+            {
+              type: NotificationType.CONTRACT_COMPLETED,
               contractId: contract.id,
               completedBy: tutorId,
             },
-          });
+            undefined,
+            `/contracts/${contract.id}`
+          );
           console.log(`✅ Sent completion notification to parent ${contract.parentId}`);
         }
       } catch (notificationError) {
@@ -2310,25 +2334,23 @@ export default class TutorService {
           const tutor = await User.findByPk(tutorId);
           const parent = await User.findByPk(contract.parentId);
           
-          await sendNotificationToUser({
-            userId: contract.parentId,
-            type: NotificationType.CONTRACT_COMPLETED,
-            title: '✅ Contract Completed',
-            body: 'Both parties have submitted their ratings. Contract is now completed.',
-            relatedEntityId: contract.id,
-            relatedEntityType: 'contract',
-            actionUrl: `/contracts/${contract.id}`,
-          });
+          await this.pushToUser(
+            contract.parentId,
+            '✅ Contract Completed',
+            'Both parties have submitted their ratings. Contract is now completed.',
+            { type: NotificationType.CONTRACT_COMPLETED, contractId: contract.id },
+            undefined,
+            `/contracts/${contract.id}`
+          );
 
-          await sendNotificationToUser({
-            userId: tutorId,
-            type: NotificationType.CONTRACT_COMPLETED,
-            title: '✅ Contract Completed',
-            body: 'Both parties have submitted their ratings. Contract is now completed.',
-            relatedEntityId: contract.id,
-            relatedEntityType: 'contract',
-            actionUrl: `/contracts/${contract.id}`,
-          });
+          await this.pushToUser(
+            tutorId,
+            '✅ Contract Completed',
+            'Both parties have submitted their ratings. Contract is now completed.',
+            { type: NotificationType.CONTRACT_COMPLETED, contractId: contract.id },
+            undefined,
+            `/contracts/${contract.id}`
+          );
         } catch (notificationError) {
           console.error('❌ Error sending completion notification:', notificationError);
         }
@@ -2343,19 +2365,18 @@ export default class TutorService {
         try {
           const tutor = await User.findByPk(tutorId);
           
-          await sendNotificationToUser({
-            userId: contract.parentId,
-            type: NotificationType.CONTRACT_RATING_SUBMITTED,
-            title: '⭐ Rating Request',
-            body: `${tutor?.fullName || 'The tutor'} has submitted their rating. Please submit yours to complete the contract.`,
-            relatedEntityId: contract.id,
-            relatedEntityType: 'contract',
-            actionUrl: `/contracts/${contract.id}`,
-            metadata: {
+          await this.pushToUser(
+            contract.parentId,
+            '⭐ Rating Request',
+            `${tutor?.fullName || 'The tutor'} has submitted their rating. Please submit yours to complete the contract.`,
+            {
+              type: NotificationType.CONTRACT_RATING_SUBMITTED,
               contractId: contract.id,
               rating: rating.toString(),
             },
-          });
+            undefined,
+            `/contracts/${contract.id}`
+          );
         } catch (notificationError) {
           console.error('❌ Error sending rating notification:', notificationError);
         }

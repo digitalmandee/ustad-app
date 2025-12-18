@@ -3,10 +3,10 @@ import {
   TutorSessions, 
   TutorSessionsDetail, 
   User,
-  sendNotificationToUser,
   NotificationType,
 } from '@ustaad/shared';
 import { Op } from 'sequelize';
+import { sendNotificationToUser } from './notification.service';
 
 /**
  * Service for handling session reminder notifications
@@ -111,42 +111,44 @@ export class SessionReminderService {
       ]);
       
       // 🔔 SEND TO TUTOR
-      if (tutor) {
-        await sendNotificationToUser({
-          userId: session.tutorId,
-          type: NotificationType.SESSION_REMINDER,
-          title: '⏰ Session Starting Soon',
-          body: `Your session with ${session.childName} starts in 10 minutes (${session.startTime})`,
-          relatedEntityId: session.id,
-          relatedEntityType: 'session',
-          actionUrl: `/sessions/${session.id}`,
-          metadata: {
+      if (tutor?.deviceId) {
+        await sendNotificationToUser(
+          session.tutorId,
+          tutor.deviceId,
+          '⏰ Session Starting Soon',
+          `Your session with ${session.childName} starts in 10 minutes (${session.startTime})`,
+          {
+            type: NotificationType.SESSION_REMINDER,
+            sessionId: session.id,
             childName: session.childName,
             startTime: session.startTime,
             endTime: session.endTime || 'N/A',
             parentName: parent?.fullName || 'Unknown',
           },
-        });
+          undefined,
+          `/sessions/${session.id}`
+        );
         console.log(`  ✅ Sent reminder to tutor ${tutor.fullName}`);
       }
       
       // 🔔 SEND TO PARENT
-      if (parent) {
-        await sendNotificationToUser({
-          userId: session.parentId,
-          type: NotificationType.SESSION_REMINDER,
-          title: '⏰ Session Starting Soon',
-          body: `${tutor?.fullName || 'Your tutor'}'s session with ${session.childName} starts in 10 minutes (${session.startTime})`,
-          relatedEntityId: session.id,
-          relatedEntityType: 'session',
-          actionUrl: `/sessions/${session.id}`,
-          metadata: {
+      if (parent?.deviceId) {
+        await sendNotificationToUser(
+          session.parentId,
+          parent.deviceId,
+          '⏰ Session Starting Soon',
+          `${tutor?.fullName || 'Your tutor'}'s session with ${session.childName} starts in 10 minutes (${session.startTime})`,
+          {
+            type: NotificationType.SESSION_REMINDER,
+            sessionId: session.id,
             childName: session.childName,
             startTime: session.startTime,
             endTime: session.endTime || 'N/A',
             tutorName: tutor?.fullName || 'Unknown',
           },
-        });
+          undefined,
+          `/sessions/${session.id}`
+        );
         console.log(`  ✅ Sent reminder to parent ${parent.fullName}`);
       }
     } catch (error) {

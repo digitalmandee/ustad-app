@@ -24,7 +24,6 @@ import {
   ContractReview,
   TutorSessionsDetail,
   PaymentRequests,
-  sendNotificationToUser,
   NotificationType,
   TutorTransactionType,
   TutorSessionStatus,
@@ -34,6 +33,7 @@ import Stripe from "stripe";
 import { TutorPaymentStatus, OfferStatus } from "@ustaad/shared";
 import { Op } from "sequelize";
 import PayFastService from "../../services/payfast.service";
+import { sendNotificationToUser } from "../../services/notification.service";
 
 interface ParentProfileData {
   userId: string;
@@ -60,6 +60,28 @@ export default class ParentService {
       });
     }
     this.payfastService = new PayFastService();
+  }
+
+  private async pushToUser(
+    targetUserId: string,
+    headline: string,
+    message: string,
+    data?: any,
+    imageUrl?: string,
+    clickAction?: string
+  ) {
+    const target = await User.findByPk(targetUserId);
+    const token = target?.deviceId;
+    if (!token) return;
+    await sendNotificationToUser(
+      targetUserId,
+      token,
+      headline,
+      message,
+      data,
+      imageUrl,
+      clickAction
+    );
   }
 
   getStripeInstance(): Stripe | null {
@@ -388,7 +410,7 @@ export default class ParentService {
         totalReviews > 0
           ? reviews.reduce((sum, review) => sum + review.rating, 0) /
             totalReviews
-          : 0;
+        : 0;
 
       // Format reviews with parent information
       const formattedReviews = reviews.map((review) => {
@@ -399,10 +421,10 @@ export default class ParentService {
           review: review.review,
           parent: reviewData.reviewer
             ? {
-                id: reviewData.reviewer.id,
-                fullName: reviewData.reviewer.fullName,
-                email: reviewData.reviewer.email,
-                image: reviewData.reviewer.image,
+            id: reviewData.reviewer.id,
+            fullName: reviewData.reviewer.fullName,
+            email: reviewData.reviewer.email,
+            image: reviewData.reviewer.image,
               }
             : null,
           createdAt: review.createdAt,
@@ -459,13 +481,41 @@ export default class ParentService {
         throw new UnProcessableEntityError("Invalid offer status");
       }
 
+      // If offer is rejected, just update status + notify tutor (no payment/subscription)
+      if (status === OfferStatus.REJECTED) {
+        offer.status = OfferStatus.REJECTED;
+        await offer.save();
+
+        try {
+          const parent = await User.findByPk(userId);
+          await this.pushToUser(
+            offer.senderId,
+            "Offer Declined",
+            `${parent?.fullName || "A parent"} has declined your tutoring offer for ${offer.childName}`,
+            {
+              type: NotificationType.OFFER_REJECTED,
+              offerId,
+              parentName: parent?.fullName || "Unknown",
+              childName: offer.childName,
+              subject: offer.subject,
+            },
+            undefined,
+            `/offers/${offerId}`
+          );
+        } catch (notificationError) {
+          console.error("❌ Error sending offer rejected notification:", notificationError);
+        }
+
+        return offer;
+      }
+
       const tutor = await Tutor.findOne({ where: { userId: offer.senderId } });
       if (!tutor) {
         throw new UnProcessableEntityError("Tutor not found");
       }
 
-      // Check if subscription already exists for this offer
-      const existingSubscription = await ParentSubscription.findOne({
+        // Check if subscription already exists for this offer
+        const existingSubscription = await ParentSubscription.findOne({
         where: {
           offerId: offerId,
           status: {
@@ -475,66 +525,93 @@ export default class ParentService {
             ],
           },
         },
-      });
+        });
 
-      if (existingSubscription) {
-        throw new UnProcessableEntityError(
-          "Parent already has a subscription against this offer"
-        );
-      }
+        if (existingSubscription) {
+          throw new UnProcessableEntityError(
+            "Parent already has a subscription against this offer"
+          );
+        }
 
-      // Get parent user for email/phone
-      const parentUser = await User.findByPk(offer.receiverId);
-      if (!parentUser) {
-        throw new UnProcessableEntityError("Parent user not found");
-      }
+        // Get parent user for email/phone
+        const parentUser = await User.findByPk(offer.receiverId);
+        if (!parentUser) {
+          throw new UnProcessableEntityError("Parent user not found");
+        }
 
-      // Initiate PayFast subscription payment
-      const payfastResult = await this.payfastService.initiateSubscription({
-        userId: offer.receiverId,
-        amount: offer.amountMonthly,
-        customerEmail: parentUser.email,
-        customerMobile: parentUser.phone || undefined,
-        offerId: offerId,
-        childName: offer.childName,
-      });
+        // Initiate PayFast subscription payment
+        const payfastResult = await this.payfastService.initiateSubscription({
+          userId: offer.receiverId,
+          amount: offer.amountMonthly,
+          customerEmail: parentUser.email,
+          customerMobile: parentUser.phone || undefined,
+          offerId: offerId,
+          childName: offer.childName,
+        });
 
-      // Create ParentSubscription entry with CREATED status (will be activated after payment)
-      const parentSubscription = await ParentSubscription.create({
-        offerId: offerId,
-        parentId: offer.receiverId,
-        tutorId: offer.senderId,
-        basketId: payfastResult.basketId,
-        status: ParentSubscriptionStatus.CREATED, // Will be activated after IPN confirms payment
+        // Create ParentSubscription entry with CREATED status (will be activated after payment)
+        const parentSubscription = await ParentSubscription.create({
+          offerId: offerId,
+          parentId: offer.receiverId,
+          tutorId: offer.senderId,
+          basketId: payfastResult.basketId,
+          status: ParentSubscriptionStatus.CREATED, // Will be activated after IPN confirms payment
         planType: "sessions",
-        startDate: new Date(),
-        amount: offer.amountMonthly,
-        failureCount: 0,
-      });
+          startDate: new Date(),
+          amount: offer.amountMonthly,
+          failureCount: 0,
+        });
 
-      // Create ParentTransaction entry with PENDING status
-      await ParentTransaction.create({
-        parentId: offer.receiverId,
-        subscriptionId: parentSubscription.id,
-        invoiceId: payfastResult.basketId,
-        basketId: payfastResult.basketId,
-        status: "created",
-        orderStatus: "PENDING",
-        amount: offer.amountMonthly,
-        childName: offer.childName,
-      });
+        // Create ParentTransaction entry with PENDING status
+        await ParentTransaction.create({
+          parentId: offer.receiverId,
+          subscriptionId: parentSubscription.id,
+          invoiceId: payfastResult.basketId,
+          basketId: payfastResult.basketId,
+          status: "created",
+          orderStatus: "PENDING",
+          amount: offer.amountMonthly,
+          childName: offer.childName,
+        });
 
-      // Return PayFast form data to client
-      // The client will submit this form to PayFast
-      // After payment, IPN will activate the subscription
-      // return {
-      //   ...offer.toJSON(),
-      //   payfastPayment: {
-      //     payfastUrl: payfastResult.payfastUrl,
-      //     formFields: payfastResult.formFields,
-      //     basketId: payfastResult.basketId,
-      //   },
-      // };
+      // Update offer status to accepted
+      offer.status = OfferStatus.ACCEPTED;
+      await offer.save();
+
+      // 🔔 Notify tutor that offer was accepted (payment initiated)
+      try {
+        const parent = await User.findByPk(userId);
+        await this.pushToUser(
+          offer.senderId,
+          "Offer Accepted! 🎉",
+          `${parent?.fullName || "A parent"} has accepted your tutoring offer for ${offer.childName}`,
+          {
+            type: NotificationType.OFFER_ACCEPTED,
+            offerId,
+            parentName: parent?.fullName || "Unknown",
+            childName: offer.childName,
+            subject: offer.subject,
+            amountMonthly: String(offer.amountMonthly),
+            basketId: payfastResult.basketId,
+          },
+          undefined,
+          `/offers/${offerId}`
+        );
+      } catch (notificationError) {
+        console.error("❌ Error sending offer accepted notification:", notificationError);
+      }
+
+        // Return PayFast form data to client
+        // The client will submit this form to PayFast
+        // After payment, IPN will activate the subscription
+        // return {
+        //   ...offer.toJSON(),
+        //   payfastPayment: {
+        //     payfastUrl: payfastResult.payfastUrl,
+        //     formFields: payfastResult.formFields,
+        //     basketId: payfastResult.basketId,
+        //   },
+        // };
 
       // // Update offer status
       // offer.status = status as OfferStatus;
@@ -544,7 +621,7 @@ export default class ParentService {
       // try {
       //   const parent = await User.findByPk(userId);
       //   const tutor = await User.findByPk(offer.senderId);
-
+        
       //   if (status === OfferStatus.ACCEPTED) {
       //     await sendNotificationToUser({
       //       userId: offer.senderId, // Tutor
@@ -628,7 +705,7 @@ export default class ParentService {
 
       // Update subscription status in database
       await subscription.update({
-        status: ParentSubscriptionStatus.CANCELLED,
+          status: ParentSubscriptionStatus.CANCELLED,
         endDate: new Date(),
       });
 
@@ -636,22 +713,23 @@ export default class ParentService {
       try {
         const parentUser = await User.findByPk(userId);
         const offer = await Offer.findByPk(subscription.offerId);
-
+        
         if (offer) {
-          await sendNotificationToUser({
-            userId: subscription.tutorId,
+          await this.pushToUser(
+            subscription.tutorId,
+            "❌ Subscription Cancelled",
+            `${parentUser?.fullName || "A parent"} has cancelled the subscription for ${offer.childName}`,
+            {
             type: NotificationType.SUBSCRIPTION_CANCELLED_BY_PARENT,
-            title: "❌ Subscription Cancelled",
-            body: `${parentUser?.fullName || "A parent"} has cancelled the subscription for ${offer.childName}`,
             relatedEntityId: subscriptionId,
-            relatedEntityType: "subscription",
-            actionUrl: `/subscriptions/${subscriptionId}`,
-            metadata: {
+              relatedEntityType: "subscription",
               parentName: parentUser?.fullName || "Unknown",
               childName: offer.childName,
               subject: offer.subject,
             },
-          });
+            undefined,
+            `/subscriptions/${subscriptionId}`
+          );
           console.log(
             `✅ Sent subscription cancelled notification to tutor ${subscription.tutorId}`
           );
@@ -761,7 +839,7 @@ export default class ParentService {
   //     // 🔔 SEND NOTIFICATION TO TUTOR
   //     try {
   //       const parent = await User.findByPk(parentId);
-
+        
   //       await sendNotificationToUser({
   //         userId: tutorId,
   //         type: NotificationType.REVIEW_RECEIVED_TUTOR,
@@ -818,7 +896,7 @@ export default class ParentService {
           children: Set<string>;
         };
       } = {};
-
+      
       // Initialize last 6 months with zero spending
       for (let i = 5; i >= 0; i--) {
         const date = new Date();
@@ -828,7 +906,7 @@ export default class ParentService {
           year: "numeric",
           month: "long",
         });
-
+        
         monthlyData[monthKey] = {
           month: monthName,
           spending: 0,
@@ -841,7 +919,7 @@ export default class ParentService {
       transactions.forEach((transaction) => {
         const transactionDate = new Date(transaction.createdAt);
         const monthKey = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, "0")}`;
-
+        
         if (monthlyData[monthKey]) {
           monthlyData[monthKey].spending += transaction.amount;
           monthlyData[monthKey].count += 1;
@@ -980,39 +1058,37 @@ export default class ParentService {
       try {
         const parent = await User.findByPk(parentId);
         const offer = await Offer.findByPk(contract.offerId);
-
+        
         if (status === ParentSubscriptionStatus.DISPUTE) {
-          await sendNotificationToUser({
-            userId: contract.tutorId,
+          await this.pushToUser(
+            contract.tutorId,
+            "⚠️ Contract Disputed",
+            `${parent?.fullName || "A parent"} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ""}. Reason: ${reason?.substring(0, 50) || ""}${reason && reason.length > 50 ? "..." : ""}`,
+            {
             type: NotificationType.CONTRACT_DISPUTED,
-            title: "⚠️ Contract Disputed",
-            body: `${parent?.fullName || "A parent"} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ""}. Reason: ${reason?.substring(0, 50) || ""}${reason && reason.length > 50 ? "..." : ""}`,
-            relatedEntityId: contract.id,
-            relatedEntityType: "contract",
-            actionUrl: `/contracts/${contract.id}`,
-            metadata: {
               contractId: contract.id,
               disputedBy: parentId,
               reason: reason?.substring(0, 100) || "",
             },
-          });
+            undefined,
+            `/contracts/${contract.id}`
+          );
           console.log(
             `✅ Sent dispute notification to tutor ${contract.tutorId}`
           );
         } else if (status === ParentSubscriptionStatus.PENDING_COMPLETION) {
-          await sendNotificationToUser({
-            userId: contract.tutorId,
+          await this.pushToUser(
+            contract.tutorId,
+            "✅ Contract Completed",
+            `${parent?.fullName || "A parent"} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ""} as completed.`,
+            {
             type: NotificationType.CONTRACT_COMPLETED,
-            title: "✅ Contract Completed",
-            body: `${parent?.fullName || "A parent"} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ""} as completed.`,
-            relatedEntityId: contract.id,
-            relatedEntityType: "contract",
-            actionUrl: `/contracts/${contract.id}`,
-            metadata: {
               contractId: contract.id,
               completedBy: parentId,
             },
-          });
+            undefined,
+            `/contracts/${contract.id}`
+          );
           console.log(
             `✅ Sent completion notification to tutor ${contract.tutorId}`
           );
@@ -1100,15 +1176,15 @@ export default class ParentService {
 
         await TutorSessions.update(
           {
-            status: "cancelled",
+          status: "cancelled",
           },
           {
-            where: {
-              offerId: contract.offerId,
-              tutorId: contract.tutorId,
-              parentId: contract.parentId,
-              status: "active",
-            },
+          where: {
+            offerId: contract.offerId,
+            tutorId: contract.tutorId,
+            parentId: contract.parentId,
+            status: "active",
+          },
           }
         );
 
@@ -1116,26 +1192,24 @@ export default class ParentService {
         try {
           const parent = await User.findByPk(parentId);
           const tutor = await User.findByPk(contract.tutorId);
+          
+          await this.pushToUser(
+            contract.tutorId,
+            "✅ Contract Completed",
+            "Both parties have submitted their ratings. Contract is now completed.",
+            { type: NotificationType.CONTRACT_COMPLETED, contractId: contract.id },
+            undefined,
+            `/contracts/${contract.id}`
+          );
 
-          await sendNotificationToUser({
-            userId: contract.tutorId,
-            type: NotificationType.CONTRACT_COMPLETED,
-            title: "✅ Contract Completed",
-            body: "Both parties have submitted their ratings. Contract is now completed.",
-            relatedEntityId: contract.id,
-            relatedEntityType: "contract",
-            actionUrl: `/contracts/${contract.id}`,
-          });
-
-          await sendNotificationToUser({
-            userId: parentId,
-            type: NotificationType.CONTRACT_COMPLETED,
-            title: "✅ Contract Completed",
-            body: "Both parties have submitted their ratings. Contract is now completed.",
-            relatedEntityId: contract.id,
-            relatedEntityType: "contract",
-            actionUrl: `/contracts/${contract.id}`,
-          });
+          await this.pushToUser(
+            parentId,
+            "✅ Contract Completed",
+            "Both parties have submitted their ratings. Contract is now completed.",
+            { type: NotificationType.CONTRACT_COMPLETED, contractId: contract.id },
+            undefined,
+            `/contracts/${contract.id}`
+          );
         } catch (notificationError) {
           console.error(
             "❌ Error sending completion notification:",
@@ -1151,20 +1225,19 @@ export default class ParentService {
         // Notify tutor to submit rating
         try {
           const parent = await User.findByPk(parentId);
-
-          await sendNotificationToUser({
-            userId: contract.tutorId,
+          
+          await this.pushToUser(
+            contract.tutorId,
+            "⭐ Rating Request",
+            `${parent?.fullName || "The parent"} has submitted their rating. Please submit yours to complete the contract.`,
+            {
             type: NotificationType.CONTRACT_RATING_SUBMITTED,
-            title: "⭐ Rating Request",
-            body: `${parent?.fullName || "The parent"} has submitted their rating. Please submit yours to complete the contract.`,
-            relatedEntityId: contract.id,
-            relatedEntityType: "contract",
-            actionUrl: `/contracts/${contract.id}`,
-            metadata: {
               contractId: contract.id,
               rating: rating.toString(),
             },
-          });
+            undefined,
+            `/contracts/${contract.id}`
+          );
         } catch (notificationError) {
           console.error(
             "❌ Error sending rating notification:",
@@ -1175,7 +1248,7 @@ export default class ParentService {
 
       return {
         contract,
-        message: tutorReview
+        message: tutorReview 
           ? "Contract completed! Both parties have rated."
           : "Rating submitted. Waiting for tutor to rate.",
       };
@@ -1318,24 +1391,24 @@ export default class ParentService {
             hasTutorReview: !!tutorReview,
             parentReview: parentReview
               ? {
-                  id: parentReview.id,
-                  reviewerId: parentReview.reviewerId,
-                  reviewedId: parentReview.reviewedId,
-                  reviewerRole: parentReview.reviewerRole,
-                  rating: parentReview.rating,
-                  review: parentReview.review,
-                  createdAt: parentReview.createdAt,
+              id: parentReview.id,
+              reviewerId: parentReview.reviewerId,
+              reviewedId: parentReview.reviewedId,
+              reviewerRole: parentReview.reviewerRole,
+              rating: parentReview.rating,
+              review: parentReview.review,
+              createdAt: parentReview.createdAt,
                 }
               : null,
             tutorReview: tutorReview
               ? {
-                  id: tutorReview.id,
-                  reviewerId: tutorReview.reviewerId,
-                  reviewedId: tutorReview.reviewedId,
-                  reviewerRole: tutorReview.reviewerRole,
-                  rating: tutorReview.rating,
-                  review: tutorReview.review,
-                  createdAt: tutorReview.createdAt,
+              id: tutorReview.id,
+              reviewerId: tutorReview.reviewerId,
+              reviewedId: tutorReview.reviewedId,
+              reviewerRole: tutorReview.reviewerRole,
+              rating: tutorReview.rating,
+              review: tutorReview.review,
+              createdAt: tutorReview.createdAt,
                 }
               : null,
             paymentRequests: paymentRequests.map((pr) => ({
@@ -1507,7 +1580,7 @@ export default class ParentService {
         const isValid = this.payfastService.validateIPNHash(
           basketId,
           errCode,
-          validationHash
+          validationHash  
         );
         if (!isValid) {
           console.error("PayFast IPN: Invalid validation hash", {
@@ -1620,6 +1693,38 @@ export default class ParentService {
             failureCount: 0,
           });
 
+          // 🔔 Notify parent + tutor that subscription is active
+          try {
+            await this.pushToUser(
+              subscription.parentId,
+              "✅ Payment Successful",
+              "Your subscription payment was successful and is now active.",
+              {
+                type: "SUBSCRIPTION_ACTIVE",
+                subscriptionId: subscription.id,
+                basketId: data.basketId,
+                transactionId: data.transactionId || "",
+              },
+              undefined,
+              `/subscriptions/${subscription.id}`
+            );
+            await this.pushToUser(
+              subscription.tutorId,
+              "✅ New Active Subscription",
+              "A new subscription is now active for you.",
+              {
+                type: "SUBSCRIPTION_ACTIVE",
+                subscriptionId: subscription.id,
+                basketId: data.basketId,
+                transactionId: data.transactionId || "",
+              },
+              undefined,
+              `/subscriptions/${subscription.id}`
+            );
+          } catch (e) {
+            console.error("❌ Error sending subscription active notification:", e);
+          }
+
           // Create TutorTransaction and TutorSessions
           const offer = await Offer.findByPk(subscription.offerId);
           if (offer) {
@@ -1675,6 +1780,26 @@ export default class ParentService {
         await subscription.update({
           status: ParentSubscriptionStatus.CANCELLED,
         });
+
+        // 🔔 Notify parent payment failed
+        try {
+          await this.pushToUser(
+            subscription.parentId,
+            "❌ Payment Failed",
+            "Your subscription payment failed. Please try again.",
+            {
+              type: "PAYMENT_FAILED",
+              subscriptionId: subscription.id,
+              basketId: data.basketId,
+              errCode: data.errCode,
+              errMsg: data.errMsg || "",
+            },
+            undefined,
+            `/subscriptions/${subscription.id}`
+          );
+        } catch (e) {
+          console.error("❌ Error sending payment failed notification:", e);
+        }
       }
     } catch (error) {
       console.error("Error in handleInitialPaymentIPN:", error);
@@ -1737,6 +1862,26 @@ export default class ParentService {
           lastPaymentAmount: parseFloat(data.transactionAmount || "0") / 100,
           failureCount: 0,
         });
+
+        // 🔔 Notify parent recurring payment success
+        try {
+          await this.pushToUser(
+            subscription.parentId,
+            "✅ Recurring Payment Successful",
+            "Your recurring subscription payment was successful.",
+            {
+              type: "RECURRING_PAYMENT_SUCCESS",
+              subscriptionId: subscription.id,
+              basketId: data.basketId,
+              transactionId: data.transactionId || "",
+              nextBillingDate: nextBillingDate.toISOString(),
+            },
+            undefined,
+            `/subscriptions/${subscription.id}`
+          );
+        } catch (e) {
+          console.error("❌ Error sending recurring success notification:", e);
+        }
 
         // Create TutorTransaction
         const tutor = await Tutor.findOne({
@@ -1804,10 +1949,52 @@ export default class ParentService {
             status: ParentSubscriptionStatus.EXPIRED, // Using EXPIRED as suspended status
             failureCount,
           });
+
+          // 🔔 Notify parent subscription suspended
+          try {
+            await this.pushToUser(
+              subscription.parentId,
+              "⚠️ Subscription Suspended",
+              "Your subscription has been suspended after multiple failed payments. Please update your payment method.",
+              {
+                type: "SUBSCRIPTION_SUSPENDED",
+                subscriptionId: subscription.id,
+                basketId: data.basketId,
+                errCode: data.errCode,
+                errMsg: data.errMsg || "",
+                failureCount,
+              },
+              undefined,
+              `/subscriptions/${subscription.id}`
+            );
+          } catch (e) {
+            console.error("❌ Error sending suspension notification:", e);
+          }
         } else {
           await subscription.update({
             failureCount,
           });
+
+          // 🔔 Notify parent recurring payment failed
+          try {
+            await this.pushToUser(
+              subscription.parentId,
+              "❌ Recurring Payment Failed",
+              "Your recurring payment failed. Please try again or update your payment method.",
+              {
+                type: "RECURRING_PAYMENT_FAILED",
+                subscriptionId: subscription.id,
+                basketId: data.basketId,
+                errCode: data.errCode,
+                errMsg: data.errMsg || "",
+                failureCount,
+              },
+              undefined,
+              `/subscriptions/${subscription.id}`
+            );
+          } catch (e) {
+            console.error("❌ Error sending recurring failure notification:", e);
+          }
         }
       }
     } catch (error) {
@@ -1956,6 +2143,7 @@ export default class ParentService {
     data: {
       cvv: string;
       cardId: string;
+      offerId: string;
     }
   ) {
     try {
@@ -1971,6 +2159,7 @@ export default class ParentService {
       const subscription = await ParentSubscription.findOne({
         where: {
           parentId: userId,
+          offerId: data.offerId,
         },
         order: [["createdAt", "DESC"]],
       });
@@ -2057,18 +2246,12 @@ export default class ParentService {
   async initiateRecurringPayment(
     userId: string,
     data: {
-      instrumentToken: string;
-      basketId: string;
-      orderDate: string;
-      txndesc: string;
-      txnamt: string;
       cvv: string;
-      transactionId?: string;
-      currencyCode?: string;
+      cardId: string;
       otp?: string;
+      transactionId?: string;
       data3dsSecureId?: string;
       data3dsPares?: string;
-      checkoutUrl?: string;
     }
   ) {
     try {
@@ -2077,24 +2260,78 @@ export default class ParentService {
         throw new NotFoundError("User not found");
       }
 
-      const merchantUserId = user.phone || user.id;
+      const merchantUserId = user.phone;
       const userMobileNumber = user.phone || "";
 
+      // Find user's subscription
+      const subscription = await ParentSubscription.findOne({
+        where: {
+          parentId: userId,
+        },
+        order: [["createdAt", "DESC"]],
+      });
+
+      let instrumentToken: string;
+
+      // Check if subscription has instrumentToken
+      if (subscription && subscription.instrumentToken) {
+        instrumentToken = subscription.instrumentToken;
+      } else {
+        // Fetch instruments list and match cardId with unique_identifier
+        const instruments = await this.payfastService.getListsOfInstruments(
+          userMobileNumber
+        );
+
+        const matchedInstrument = instruments.find(
+          (item: any) => item.unique_identifier === data.cardId
+        );
+
+        if (!matchedInstrument) {
+          throw new UnProcessableEntityError(
+            `No payment instrument found with cardId: ${data.cardId}`
+          );
+        }
+
+        if (!matchedInstrument.instrument_token) {
+          throw new UnProcessableEntityError(
+            "Selected payment instrument does not have an instrument_token"
+          );
+        }
+
+        instrumentToken = matchedInstrument.instrument_token;
+      }
+
+      // Generate basket/order date like OTP endpoint
+      const basketId = this.payfastService.generateBasketId("RECUR");
+      const orderDate = new Date().toISOString().replace("T", " ").substring(0, 19);
+
+      // Amount from subscription
+      if (!subscription || !subscription.amount) {
+        throw new UnProcessableEntityError(
+          "No subscription found. Cannot determine transaction amount."
+        );
+      }
+      const txnamt = Number(subscription.amount).toFixed(2);
+
+      const checkoutUrl = this.payfastService.getCheckoutUrl();
+      const currencyCode = this.payfastService.getCurrencyCode();
+      const txndesc = "Recurring Subscription Payment";
+
       const result = await this.payfastService.initiateRecurringPayment({
-        instrumentToken: data.instrumentToken,
+        instrumentToken,
         merchantUserId,
         userMobileNumber,
-        basketId: data.basketId,
-        orderDate: data.orderDate,
-        txndesc: data.txndesc,
-        txnamt: data.txnamt,
+        basketId,
+        orderDate,
+        txndesc,
+        txnamt,
         cvv: data.cvv,
-        transactionId: data.transactionId,
-        currencyCode: data.currencyCode,
         otp: data.otp,
         data3dsSecureId: data.data3dsSecureId,
         data3dsPares: data.data3dsPares,
-        checkoutUrl: data.checkoutUrl,
+        transactionId: data.transactionId,
+        currencyCode,
+        checkoutUrl,
       });
 
       return result;

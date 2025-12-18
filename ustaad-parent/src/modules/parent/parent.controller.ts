@@ -640,7 +640,7 @@ export default class ParentController {
   ): Promise<void> => {
     try {
       const { id: userId } = req.user;
-      const { cvv, cardId } = req.body;
+      const { cvv, cardId, offerId } = req.body;
 
       if (!cvv) {
         return sendErrorResponse(
@@ -661,6 +661,7 @@ export default class ParentController {
       const result = await this.parentService.recurringTransactionOTP(userId, {
         cvv,
         cardId,
+        offerId,
       });
 
       return sendSuccessResponse(
@@ -691,42 +692,28 @@ export default class ParentController {
   ): Promise<void> => {
     try {
       const { id: userId } = req.user;
-      const {
-        instrumentToken,
-        basketId,
-        orderDate,
-        txndesc,
-        txnamt,
-        cvv,
-        transactionId,
-        currencyCode,
-        otp,
-        data3dsSecureId,
-        data3dsPares,
-        checkoutUrl,
-      } = req.body;
+      const { cvv, cardId, otp, transactionId, data3dsSecureId, data3dsPares } =
+        req.body;
 
-      if (!instrumentToken || !basketId || !orderDate || !txndesc || !txnamt || !cvv) {
+      if (!cvv) {
         return sendErrorResponse(
           res,
-          "instrumentToken, basketId, orderDate, txndesc, txnamt, and cvv are required",
+          "CVV is required",
           400
         );
       }
 
+      if (!cardId) {
+        return sendErrorResponse(res, "cardId is required", 400);
+      }
+
       const result = await this.parentService.initiateRecurringPayment(userId, {
-        instrumentToken,
-        basketId,
-        orderDate,
-        txndesc,
-        txnamt,
         cvv,
-        transactionId,
-        currencyCode,
+        cardId,
         otp,
+        transactionId,
         data3dsSecureId,
         data3dsPares,
-        checkoutUrl,
       });
 
       return sendSuccessResponse(
