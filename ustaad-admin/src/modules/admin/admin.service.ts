@@ -50,7 +50,13 @@ export default class AdminService {
         totalTransactions,
         revenueRaw,
       ] = await Promise.all([
-        User.count({ where: { ...dateFilter } }),
+        // Exclude admin/super-admin from "totalUsers"
+        User.count({
+          where: {
+            role: { [Op.notIn]: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+            ...dateFilter,
+          },
+        }),
         User.count({ where: { role: UserRole.PARENT, ...dateFilter } }),
         User.count({ where: { role: UserRole.TUTOR, ...dateFilter } }),
         ParentSubscription.count({ where: { ...dateFilter } }),
@@ -138,14 +144,25 @@ export default class AdminService {
     };
   }
 
-  async getAllParents(page = 1, limit = 20) {
+  async getAllParents(page = 1, limit = 20, search: string = "") {
     const offset = (page - 1) * limit;
+
+    const hasSearch = !!search && search.trim().length > 0;
+    const userSearchWhere = hasSearch
+      ? {
+          [Op.or]: [
+            { fullName: { [Op.iLike]: `%${search.trim()}%` } },
+            { email: { [Op.iLike]: `%${search.trim()}%` } },
+          ],
+        }
+      : undefined;
 
     const { rows, count } = await Parent.findAndCountAll({
       include: [
         {
           model: User,
-          attributes: ["id", "fullName", "email", "phone", "image", "role"],
+          attributes: ["id", "fullName", "email", "phone", "image", "role", "isAdminVerified","isOnBoard", "isPhoneVerified", "isEmailVerified"],
+          ...(userSearchWhere ? { where: userSearchWhere, required: true } : {}),
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -173,7 +190,7 @@ export default class AdminService {
       include: [
         {
           model: User,
-          attributes: ["id", "fullName", "email", "phone", "image", "role"],
+          attributes: ["id", "fullName", "email", "phone", "image", "role", "isAdminVerified","isOnBoard", "isPhoneVerified", "isEmailVerified"],
         },
       ],
     });
@@ -191,14 +208,32 @@ export default class AdminService {
     return { parent, children, subscriptions, transactions };
   }
 
-  async getAllTutors(page = 1, limit = 20) {
+  async getAllTutors(page = 1, limit = 20, search: string = "") {
     const offset = (page - 1) * limit;
+
+    const hasSearch = !!search && search.trim().length > 0;
+    const tutorUserWhere: any = {
+      isAdminVerified: true,
+    };
+
+    if (hasSearch) {
+      tutorUserWhere[Op.and] = [
+        {
+          [Op.or]: [
+            { fullName: { [Op.iLike]: `%${search.trim()}%` } },
+            { email: { [Op.iLike]: `%${search.trim()}%` } },
+          ],
+        },
+      ];
+    }
 
     const { rows, count } = await Tutor.findAndCountAll({
       include: [
         {
           model: User,
-          attributes: ["id", "fullName", "email", "phone", "image", "role"],
+          attributes: ["id", "fullName", "email", "phone", "image", "role", "isAdminVerified","isOnBoard", "isPhoneVerified", "isEmailVerified"],
+          where: tutorUserWhere,
+          required: true,
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -225,7 +260,7 @@ export default class AdminService {
       include: [
         {
           model: User,
-          attributes: ["id", "fullName", "email", "phone", "image", "role"],
+          attributes: ["id", "fullName", "email", "phone", "image", "role", "isAdminVerified","isOnBoard", "isPhoneVerified", "isEmailVerified"],
         },
       ],
     });

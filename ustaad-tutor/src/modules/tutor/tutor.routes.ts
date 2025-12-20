@@ -12,7 +12,8 @@ import {
   paymentRequestValidationRules,
   tutorSearchByLocationValidationRules,
   helpRequestValidationRules,
-  childNoteValidationRules
+  childNoteValidationRules,
+  updateBankDetailsValidationRules
 } from "./tutor.validators";
 import routes from "../../routes/routes";
 import { authenticateJwt } from "../../middlewares/auth";
@@ -50,6 +51,15 @@ router.post(
 );
 
 router.get(routes.TUTOR_Profile, authenticateJwt, authorizeRoles("TUTOR"), tutorController.getProfile);
+
+router.put(
+  routes.UPDATE_BANK_DETAILS,
+  authenticateJwt,
+  updateBankDetailsValidationRules(),
+  validateRequest,
+  authorizeRoles("TUTOR"),
+  tutorController.updateBankDetails
+);
 
 router.get(
   routes.GET_PARENT_PROFILE,

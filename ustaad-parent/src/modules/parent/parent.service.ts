@@ -347,19 +347,7 @@ export default class ParentService {
         include: [
           {
             model: Tutor,
-            attributes: ["subjects", "about", "grade"],
-            include: [
-              {
-                model: TutorExperience,
-                attributes: [
-                  "id",
-                  "company",
-                  "startDate",
-                  "endDate",
-                  "description",
-                ],
-              },
-            ],
+            attributes: ["subjects", "about", "grade"]
           },
           {
             model: TutorSettings,

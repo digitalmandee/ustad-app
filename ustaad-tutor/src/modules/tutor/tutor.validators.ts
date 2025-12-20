@@ -17,6 +17,17 @@ export const tutorOnboardingValidationRules = () => {
       .withMessage("Account number must be numeric"),
   ];
 };
+
+export const updateBankDetailsValidationRules = () => {
+  return [
+    body("bankName").notEmpty().withMessage("Bank name is required"),
+    body("accountNumber")
+      .notEmpty()
+      .withMessage("Account number is required")
+      .isNumeric()
+      .withMessage("Account number must be numeric"),
+  ];
+};
 export const tutorLocationValidationRules = () => {
   return [
     body("latitude")

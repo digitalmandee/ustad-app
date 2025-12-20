@@ -31,7 +31,8 @@ export default class AdminController {
     try {
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 20;
-      const data = await this.adminService.getAllParents(page, limit);
+      const search = (req.query.search || req.query.q || "").toString().trim();
+      const data = await this.adminService.getAllParents(page, limit, search);
       sendSuccessResponse(res, "parents fetched successfully", 200, data);
     } catch (e: any) {
       throw new GenericError(e, ` Error from getAllParents ${__filename}`);
@@ -55,7 +56,8 @@ export default class AdminController {
     try {
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 20;
-      const data = await this.adminService.getAllTutors(page, limit);
+      const search = (req.query.search || req.query.q || "").toString().trim();
+      const data = await this.adminService.getAllTutors(page, limit, search);
       sendSuccessResponse(res, "tutors fetched successfully", 200, data);
     } catch (e: any) {
       throw new GenericError(e, ` Error from getAllTutors ${__filename}`);

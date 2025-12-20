@@ -221,6 +221,25 @@ export default class TutorService {
     }
   }
 
+  async updateBankDetails(userId: string, bankName: string, accountNumber: string) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      await tutor.update({
+        bankName,
+        accountNumber,
+      });
+
+      return tutor;
+    } catch (error) {
+      console.error("Error in updateBankDetails:", error);
+      throw error;
+    }
+  }
+
   async getProfile(userId: string) {
     try {
       const user = await User.findByPk(userId, {

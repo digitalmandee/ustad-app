@@ -12,11 +12,20 @@ const serviceManager = new ServiceManager();
 
 app.use(cors());
 
+// Service targets (override these on server / docker)
+// Example:
+//   AUTH_TARGET=http://127.0.0.1:300
+//   or in docker: AUTH_TARGET=http://ustaad-auth:300
+const AUTH_TARGET = process.env.AUTH_TARGET || `http://localhost:${process.env.AUTH_PORT || 300}`;
+const PARENT_TARGET = process.env.PARENT_TARGET || `http://localhost:${process.env.PARENT_PORT || 301}`;
+const TUTOR_TARGET = process.env.TUTOR_TARGET || `http://localhost:${process.env.TUTOR_PORT || 303}`;
+const CHAT_TARGET = process.env.CHAT_TARGET || `http://localhost:${process.env.CHAT_PORT || 305}`;
+const ADMIN_TARGET = process.env.ADMIN_TARGET || `http://localhost:${process.env.ADMIN_PORT || 306}`;
 
 app.use(
   "/auth",
   createProxyMiddleware({
-    target: "http://localhost:300",
+    target: AUTH_TARGET,
     changeOrigin: true,
     pathRewrite: { "^/auth": "/api/v1/auth" },
     onError(err, req, res) {
@@ -35,7 +44,7 @@ app.use(
 app.use(
   "/tutor",
   createProxyMiddleware({
-    target: "http://localhost:303",
+    target: TUTOR_TARGET,
     changeOrigin: true,
     pathRewrite: { "^/tutor": "/api/v1/tutor" },
     onError(err, req, res) {
@@ -52,7 +61,7 @@ app.use(
 app.use(
   "/parent",
   createProxyMiddleware({
-    target: "http://localhost:301",
+    target: PARENT_TARGET,
     changeOrigin: true,
     pathRewrite: { "^/parent": "/api/v1/parent" },
     onError(err, req, res) {
@@ -69,7 +78,7 @@ app.use(
 app.use(
   "/chat",
   createProxyMiddleware({
-    target: "http://localhost:305",
+    target: CHAT_TARGET,
     changeOrigin: true,
     pathRewrite: { "^/chat": "/api/v1/chat" },
     onError(err, req, res) {
@@ -84,7 +93,7 @@ app.use(
 app.use(
   "/admin",
   createProxyMiddleware({
-    target: "http://localhost:306",
+    target: ADMIN_TARGET,
     changeOrigin: true,
     pathRewrite: { "^/admin": "/api/v1/admin" },
     onError(err, req, res) {
@@ -118,7 +127,7 @@ app.get("/", (req, res) => {
 app.get('/documents/parent/*', async (req, res) => {
   const documentPath = req.params[0];
   try {
-    const response = await fetch(`http://localhost:301/${documentPath}`);
+    const response = await fetch(`${PARENT_TARGET}/${documentPath}`);
     const buffer = await response.buffer();
     res.set('Content-Type', response.headers.get('content-type'));
     res.send(buffer);
@@ -131,7 +140,7 @@ app.get('/documents/parent/*', async (req, res) => {
 app.get('/documents/tutor/*', async (req, res) => {
   const documentPath = req.params[0];
   try {
-    const response = await fetch(`http://localhost:303/${documentPath}`);
+    const response = await fetch(`${TUTOR_TARGET}/${documentPath}`);
 
     console.log(response);
     const buffer = await response.buffer();

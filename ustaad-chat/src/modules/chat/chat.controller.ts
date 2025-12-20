@@ -166,6 +166,9 @@ export default class ChatController {
     try {
       const savedMessage = await this.chatService.createMessage(senderId, data,role);
       socket.to(data.conversationId).emit('newMessage', savedMessage);
+
+      console.log("savedMessage", savedMessage);
+      
       socket.emit('newMessage', savedMessage);
     } catch (err) {
       console.error('Error saving message:', err);

@@ -2,6 +2,7 @@ const routes = {
   TUTOR_ONBOARDING: "/tutor/onboarding",
   TUTOR_Profile_EDIT: "/tutor/profile/edit",
   TUTOR_Profile: "/tutor/profile",
+  UPDATE_BANK_DETAILS: "/tutor/bank-details",
   ALL_EXPERIENCE: "/tutor/experience",
   ADD_EXPERIENCE: "/tutor/experience/add",
   DELETE_EXPERIENCE: "/tutor/experience/delete/:experienceId",

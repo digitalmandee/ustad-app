@@ -98,6 +98,32 @@ export default class TutorController {
     }
   };
 
+  updateBankDetails = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { bankName, accountNumber } = req.body;
+
+      const result = await this.tutorService.updateBankDetails(userId, bankName, accountNumber);
+
+      return sendSuccessResponse(
+        res,
+        "Bank details updated successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Bank details update error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while updating bank details";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
   getProfile = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
