@@ -39,7 +39,7 @@ router.delete(
 router.get(
   routes.CHILD_GET_ALL,
   authenticateJwt,
-  authorizeRoles("PARENT"),
+  authorizeRoles("PARENT", "TUTOR"),
   childController.getChildren
 );
 
@@ -52,4 +52,4 @@ router.get(
 
 router.get(routes.CHILD_GET_NOTES, authenticateJwt, authorizeRoles("PARENT"), childController.getChildNotesByChildId);
 
-export  { router as childRouter }; 
+export { router as childRouter }; 

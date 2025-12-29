@@ -30,6 +30,10 @@ const uploadFields = upload.fields([
   { name: "idBack", maxCount: 1 },
 ]);
 
+const uploadEducation = upload.fields([
+  { name: "degree", maxCount: 1 },
+]);
+
 router.post(
   routes.TUTOR_ONBOARDING,
   uploadFields,
@@ -106,6 +110,7 @@ router.get(routes.ALL_EDUCATION, authenticateJwt, authorizeRoles("TUTOR"), tutor
 router.post(
   routes.ADD_EDUCATION,
   authenticateJwt,
+  uploadEducation,
   educationValidationRules(),
   validateRequest,
   authorizeRoles("TUTOR"),
@@ -129,7 +134,7 @@ router.get(
 );
 
 // About routes
-router.post(routes.ADD_TUTOR_ABOUT, authenticateJwt, authorizeRoles("TUTOR"),       tutorController.addAbout);
+router.post(routes.ADD_TUTOR_ABOUT, authenticateJwt, authorizeRoles("TUTOR"), tutorController.addAbout);
 
 router.post(
   routes.EDIT_TUTOR_ABOUT,
@@ -167,7 +172,7 @@ router.post(
   validateRequest,
   tutorController.addChildNote
 );
-router.post(routes.ADD_CHILD_REVIEW, authenticateJwt,authorizeRoles("TUTOR"),tutorController.addChildReview);
+router.post(routes.ADD_CHILD_REVIEW, authenticateJwt, authorizeRoles("TUTOR"), tutorController.addChildReview);
 
 router.get(
   routes.GET_TUTORS_LOCATIONS,
@@ -299,4 +304,4 @@ router.put(routes.NOTIFICATION_READ, authenticateJwt, authorizeRoles("TUTOR", "P
 
 
 
-export  {router as tutorRouter};
+export { router as tutorRouter };

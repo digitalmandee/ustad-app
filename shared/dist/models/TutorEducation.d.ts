@@ -6,6 +6,7 @@ export interface TutorEducationAttributes {
     startDate: Date;
     endDate: Date;
     description: string;
+    degreeUrl?: string;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -16,6 +17,7 @@ export declare class TutorEducation extends Model<TutorEducationAttributes> {
     startDate: Date;
     endDate: Date;
     description: string;
+    degreeUrl?: string;
     readonly createdAt: Date;
     readonly updatedAt: Date;
 }

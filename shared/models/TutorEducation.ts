@@ -9,6 +9,7 @@ export interface TutorEducationAttributes {
   startDate: Date;
   endDate: Date;
   description: string;
+  degreeUrl?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -20,6 +21,7 @@ export class TutorEducation extends Model<TutorEducationAttributes> {
   public startDate!: Date;
   public endDate!: Date;
   public description!: string;
+  public degreeUrl?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -55,6 +57,10 @@ export function initTutorEducationModel(sequelize: Sequelize): typeof TutorEduca
       description: {
         type: DataTypes.TEXT,
         allowNull: false,
+      },
+      degreeUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
     },
     {

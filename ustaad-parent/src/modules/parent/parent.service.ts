@@ -253,7 +253,7 @@ export default class ParentService {
       const averageRating =
         totalReviews > 0
           ? reviews.reduce((sum, review) => sum + review.rating, 0) /
-            totalReviews
+          totalReviews
           : 0;
 
       // Format reviews with tutor information
@@ -265,11 +265,11 @@ export default class ParentService {
           review: review.review,
           tutor: reviewData.reviewer
             ? {
-                id: reviewData.reviewer.id,
-                fullName: reviewData.reviewer.fullName,
-                email: reviewData.reviewer.email,
-                image: reviewData.reviewer.image,
-              }
+              id: reviewData.reviewer.id,
+              fullName: reviewData.reviewer.fullName,
+              email: reviewData.reviewer.email,
+              image: reviewData.reviewer.image,
+            }
             : null,
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
@@ -355,7 +355,7 @@ export default class ParentService {
           },
           {
             model: TutorEducation,
-            attributes: ["institute", "startDate", "endDate", "description"],
+            attributes: ["institute", "startDate", "endDate", "description", "degreeUrl"],
           },
           {
             model: TutorExperience,
@@ -397,8 +397,8 @@ export default class ParentService {
       const averageRating =
         totalReviews > 0
           ? reviews.reduce((sum, review) => sum + review.rating, 0) /
-            totalReviews
-        : 0;
+          totalReviews
+          : 0;
 
       // Format reviews with parent information
       const formattedReviews = reviews.map((review) => {
@@ -409,11 +409,11 @@ export default class ParentService {
           review: review.review,
           parent: reviewData.reviewer
             ? {
-            id: reviewData.reviewer.id,
-            fullName: reviewData.reviewer.fullName,
-            email: reviewData.reviewer.email,
-            image: reviewData.reviewer.image,
-              }
+              id: reviewData.reviewer.id,
+              fullName: reviewData.reviewer.fullName,
+              email: reviewData.reviewer.email,
+              image: reviewData.reviewer.image,
+            }
             : null,
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
@@ -502,8 +502,8 @@ export default class ParentService {
         throw new UnProcessableEntityError("Tutor not found");
       }
 
-        // Check if subscription already exists for this offer
-        const existingSubscription = await ParentSubscription.findOne({
+      // Check if subscription already exists for this offer
+      const existingSubscription = await ParentSubscription.findOne({
         where: {
           offerId: offerId,
           status: {
@@ -513,54 +513,54 @@ export default class ParentService {
             ],
           },
         },
-        });
+      });
 
-        if (existingSubscription) {
-          throw new UnProcessableEntityError(
-            "Parent already has a subscription against this offer"
-          );
-        }
+      if (existingSubscription) {
+        throw new UnProcessableEntityError(
+          "Parent already has a subscription against this offer"
+        );
+      }
 
-        // Get parent user for email/phone
-        const parentUser = await User.findByPk(offer.receiverId);
-        if (!parentUser) {
-          throw new UnProcessableEntityError("Parent user not found");
-        }
+      // Get parent user for email/phone
+      const parentUser = await User.findByPk(offer.receiverId);
+      if (!parentUser) {
+        throw new UnProcessableEntityError("Parent user not found");
+      }
 
-        // Initiate PayFast subscription payment
-        const payfastResult = await this.payfastService.initiateSubscription({
-          userId: offer.receiverId,
-          amount: offer.amountMonthly,
-          customerEmail: parentUser.email,
-          customerMobile: parentUser.phone || undefined,
-          offerId: offerId,
-          childName: offer.childName,
-        });
+      // Initiate PayFast subscription payment
+      const payfastResult = await this.payfastService.initiateSubscription({
+        userId: offer.receiverId,
+        amount: offer.amountMonthly,
+        customerEmail: parentUser.email,
+        customerMobile: parentUser.phone || undefined,
+        offerId: offerId,
+        childName: offer.childName,
+      });
 
-        // Create ParentSubscription entry with CREATED status (will be activated after payment)
-        const parentSubscription = await ParentSubscription.create({
-          offerId: offerId,
-          parentId: offer.receiverId,
-          tutorId: offer.senderId,
-          basketId: payfastResult.basketId,
-          status: ParentSubscriptionStatus.CREATED, // Will be activated after IPN confirms payment
+      // Create ParentSubscription entry with CREATED status (will be activated after payment)
+      const parentSubscription = await ParentSubscription.create({
+        offerId: offerId,
+        parentId: offer.receiverId,
+        tutorId: offer.senderId,
+        basketId: payfastResult.basketId,
+        status: ParentSubscriptionStatus.CREATED, // Will be activated after IPN confirms payment
         planType: "sessions",
-          startDate: new Date(),
-          amount: offer.amountMonthly,
-          failureCount: 0,
-        });
+        startDate: new Date(),
+        amount: offer.amountMonthly,
+        failureCount: 0,
+      });
 
-        // Create ParentTransaction entry with PENDING status
-        await ParentTransaction.create({
-          parentId: offer.receiverId,
-          subscriptionId: parentSubscription.id,
-          invoiceId: payfastResult.basketId,
-          basketId: payfastResult.basketId,
-          status: "created",
-          orderStatus: "PENDING",
-          amount: offer.amountMonthly,
-          childName: offer.childName,
-        });
+      // Create ParentTransaction entry with PENDING status
+      await ParentTransaction.create({
+        parentId: offer.receiverId,
+        subscriptionId: parentSubscription.id,
+        invoiceId: payfastResult.basketId,
+        basketId: payfastResult.basketId,
+        status: "created",
+        orderStatus: "PENDING",
+        amount: offer.amountMonthly,
+        childName: offer.childName,
+      });
 
       // Update offer status to accepted
       offer.status = OfferStatus.ACCEPTED;
@@ -589,17 +589,17 @@ export default class ParentService {
         console.error("❌ Error sending offer accepted notification:", notificationError);
       }
 
-        // Return PayFast form data to client
-        // The client will submit this form to PayFast
-        // After payment, IPN will activate the subscription
-        // return {
-        //   ...offer.toJSON(),
-        //   payfastPayment: {
-        //     payfastUrl: payfastResult.payfastUrl,
-        //     formFields: payfastResult.formFields,
-        //     basketId: payfastResult.basketId,
-        //   },
-        // };
+      // Return PayFast form data to client
+      // The client will submit this form to PayFast
+      // After payment, IPN will activate the subscription
+      // return {
+      //   ...offer.toJSON(),
+      //   payfastPayment: {
+      //     payfastUrl: payfastResult.payfastUrl,
+      //     formFields: payfastResult.formFields,
+      //     basketId: payfastResult.basketId,
+      //   },
+      // };
 
       // // Update offer status
       // offer.status = status as OfferStatus;
@@ -609,7 +609,7 @@ export default class ParentService {
       // try {
       //   const parent = await User.findByPk(userId);
       //   const tutor = await User.findByPk(offer.senderId);
-        
+
       //   if (status === OfferStatus.ACCEPTED) {
       //     await sendNotificationToUser({
       //       userId: offer.senderId, // Tutor
@@ -693,7 +693,7 @@ export default class ParentService {
 
       // Update subscription status in database
       await subscription.update({
-          status: ParentSubscriptionStatus.CANCELLED,
+        status: ParentSubscriptionStatus.CANCELLED,
         endDate: new Date(),
       });
 
@@ -701,15 +701,15 @@ export default class ParentService {
       try {
         const parentUser = await User.findByPk(userId);
         const offer = await Offer.findByPk(subscription.offerId);
-        
+
         if (offer) {
           await this.pushToUser(
             subscription.tutorId,
             "❌ Subscription Cancelled",
             `${parentUser?.fullName || "A parent"} has cancelled the subscription for ${offer.childName}`,
             {
-            type: NotificationType.SUBSCRIPTION_CANCELLED_BY_PARENT,
-            relatedEntityId: subscriptionId,
+              type: NotificationType.SUBSCRIPTION_CANCELLED_BY_PARENT,
+              relatedEntityId: subscriptionId,
               relatedEntityType: "subscription",
               parentName: parentUser?.fullName || "Unknown",
               childName: offer.childName,
@@ -827,7 +827,7 @@ export default class ParentService {
   //     // 🔔 SEND NOTIFICATION TO TUTOR
   //     try {
   //       const parent = await User.findByPk(parentId);
-        
+
   //       await sendNotificationToUser({
   //         userId: tutorId,
   //         type: NotificationType.REVIEW_RECEIVED_TUTOR,
@@ -868,8 +868,8 @@ export default class ParentService {
           createdAt: {
             [Op.gte]: sixMonthsAgo,
           },
-          status: {
-            [Op.in]: ["created", "paid", "completed"], // Include successful transactions
+          orderStatus: {
+            [Op.in]: ["SUCCESS", "FAILED"], // Include successful transactions
           },
         },
         order: [["createdAt", "ASC"]],
@@ -884,7 +884,7 @@ export default class ParentService {
           children: Set<string>;
         };
       } = {};
-      
+
       // Initialize last 6 months with zero spending
       for (let i = 5; i >= 0; i--) {
         const date = new Date();
@@ -894,7 +894,7 @@ export default class ParentService {
           year: "numeric",
           month: "long",
         });
-        
+
         monthlyData[monthKey] = {
           month: monthName,
           spending: 0,
@@ -907,7 +907,7 @@ export default class ParentService {
       transactions.forEach((transaction) => {
         const transactionDate = new Date(transaction.createdAt);
         const monthKey = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, "0")}`;
-        
+
         if (monthlyData[monthKey]) {
           monthlyData[monthKey].spending += transaction.amount;
           monthlyData[monthKey].count += 1;
@@ -1046,14 +1046,14 @@ export default class ParentService {
       try {
         const parent = await User.findByPk(parentId);
         const offer = await Offer.findByPk(contract.offerId);
-        
+
         if (status === ParentSubscriptionStatus.DISPUTE) {
           await this.pushToUser(
             contract.tutorId,
             "⚠️ Contract Disputed",
             `${parent?.fullName || "A parent"} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ""}. Reason: ${reason?.substring(0, 50) || ""}${reason && reason.length > 50 ? "..." : ""}`,
             {
-            type: NotificationType.CONTRACT_DISPUTED,
+              type: NotificationType.CONTRACT_DISPUTED,
               contractId: contract.id,
               disputedBy: parentId,
               reason: reason?.substring(0, 100) || "",
@@ -1070,7 +1070,7 @@ export default class ParentService {
             "✅ Contract Completed",
             `${parent?.fullName || "A parent"} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ""} as completed.`,
             {
-            type: NotificationType.CONTRACT_COMPLETED,
+              type: NotificationType.CONTRACT_COMPLETED,
               contractId: contract.id,
               completedBy: parentId,
             },
@@ -1164,15 +1164,15 @@ export default class ParentService {
 
         await TutorSessions.update(
           {
-          status: "cancelled",
+            status: "cancelled",
           },
           {
-          where: {
-            offerId: contract.offerId,
-            tutorId: contract.tutorId,
-            parentId: contract.parentId,
-            status: "active",
-          },
+            where: {
+              offerId: contract.offerId,
+              tutorId: contract.tutorId,
+              parentId: contract.parentId,
+              status: "active",
+            },
           }
         );
 
@@ -1180,7 +1180,7 @@ export default class ParentService {
         try {
           const parent = await User.findByPk(parentId);
           const tutor = await User.findByPk(contract.tutorId);
-          
+
           await this.pushToUser(
             contract.tutorId,
             "✅ Contract Completed",
@@ -1213,13 +1213,13 @@ export default class ParentService {
         // Notify tutor to submit rating
         try {
           const parent = await User.findByPk(parentId);
-          
+
           await this.pushToUser(
             contract.tutorId,
             "⭐ Rating Request",
             `${parent?.fullName || "The parent"} has submitted their rating. Please submit yours to complete the contract.`,
             {
-            type: NotificationType.CONTRACT_RATING_SUBMITTED,
+              type: NotificationType.CONTRACT_RATING_SUBMITTED,
               contractId: contract.id,
               rating: rating.toString(),
             },
@@ -1236,7 +1236,7 @@ export default class ParentService {
 
       return {
         contract,
-        message: tutorReview 
+        message: tutorReview
           ? "Contract completed! Both parties have rated."
           : "Rating submitted. Waiting for tutor to rate.",
       };
@@ -1379,25 +1379,25 @@ export default class ParentService {
             hasTutorReview: !!tutorReview,
             parentReview: parentReview
               ? {
-              id: parentReview.id,
-              reviewerId: parentReview.reviewerId,
-              reviewedId: parentReview.reviewedId,
-              reviewerRole: parentReview.reviewerRole,
-              rating: parentReview.rating,
-              review: parentReview.review,
-              createdAt: parentReview.createdAt,
-                }
+                id: parentReview.id,
+                reviewerId: parentReview.reviewerId,
+                reviewedId: parentReview.reviewedId,
+                reviewerRole: parentReview.reviewerRole,
+                rating: parentReview.rating,
+                review: parentReview.review,
+                createdAt: parentReview.createdAt,
+              }
               : null,
             tutorReview: tutorReview
               ? {
-              id: tutorReview.id,
-              reviewerId: tutorReview.reviewerId,
-              reviewedId: tutorReview.reviewedId,
-              reviewerRole: tutorReview.reviewerRole,
-              rating: tutorReview.rating,
-              review: tutorReview.review,
-              createdAt: tutorReview.createdAt,
-                }
+                id: tutorReview.id,
+                reviewerId: tutorReview.reviewerId,
+                reviewedId: tutorReview.reviewedId,
+                reviewerRole: tutorReview.reviewerRole,
+                rating: tutorReview.rating,
+                review: tutorReview.review,
+                createdAt: tutorReview.createdAt,
+              }
               : null,
             paymentRequests: paymentRequests.map((pr) => ({
               id: pr.id,
@@ -1449,6 +1449,10 @@ export default class ParentService {
         throw new UnProcessableEntityError(
           "You are not the receiver of this offer"
         );
+      }
+
+      if (offer.status === OfferStatus.ACCEPTED) {
+        throw new UnProcessableEntityError("Offer already accepted");
       }
 
       // Get user email and phone if not provided
@@ -1568,7 +1572,7 @@ export default class ParentService {
         const isValid = this.payfastService.validateIPNHash(
           basketId,
           errCode,
-          validationHash  
+          validationHash
         );
         if (!isValid) {
           console.error("PayFast IPN: Invalid validation hash", {
@@ -2186,10 +2190,10 @@ export default class ParentService {
 
       // Generate new basket ID for this transaction
       const basketId = this.payfastService.generateBasketId("RECUR");
-      
+
       // Generate order date (current date in required format)
       const orderDate = new Date().toISOString().replace("T", " ").substring(0, 19);
-      
+
       // Get amount from subscription if available, otherwise use a default or throw error
       let txnamt: string;
       if (subscription && subscription.amount) {
@@ -2204,7 +2208,7 @@ export default class ParentService {
       // Get callback URLs from PayFast service config
       const data3dsCallbackUrl = `${process.env.API_BASE_URL || "https://63fa2444770f.ngrok-free.app"}/parent/payfast/3dscallback`;
       const checkoutUrl = this.payfastService.getCheckoutUrl();
-      
+
       // Get currency code from PayFast service config
       const currencyCode = this.payfastService.getCurrencyCode();
 
@@ -2353,26 +2357,30 @@ export default class ParentService {
       const transactionAmount = queryParams.transaction_amount;
       const isRecurring = queryParams.Recurring_txn === "true";
 
+
+      console.log("we here ");
+
+
       if (!basketId) {
         throw new BadRequestError("Missing basket_id in success callback");
       }
 
       // Validate hash if provided
-      if (validationHash) {
-        const isValid = this.payfastService.validateIPNHash(
-          basketId,
-          errCode,
-          validationHash
-        );
-        if (!isValid) {
-          console.error("PayFast Success: Invalid validation hash", {
-            basketId,
-            errCode,
-            receivedHash: validationHash,
-          });
-          throw new BadRequestError("Invalid validation hash");
-        }
-      }
+      // if (validationHash) {
+      //   const isValid = this.payfastService.validateIPNHash(
+      //     basketId,
+      //     errCode,
+      //     validationHash
+      //   );
+      //   if (!isValid) {
+      //     console.error("PayFast Success: Invalid validation hash", {
+      //       basketId,
+      //       errCode,
+      //       receivedHash: validationHash,
+      //     });
+      //     throw new BadRequestError("Invalid validation hash");
+      //   }
+      // }
 
       // Find transaction by basketId
       const transaction = await ParentTransaction.findOne({
@@ -2417,6 +2425,8 @@ export default class ParentService {
       // Handle initial payment
       const nextBillingDate = new Date();
       nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+      console.log("FDSFAS");
+
 
       await subscription.update({
         status: ParentSubscriptionStatus.ACTIVE,
@@ -2430,6 +2440,9 @@ export default class ParentService {
 
       // Create TutorTransaction and TutorSessions for initial payment
       const offer = await Offer.findByPk(subscription.offerId);
+
+      console.log("FSDFSDFSDFS");
+
       if (offer) {
         const tutor = await Tutor.findOne({
           where: { userId: subscription.tutorId },
@@ -2458,7 +2471,7 @@ export default class ParentService {
             endTime: offer.endTime,
             offerId: subscription.offerId,
             daysOfWeek: offer.daysOfWeek,
-            price: subscription.amount,
+            price: Number(subscription.amount),
             status: "active",
             month: currentMonth,
             totalSessions: offer.sessions,
@@ -2471,6 +2484,9 @@ export default class ParentService {
           });
         }
       }
+
+      offer.status = OfferStatus.ACCEPTED;
+      offer.save()
 
       return {
         success: errCode === "000",

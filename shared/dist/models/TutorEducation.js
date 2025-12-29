@@ -38,6 +38,10 @@ function initTutorEducationModel(sequelize) {
             type: sequelize_1.DataTypes.TEXT,
             allowNull: false,
         },
+        degreeUrl: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: true,
+        },
     }, {
         sequelize,
         tableName: "tutor_educations",

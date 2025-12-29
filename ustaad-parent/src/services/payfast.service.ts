@@ -63,12 +63,12 @@ export class PayFastService {
       env: (process.env.PAYFAST_ENV as "UAT" | "LIVE") || "UAT",
       merchantName: process.env.PAYFAST_MERCHANT_NAME || "Test Merchant",
       currencyCode: process.env.PAYFAST_CURRENCY_CODE || "PKR",
-      // successUrl: process.env.PAYFAST_SUCCESS_URL || "https://fasdfsadfasdfasdfsf.com/payfast/success",
-      successUrl: "https://63fa2444770f.ngrok-free.app/parent/payfast/success",
-      failureUrl: "https://63fa2444770f.ngrok-free.app /parent/payfast/failure",
-      // failureUrl: process.env.PAYFAST_FAILURE_URL || "https://fasdfsadfasdfasdfsf.com/payfast/success",
-      // checkoutUrl: `${process.env.PAYFAST_CHECKOUT_URL}/api/payfast/ipn` || "",
-      checkoutUrl: "https://63fa2444770f.ngrok-free.app/api/payfast/ipn",
+      successUrl: process.env.PAYFAST_SUCCESS_URL || "https://fasdfsadfasdfasdfsf.com/payfast/success",
+      // successUrl: "https://63fa2444770f.ngrok-free.app/parent/payfast/success",
+      // failureUrl: "https://63fa2444770f.ngrok-free.app /parent/payfast/failure",
+      failureUrl: process.env.PAYFAST_FAILURE_URL || "https://fasdfsadfasdfasdfsf.com/payfast/success",
+      checkoutUrl: `${process.env.PAYFAST_CHECKOUT_URL}/api/payfast/ipn` || "",
+      // checkoutUrl: "https://63fa2444770f.ngrok-free.app/api/payfast/ipn",
     };
 
     if (!this.config.merchantId || !this.config.securedKey) {
@@ -113,21 +113,21 @@ export class PayFastService {
    */
   async getAccessToken(basketId: string, txnAmt: string): Promise<string> {
     // Check if we have a valid cached token
-    if (this.accessToken && this.tokenExpiry && this.tokenExpiry > new Date()) {
-      return this.accessToken;
-    }
+    // if (this.accessToken && this.tokenExpiry && this.tokenExpiry > new Date()) {
+    //   return this.accessToken;
+    // }
 
     try {
       const url = `${this.getBaseUrl()}/GetAccessToken`;
-      
+
       const response = await axios.post(
         url,
         {
           MERCHANT_ID: this.config.merchantId,
           SECURED_KEY: this.config.securedKey,
-          BASKET_ID: basketId,
-          TXNAMT: txnAmt,
-          CURRENCY_CODE: this.config.currencyCode
+          // BASKET_ID: basketId,
+          // TXNAMT: txnAmt,
+          // CURRENCY_CODE: this.config.currencyCode
         },
         {
           headers: {
@@ -137,7 +137,7 @@ export class PayFastService {
       );
 
       // console.log("response", response);
-      
+
 
       if (response.status === 200) {
         this.accessToken = response.data.ACCESS_TOKEN;
@@ -211,16 +211,16 @@ export class PayFastService {
   }> {
     try {
       console.log("request", request.amount);
-      
+
       // Generate basket ID
       const basketId = this.generateBasketId("SUB");
-      
+
       const token = await this.getAccessToken(basketId, Number(request.amount).toFixed(2));
       // Format order date
 
 
       console.log("token", token);
-      
+
       const orderDate = new Date().toISOString().replace("T", " ").substring(0, 19);
 
       // Prepare form fields
@@ -345,12 +345,12 @@ export class PayFastService {
   async getTokenizationAccessToken(): Promise<string> {
     try {
       const url = `${this.getTokenizationBaseUrl()}/token`;
-  
+
       const body = new URLSearchParams();
       body.append("merchant_id", this.config.merchantId);
       body.append("secured_key", this.config.securedKey);
       body.append("grant_type", "client_credentials");
-  
+
       const response = await axios.post(url, body.toString(), {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -359,29 +359,29 @@ export class PayFastService {
 
 
       // console.log("response", response.data);
-      
-  
+
+
       if (response.status === 200 && response.data?.token) {
         return response.data.token;
       }
-  
+
       throw new Error("Failed to get access token from PayFast tokenization API");
     } catch (error: any) {
 
       console.log("error", error);
-      
+
       console.error(
         "PayFast getTokenizationAccessToken error:",
         error.response?.data || error.message
       );
-  
+
       throw new GenericError(
         error,
         "Failed to get PayFast tokenization access token"
       );
     }
   }
-  
+
 
   /**
    * 3.15 Get Lists of Instruments

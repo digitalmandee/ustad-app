@@ -75,6 +75,7 @@ interface EducationData {
   startDate: Date;
   endDate: Date;
   description: string;
+  degree?: Express.Multer.File;
 }
 
 interface PaymentRequestData {
@@ -468,12 +469,19 @@ export default class TutorService {
         throw new UnProcessableEntityError("Tutor profile not found");
       }
 
+      let degreeUrl = null;
+      if (data.degree) {
+        const userFolder = path.join("uploads", "tutors", userId.toString(), "education");
+        degreeUrl = await uploadFile(data.degree, userFolder, "degree");
+      }
+
       const education = await TutorEducation.create({
         tutorId: tutor.userId,
         institute: data.institute,
         startDate: data.startDate,
         endDate: data.endDate,
         description: data.description,
+        degreeUrl,
       });
 
       return education;
@@ -587,9 +595,9 @@ export default class TutorService {
   }
 
   async getTutorByUserId(userId: string) {
-    
+
     console.log("we herere");
-    
+
     return await Tutor.findOne({ where: { userId: userId } });
   }
 
@@ -924,7 +932,7 @@ export default class TutorService {
 
         // Get all tutor IDs to fetch reviews
         const tutorIds = uniqueTutors.map((tutor) => tutor.tutorId);
-        
+
         // Fetch all reviews for these tutors from ContractReview
         // Reviews where tutor is the reviewedId and reviewerRole is PARENT
         const allReviews = await ContractReview.findAll({
@@ -950,7 +958,7 @@ export default class TutorService {
         tutorIds.forEach((tutorId) => {
           reviewsMap.set(tutorId, []);
         });
-        
+
         allReviews.forEach((review) => {
           const tutorId = review.reviewedId;
           if (reviewsMap.has(tutorId)) {
@@ -964,10 +972,10 @@ export default class TutorService {
           const totalExperience = this.calculateTotalExperience(
             tutorData.tutor?.TutorExperiences || []
           );
-          
+
           // Get reviews for this tutor
           const tutorReviews = reviewsMap.get(tutor.tutorId) || [];
-          
+
           // Calculate review stats
           const totalReviews = tutorReviews.length;
           const averageRating = totalReviews > 0
@@ -1111,7 +1119,7 @@ export default class TutorService {
 
       // Get all tutor IDs to fetch reviews
       const tutorIds = uniqueTutors.map((tutor) => tutor.tutorId);
-      
+
       // Fetch all reviews for these tutors from ContractReview
       // Reviews where tutor is the reviewedId and reviewerRole is PARENT
       const allReviews = await ContractReview.findAll({
@@ -1137,7 +1145,7 @@ export default class TutorService {
       tutorIds.forEach((tutorId) => {
         reviewsMap.set(tutorId, []);
       });
-      
+
       allReviews.forEach((review) => {
         const tutorId = review.reviewedId;
         if (reviewsMap.has(tutorId)) {
@@ -1149,7 +1157,7 @@ export default class TutorService {
       const tutorsWithReviews = uniqueTutors.map((tutor) => {
         // Get reviews for this tutor
         const tutorReviews = reviewsMap.get(tutor.tutorId) || [];
-        
+
         // Calculate review stats
         const totalReviews = tutorReviews.length;
         const averageRating = totalReviews > 0
@@ -1340,7 +1348,7 @@ export default class TutorService {
 
   async getPaymentRequests(tutorId: string) {
     try {
-      const tutor = await Tutor.findOne({where: {userId: tutorId}});
+      const tutor = await Tutor.findOne({ where: { userId: tutorId } });
       if (!tutor) {
         throw new UnProcessableEntityError("Tutor not found");
       }
@@ -1691,7 +1699,7 @@ export default class TutorService {
       }
     }
 
-    if(data.status === TutorSessionStatus.COMPLETED) {
+    if (data.status === TutorSessionStatus.COMPLETED) {
       await mainSession.update({
         sessionsCompleted: mainSession.sessionsCompleted + 1,
       });
@@ -2176,7 +2184,7 @@ export default class TutorService {
 
 
       console.log("we here 11");
-      
+
 
       // 2. Check if contract can be terminated (not already completed/disputed/cancelled)
       if ([ParentSubscriptionStatus.COMPLETED, ParentSubscriptionStatus.DISPUTE, ParentSubscriptionStatus.CANCELLED].includes(contract.status as any)) {
@@ -2227,7 +2235,7 @@ export default class TutorService {
       try {
         const tutor = await User.findByPk(tutorId);
         const offer = await Offer.findByPk(contract.offerId);
-        
+
         if (status === ParentSubscriptionStatus.DISPUTE) {
           await this.pushToUser(
             contract.parentId,
@@ -2266,7 +2274,7 @@ export default class TutorService {
       return {
         contract,
         // completedSessions,
-        message: status === ParentSubscriptionStatus.DISPUTE 
+        message: status === ParentSubscriptionStatus.DISPUTE
           ? 'Contract has been disputed and forwarded to admin for review'
           : 'Contract has been marked as completed',
       };
@@ -2352,7 +2360,7 @@ export default class TutorService {
         try {
           const tutor = await User.findByPk(tutorId);
           const parent = await User.findByPk(contract.parentId);
-          
+
           await this.pushToUser(
             contract.parentId,
             '✅ Contract Completed',
@@ -2378,12 +2386,12 @@ export default class TutorService {
         await contract.update({
           status: ParentSubscriptionStatus.PENDING_COMPLETION,
         });
-        
+
 
         // Notify parent to submit rating
         try {
           const tutor = await User.findByPk(tutorId);
-          
+
           await this.pushToUser(
             contract.parentId,
             '⭐ Rating Request',
@@ -2403,8 +2411,8 @@ export default class TutorService {
 
       return {
         contract,
-        message: parentReview 
-          ? 'Contract completed! Both parties have rated.' 
+        message: parentReview
+          ? 'Contract completed! Both parties have rated.'
           : 'Rating submitted. Waiting for parent to rate.',
       };
     } catch (error) {
@@ -2451,8 +2459,8 @@ export default class TutorService {
 
 
 
-    console.log("fadsfasdf");
-    
+      console.log("fadsfasdf");
+
 
       // Calculate completed sessions and get all related data for each contract
       const contractsWithDetails = await Promise.all(
@@ -2473,7 +2481,7 @@ export default class TutorService {
             ],
           });
           console.log("we herer !");
-          
+
 
           // Get total active sessions count
           const totalSessions = await TutorSessions.count({
