@@ -38,7 +38,7 @@ function initTutorEducationModel(sequelize) {
             type: sequelize_1.DataTypes.TEXT,
             allowNull: false,
         },
-        degreeUrl: {
+        degree: {
             type: sequelize_1.DataTypes.STRING,
             allowNull: true,
         },

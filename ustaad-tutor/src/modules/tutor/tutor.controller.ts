@@ -76,7 +76,7 @@ export default class TutorController {
         email,
         phone,
         password,
-        image
+        image,
       });
 
       return sendSuccessResponse(
@@ -103,7 +103,11 @@ export default class TutorController {
       const { id: userId } = req.user;
       const { bankName, accountNumber } = req.body;
 
-      const result = await this.tutorService.updateBankDetails(userId, bankName, accountNumber);
+      const result = await this.tutorService.updateBankDetails(
+        userId,
+        bankName,
+        accountNumber
+      );
 
       return sendSuccessResponse(
         res,
@@ -142,7 +146,8 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while retrieving profile";
+      const errorMessage =
+        error?.message || "Something went wrong while retrieving profile";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -165,7 +170,9 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while retrieving parent profile";
+      const errorMessage =
+        error?.message ||
+        "Something went wrong while retrieving parent profile";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -176,13 +183,15 @@ export default class TutorController {
 
       console.log(userId);
 
-      const { company, startDate, endDate, description } = req.body;
+      const { company, startDate, endDate, description, designation } =
+        req.body;
 
       const result = await this.tutorService.addExperience(userId, {
         company,
         startDate,
         endDate,
         description,
+        designation,
       });
 
       return sendSuccessResponse(
@@ -198,14 +207,14 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while adding experience";
+      const errorMessage =
+        error?.message || "Something went wrong while adding experience";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
   allExperience = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-
 
       const result = await this.tutorService.allExperience(userId);
 
@@ -222,7 +231,8 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while adding experience";
+      const errorMessage =
+        error?.message || "Something went wrong while adding experience";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -231,14 +241,20 @@ export default class TutorController {
     try {
       const { id: userId } = req.user;
       const { experienceId } = req.params;
-      const { company, startDate, endDate, description } = req.body;
+      const { company, startDate, endDate, description, designation } =
+        req.body;
 
-      const result = await this.tutorService.updateExperience(userId, experienceId, {
-        company,
-        startDate,
-        endDate,
-        description,
-      });
+      const result = await this.tutorService.updateExperience(
+        userId,
+        experienceId,
+        {
+          company,
+          startDate,
+          endDate,
+          description,
+          designation,
+        }
+      );
 
       return sendSuccessResponse(
         res,
@@ -253,7 +269,8 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while updating experience";
+      const errorMessage =
+        error?.message || "Something went wrong while updating experience";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -265,11 +282,7 @@ export default class TutorController {
 
       await this.tutorService.deleteExperience(userId, experienceId);
 
-      return sendSuccessResponse(
-        res,
-        "Experience deleted successfully",
-        200
-      );
+      return sendSuccessResponse(res, "Experience deleted successfully", 200);
     } catch (error: any) {
       console.error("Delete experience error:", error);
 
@@ -277,7 +290,8 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while deleting experience";
+      const errorMessage =
+        error?.message || "Something went wrong while deleting experience";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -285,10 +299,7 @@ export default class TutorController {
   addEducation = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-      const { institute, startDate, endDate, description } = req.body;
-
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      const degree = files?.degree ? files.degree[0] : undefined;
+      const { institute, startDate, endDate, description, degree } = req.body;
 
       const result = await this.tutorService.addEducation(userId, {
         institute,
@@ -311,7 +322,8 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while adding education";
+      const errorMessage =
+        error?.message || "Something went wrong while adding education";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -335,7 +347,8 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while retrieving education";
+      const errorMessage =
+        error?.message || "Something went wrong while retrieving education";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -346,12 +359,16 @@ export default class TutorController {
       const { educationId } = req.params;
       const { institute, startDate, endDate, description } = req.body;
 
-      const result = await this.tutorService.updateEducation(userId, educationId, {
-        institute,
-        startDate,
-        endDate,
-        description,
-      });
+      const result = await this.tutorService.updateEducation(
+        userId,
+        educationId,
+        {
+          institute,
+          startDate,
+          endDate,
+          description,
+        }
+      );
 
       return sendSuccessResponse(
         res,
@@ -366,7 +383,8 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while updating education";
+      const errorMessage =
+        error?.message || "Something went wrong while updating education";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -378,11 +396,7 @@ export default class TutorController {
 
       await this.tutorService.deleteEducation(userId, educationId);
 
-      return sendSuccessResponse(
-        res,
-        "Education deleted successfully",
-        200
-      );
+      return sendSuccessResponse(res, "Education deleted successfully", 200);
     } catch (error: any) {
       console.error("Delete education error:", error);
 
@@ -390,7 +404,8 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while deleting education";
+      const errorMessage =
+        error?.message || "Something went wrong while deleting education";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -415,7 +430,8 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while adding about information";
+      const errorMessage =
+        error?.message || "Something went wrong while adding about information";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -440,7 +456,9 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while updating about information";
+      const errorMessage =
+        error?.message ||
+        "Something went wrong while updating about information";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -453,10 +471,23 @@ export default class TutorController {
       if (!tutor) {
         return sendErrorResponse(res, "Tutor not found", 404);
       }
-      const result = await this.tutorService.setTutorSettings(userId, { minSubjects, maxStudentsDaily, subjectCosts });
-      return sendSuccessResponse(res, "Tutor settings saved successfully", 201, result);
+      const result = await this.tutorService.setTutorSettings(userId, {
+        minSubjects,
+        maxStudentsDaily,
+        subjectCosts,
+      });
+      return sendSuccessResponse(
+        res,
+        "Tutor settings saved successfully",
+        201,
+        result
+      );
     } catch (error: any) {
-      return sendErrorResponse(res, error.message || "Failed to save tutor settings", 400);
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to save tutor settings",
+        400
+      );
     }
   };
 
@@ -468,9 +499,18 @@ export default class TutorController {
         return sendErrorResponse(res, "Tutor not found", 404);
       }
       const result = await this.tutorService.getTutorSettings(userId);
-      return sendSuccessResponse(res, "Tutor settings fetched successfully", 200, result);
+      return sendSuccessResponse(
+        res,
+        "Tutor settings fetched successfully",
+        200,
+        result
+      );
     } catch (error: any) {
-      return sendErrorResponse(res, error.message || "Failed to fetch tutor settings", 400);
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to fetch tutor settings",
+        400
+      );
     }
   };
 
@@ -482,10 +522,23 @@ export default class TutorController {
       if (!tutor) {
         return sendErrorResponse(res, "Tutor not found", 404);
       }
-      const result = await this.tutorService.updateTutorSettings(userId, { minSubjects, maxStudentsDaily, subjectCosts });
-      return sendSuccessResponse(res, "Tutor settings updated successfully", 200, result);
+      const result = await this.tutorService.updateTutorSettings(userId, {
+        minSubjects,
+        maxStudentsDaily,
+        subjectCosts,
+      });
+      return sendSuccessResponse(
+        res,
+        "Tutor settings updated successfully",
+        200,
+        result
+      );
     } catch (error: any) {
-      return sendErrorResponse(res, error.message || "Failed to update tutor settings", 400);
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to update tutor settings",
+        400
+      );
     }
   };
 
@@ -493,10 +546,24 @@ export default class TutorController {
     try {
       const { id: tutorId } = req.user;
       const { sessionId, headline, description } = req.body;
-      const note = await this.tutorService.createChildNote({ sessionId, tutorId, headline, description });
-      return sendSuccessResponse(res, "Child note added successfully", 200, note);
+      const note = await this.tutorService.createChildNote({
+        sessionId,
+        tutorId,
+        headline,
+        description,
+      });
+      return sendSuccessResponse(
+        res,
+        "Child note added successfully",
+        200,
+        note
+      );
     } catch (error: any) {
-      return sendErrorResponse(res, error.message || "Failed to add child note", 400);
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to add child note",
+        400
+      );
     }
   };
 
@@ -504,10 +571,24 @@ export default class TutorController {
     try {
       const { id: tutorId } = req.user;
       const { childId, rating, review } = req.body;
-      const reviewObj = await this.tutorService.createChildReview({ childId, tutorId, rating, review });
-      return sendSuccessResponse(res, "Child review added successfully", 200, reviewObj);
+      const reviewObj = await this.tutorService.createChildReview({
+        childId,
+        tutorId,
+        rating,
+        review,
+      });
+      return sendSuccessResponse(
+        res,
+        "Child review added successfully",
+        200,
+        reviewObj
+      );
     } catch (error: any) {
-      return sendErrorResponse(res, error.message || "Failed to add child review", 400);
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to add child review",
+        400
+      );
     }
   };
 
@@ -516,9 +597,17 @@ export default class TutorController {
       const userId = req.user.id;
       const locationData = req.body;
 
-      const location = await this.tutorService.addTutorLocation(userId, locationData);
+      const location = await this.tutorService.addTutorLocation(
+        userId,
+        locationData
+      );
 
-      sendSuccessResponse(res, InfoMessages.GENERIC.ITEM_CREATED_SUCCESSFULLY("Tutor Location"), 201, location);
+      sendSuccessResponse(
+        res,
+        InfoMessages.GENERIC.ITEM_CREATED_SUCCESSFULLY("Tutor Location"),
+        201,
+        location
+      );
     } catch (e: any) {
       throw new GenericError(e, `Error from addTutorLocation ${__filename}`);
     }
@@ -526,12 +615,34 @@ export default class TutorController {
 
   findTutorsByLocation = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { latitude, longitude, radius, limit = 20, offset = 0, category } = req.query as unknown as FindTutorsByLocationDto;
-      const results = await this.tutorService.findTutorsByLocation(latitude, longitude, radius, limit, offset, category);
+      const {
+        latitude,
+        longitude,
+        radius,
+        limit = 20,
+        offset = 0,
+        category,
+      } = req.query as unknown as FindTutorsByLocationDto;
+      const results = await this.tutorService.findTutorsByLocation(
+        latitude,
+        longitude,
+        radius,
+        limit,
+        offset,
+        category
+      );
 
-      return sendSuccessResponse(res, InfoMessages.GENERIC.ITEM_GET_SUCCESSFULLY("Nearby Tutors"), 200, results);
+      return sendSuccessResponse(
+        res,
+        InfoMessages.GENERIC.ITEM_GET_SUCCESSFULLY("Nearby Tutors"),
+        200,
+        results
+      );
     } catch (e: any) {
-      throw new GenericError(e, `Error from findTutorsByLocation ${__filename}`);
+      throw new GenericError(
+        e,
+        `Error from findTutorsByLocation ${__filename}`
+      );
     }
   };
 
@@ -547,7 +658,10 @@ export default class TutorController {
         locations
       );
     } catch (e: any) {
-      throw new GenericError(e, `Error from getAllTutorLocations ${__filename}`);
+      throw new GenericError(
+        e,
+        `Error from getAllTutorLocations ${__filename}`
+      );
     }
   };
 
@@ -558,7 +672,10 @@ export default class TutorController {
 
       console.log("locationId", locationId);
 
-      const result = await this.tutorService.deleteTutorLocation(userId, locationId);
+      const result = await this.tutorService.deleteTutorLocation(
+        userId,
+        locationId
+      );
 
       return sendSuccessResponse(
         res,
@@ -580,21 +697,13 @@ export default class TutorController {
       const txnId = crypto.randomUUID();
 
       if (!amount || amount <= 0) {
-        return sendErrorResponse(
-          res,
-          "Valid amount is required",
-          400
-        );
+        return sendErrorResponse(res, "Valid amount is required", 400);
       }
 
       // Get tutor by userId
       const tutor = await this.tutorService.getTutorByUserId(userId);
       if (!tutor) {
-        return sendErrorResponse(
-          res,
-          "Tutor profile not found",
-          404
-        );
+        return sendErrorResponse(res, "Tutor profile not found", 404);
       }
 
       const result = await this.tutorService.createPaymentRequest({
@@ -615,7 +724,8 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while creating payment request";
+      const errorMessage =
+        error?.message || "Something went wrong while creating payment request";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -627,11 +737,7 @@ export default class TutorController {
       const tutor = await this.tutorService.getTutorByUserId(userId);
 
       if (!tutor) {
-        return sendErrorResponse(
-          res,
-          "Tutor profile not found",
-          404
-        );
+        return sendErrorResponse(res, "Tutor profile not found", 404);
       }
 
       const result = await this.tutorService.getPaymentRequests(userId);
@@ -649,7 +755,9 @@ export default class TutorController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage = error?.message || "Something went wrong while retrieving payment requests";
+      const errorMessage =
+        error?.message ||
+        "Something went wrong while retrieving payment requests";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -657,22 +765,46 @@ export default class TutorController {
   getTutorSessions = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId, role } = req.user;
-      const sessions = await this.tutorService.getTutorSessions(userId, role as any);
-      return sendSuccessResponse(res, "Tutor sessions retrieved successfully", 200, sessions);
+      const sessions = await this.tutorService.getTutorSessions(
+        userId,
+        role as any
+      );
+      return sendSuccessResponse(
+        res,
+        "Tutor sessions retrieved successfully",
+        200,
+        sessions
+      );
     } catch (error: any) {
-      return sendErrorResponse(res, error.message || "Failed to retrieve tutor sessions", 400);
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to retrieve tutor sessions",
+        400
+      );
     }
   };
-
 
   getTutorSession = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId, role } = req.user;
       const { sessionId } = req.query as any;
-      const session = await this.tutorService.getTutorSession(userId, sessionId, role as any);
-      return sendSuccessResponse(res, "Tutor session retrieved successfully", 200, session);
+      const session = await this.tutorService.getTutorSession(
+        userId,
+        sessionId,
+        role as any
+      );
+      return sendSuccessResponse(
+        res,
+        "Tutor session retrieved successfully",
+        200,
+        session
+      );
     } catch (error: any) {
-      return sendErrorResponse(res, error.message || "Failed to retrieve tutor session", 400);
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to retrieve tutor session",
+        400
+      );
     }
   };
 
@@ -680,9 +812,18 @@ export default class TutorController {
     try {
       const { id: userId } = req.user;
       const session = await this.tutorService.addTutorSession(userId, req.body);
-      return sendSuccessResponse(res, "Tutor session added successfully", 200, session);
+      return sendSuccessResponse(
+        res,
+        "Tutor session added successfully",
+        200,
+        session
+      );
     } catch (error: any) {
-      return sendErrorResponse(res, error.message || "Failed to add tutor session", 400);
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to add tutor session",
+        400
+      );
     }
   };
 
@@ -691,18 +832,35 @@ export default class TutorController {
       const { id: userId } = req.user;
       const { sessionId } = req.params;
       await this.tutorService.deleteTutorSession(userId, sessionId);
-      return sendSuccessResponse(res, "Tutor session deleted successfully", 200);
+      return sendSuccessResponse(
+        res,
+        "Tutor session deleted successfully",
+        200
+      );
     } catch (error: any) {
-      return sendErrorResponse(res, error.message || "Failed to delete tutor session", 400);
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to delete tutor session",
+        400
+      );
     }
   };
 
   editTutorSession = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const session = await this.tutorService.editTutorSession(req.body);
-      return sendSuccessResponse(res, "Tutor session updated successfully", 200, session);
+      return sendSuccessResponse(
+        res,
+        "Tutor session updated successfully",
+        200,
+        session
+      );
     } catch (error: any) {
-      return sendErrorResponse(res, error.message || "Failed to update tutor session", 400);
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to update tutor session",
+        400
+      );
     }
   };
 
@@ -717,8 +875,11 @@ export default class TutorController {
         earnings
       );
     } catch (error: any) {
-      console.error('Get monthly earnings error:', error);
-      throw new GenericError(error, `Error from getMonthlyEarnings ${__filename}`);
+      console.error("Get monthly earnings error:", error);
+      throw new GenericError(
+        error,
+        `Error from getMonthlyEarnings ${__filename}`
+      );
     }
   };
 
@@ -742,23 +903,33 @@ export default class TutorController {
         helpRequest
       );
     } catch (error: any) {
-      console.error('Create help request error:', error);
+      console.error("Create help request error:", error);
 
-      if (error.message?.includes('Invalid')) {
+      if (error.message?.includes("Invalid")) {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      throw new GenericError(error, `Error from createHelpRequest ${__filename}`);
+      throw new GenericError(
+        error,
+        `Error from createHelpRequest ${__filename}`
+      );
     }
   };
 
-  getHelpRequestsAgainstMe = async (req: AuthenticatedRequest, res: Response) => {
+  getHelpRequestsAgainstMe = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
     try {
       const { id: userId } = req.user;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
 
-      const result = await this.tutorService.getHelpRequestsAgainstUser(userId, page, limit);
+      const result = await this.tutorService.getHelpRequestsAgainstUser(
+        userId,
+        page,
+        limit
+      );
 
       return sendSuccessResponse(
         res,
@@ -767,8 +938,11 @@ export default class TutorController {
         result
       );
     } catch (error: any) {
-      console.error('Get help requests error:', error);
-      throw new GenericError(error, `Error from getHelpRequestsAgainstMe ${__filename}`);
+      console.error("Get help requests error:", error);
+      throw new GenericError(
+        error,
+        `Error from getHelpRequestsAgainstMe ${__filename}`
+      );
     }
   };
 
@@ -778,7 +952,12 @@ export default class TutorController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
 
-      const result = await this.tutorService.getContracts(userId, role as any, page, limit);
+      const result = await this.tutorService.getContracts(
+        userId,
+        role as any,
+        page,
+        limit
+      );
 
       return sendSuccessResponse(
         res,
@@ -787,20 +966,28 @@ export default class TutorController {
         result
       );
     } catch (error: any) {
-      console.error('Get contracts error:', error);
+      console.error("Get contracts error:", error);
       throw new GenericError(error, `Error from getContracts ${__filename}`);
     }
   };
 
-
-
   getNotificationHistory = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-      const notifications = await this.tutorService.getNotificationHistory(userId);
-      return sendSuccessResponse(res, "Notification history retrieved successfully", 200, notifications);
+      const notifications =
+        await this.tutorService.getNotificationHistory(userId);
+      return sendSuccessResponse(
+        res,
+        "Notification history retrieved successfully",
+        200,
+        notifications
+      );
     } catch (error: any) {
-      return sendErrorResponse(res, error.message || "Failed to retrieve notification history", 400);
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to retrieve notification history",
+        400
+      );
     }
   };
 
@@ -809,9 +996,17 @@ export default class TutorController {
       const { id: userId } = req.user;
       const { notificationId } = req.params;
       await this.tutorService.markNotificationAsRead(userId, notificationId);
-      return sendSuccessResponse(res, "Notification marked as read successfully", 200);
+      return sendSuccessResponse(
+        res,
+        "Notification marked as read successfully",
+        200
+      );
     } catch (error: any) {
-      return sendErrorResponse(res, error.message || "Failed to mark notification as read", 400);
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to mark notification as read",
+        400
+      );
     }
   };
 
@@ -820,7 +1015,10 @@ export default class TutorController {
       const { id: tutorId } = req.user;
       const { contractId } = req.params;
 
-      const updatedContract = await this.tutorService.cancelContract(tutorId, contractId);
+      const updatedContract = await this.tutorService.cancelContract(
+        tutorId,
+        contractId
+      );
 
       return sendSuccessResponse(
         res,
@@ -829,13 +1027,16 @@ export default class TutorController {
         updatedContract
       );
     } catch (error: any) {
-      console.error('Cancel contract error:', error);
+      console.error("Cancel contract error:", error);
 
-      if (error.message?.includes('not found') || error.message?.includes('permission')) {
+      if (
+        error.message?.includes("not found") ||
+        error.message?.includes("permission")
+      ) {
         return sendErrorResponse(res, error.message, 404);
       }
 
-      if (error.message?.includes('already cancelled')) {
+      if (error.message?.includes("already cancelled")) {
         return sendErrorResponse(res, error.message, 400);
       }
 
@@ -843,10 +1044,11 @@ export default class TutorController {
     }
   };
 
-  createHelpRequestAgainstContract = async (req: AuthenticatedRequest, res: Response) => {
+  createHelpRequestAgainstContract = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
     try {
-
-
       const { id: tutorId, role } = req.user;
       const { contractId } = req.params;
       const { subject, message } = req.body;
@@ -866,13 +1068,19 @@ export default class TutorController {
         result
       );
     } catch (error: any) {
-      console.error('Create help request against contract error:', error);
+      console.error("Create help request against contract error:", error);
 
-      if (error.message?.includes('not found') || error.message?.includes('permission')) {
+      if (
+        error.message?.includes("not found") ||
+        error.message?.includes("permission")
+      ) {
         return sendErrorResponse(res, error.message, 404);
       }
 
-      throw new GenericError(error, `Error from createHelpRequestAgainstContract ${__filename}`);
+      throw new GenericError(
+        error,
+        `Error from createHelpRequestAgainstContract ${__filename}`
+      );
     }
   };
 
@@ -883,13 +1091,30 @@ export default class TutorController {
       const { status, reason } = req.body;
 
       // Validate status
-      if (!status || ![ParentSubscriptionStatus.DISPUTE, ParentSubscriptionStatus.PENDING_COMPLETION].includes(status as any)) {
-        return sendErrorResponse(res, "Status must be either 'dispute' or 'completed'", 400);
+      if (
+        !status ||
+        ![
+          ParentSubscriptionStatus.DISPUTE,
+          ParentSubscriptionStatus.PENDING_COMPLETION,
+        ].includes(status as any)
+      ) {
+        return sendErrorResponse(
+          res,
+          "Status must be either 'dispute' or 'completed'",
+          400
+        );
       }
 
       // Validate reason only if status is dispute
-      if (status === ParentSubscriptionStatus.DISPUTE && (!reason || reason.trim().length === 0)) {
-        return sendErrorResponse(res, "Cancellation reason is required for dispute", 400);
+      if (
+        status === ParentSubscriptionStatus.DISPUTE &&
+        (!reason || reason.trim().length === 0)
+      ) {
+        return sendErrorResponse(
+          res,
+          "Cancellation reason is required for dispute",
+          400
+        );
       }
 
       const result = await this.tutorService.terminateContract(
@@ -899,28 +1124,33 @@ export default class TutorController {
         reason
       );
 
-      const successMessage = status === ParentSubscriptionStatus.DISPUTE
-        ? "Contract terminated and forwarded to admin"
-        : "Contract marked as completed";
+      const successMessage =
+        status === ParentSubscriptionStatus.DISPUTE
+          ? "Contract terminated and forwarded to admin"
+          : "Contract marked as completed";
 
-      return sendSuccessResponse(
-        res,
-        successMessage,
-        200,
-        result
-      );
+      return sendSuccessResponse(res, successMessage, 200, result);
     } catch (error: any) {
-      console.error('Terminate contract error:', error);
+      console.error("Terminate contract error:", error);
 
-      if (error.message?.includes('not found') || error.message?.includes('permission')) {
+      if (
+        error.message?.includes("not found") ||
+        error.message?.includes("permission")
+      ) {
         return sendErrorResponse(res, error.message, 404);
       }
 
-      if (error.message?.includes('already') || error.message?.includes('required')) {
+      if (
+        error.message?.includes("already") ||
+        error.message?.includes("required")
+      ) {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      throw new GenericError(error, `Error from terminateContract ${__filename}`);
+      throw new GenericError(
+        error,
+        `Error from terminateContract ${__filename}`
+      );
     }
   };
 
@@ -938,39 +1168,41 @@ export default class TutorController {
         tutorId,
         contractId,
         rating,
-        review || ''
+        review || ""
       );
 
-      return sendSuccessResponse(
-        res,
-        result.message,
-        200,
-        result
-      );
+      return sendSuccessResponse(res, result.message, 200, result);
     } catch (error: any) {
-      console.error('Submit contract rating error:', error);
+      console.error("Submit contract rating error:", error);
 
-      if (error.message?.includes('not found')) {
+      if (error.message?.includes("not found")) {
         return sendErrorResponse(res, error.message, 404);
       }
 
-      if (error.message?.includes('already') || error.message?.includes('cannot be rated')) {
+      if (
+        error.message?.includes("already") ||
+        error.message?.includes("cannot be rated")
+      ) {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      throw new GenericError(error, `Error from submitContractRating ${__filename}`);
+      throw new GenericError(
+        error,
+        `Error from submitContractRating ${__filename}`
+      );
     }
   };
 
-  getActiveContractsForDispute = async (req: AuthenticatedRequest, res: Response) => {
+  getActiveContractsForDispute = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
     try {
       const { id: tutorId } = req.user;
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
 
-
       console.log("fadsfasdfasdfasfd");
-
 
       const result = await this.tutorService.getActiveContractsForDispute(
         tutorId,
@@ -985,8 +1217,11 @@ export default class TutorController {
         result
       );
     } catch (error: any) {
-      console.error('Get active contracts error:', error);
-      throw new GenericError(error, `Error from getActiveContractsForDispute ${__filename}`);
+      console.error("Get active contracts error:", error);
+      throw new GenericError(
+        error,
+        `Error from getActiveContractsForDispute ${__filename}`
+      );
     }
   };
 }

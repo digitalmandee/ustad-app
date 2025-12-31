@@ -38,6 +38,11 @@ function initTutorExperienceModel(sequelize) {
             type: sequelize_1.DataTypes.TEXT,
             allowNull: false,
         },
+        designation: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: false,
+            field: "dasignation",
+        },
     }, {
         sequelize,
         tableName: "tutor_experiences",

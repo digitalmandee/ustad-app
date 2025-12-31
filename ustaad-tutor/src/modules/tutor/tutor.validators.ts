@@ -108,24 +108,26 @@ export const editProfileValidationRules = () => {
       .trim()
       .isLength({ min: 2 })
       .withMessage("Full name must be at least 2 characters long"),
-    
+
     body("email")
       .optional()
       .isEmail()
       .withMessage("Invalid email format")
       .normalizeEmail(),
-    
+
     body("phone")
       .optional()
       .matches(/^[0-9]{10,15}$/)
       .withMessage("Phone number must be between 10 and 15 digits"),
-    
+
     body("password")
       .optional()
       .isLength({ min: 6 })
       .withMessage("Password must be at least 6 characters long")
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-      .withMessage("Password must contain at least one uppercase letter, one lowercase letter, and one number"),
+      .withMessage(
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number"
+      ),
   ];
 };
 
@@ -146,13 +148,13 @@ export const experienceValidationRules = () => {
       .trim()
       .isLength({ min: 2 })
       .withMessage("Company name must be at least 2 characters long"),
-    
+
     body("startDate")
       .notEmpty()
       .withMessage("Start date is required")
       .isISO8601()
       .withMessage("Start date must be a valid date"),
-    
+
     body("endDate")
       .notEmpty()
       .withMessage("End date is required")
@@ -164,7 +166,7 @@ export const experienceValidationRules = () => {
         }
         return true;
       }),
-    
+
     body("description")
       .notEmpty()
       .withMessage("Description is required")
@@ -173,6 +175,13 @@ export const experienceValidationRules = () => {
       .trim()
       .isLength({ min: 10 })
       .withMessage("Description must be at least 10 characters long"),
+
+    body("designation")
+      .notEmpty()
+      .withMessage("designation is required")
+      .isString()
+      .withMessage("designation must be a string")
+      .trim(),
   ];
 };
 
@@ -186,13 +195,13 @@ export const educationValidationRules = () => {
       .trim()
       .isLength({ min: 2 })
       .withMessage("Institute name must be at least 2 characters long"),
-    
+
     body("startDate")
       .notEmpty()
       .withMessage("Start date is required")
       .isISO8601()
       .withMessage("Start date must be a valid date"),
-    
+
     body("endDate")
       .notEmpty()
       .withMessage("End date is required")
@@ -204,7 +213,7 @@ export const educationValidationRules = () => {
         }
         return true;
       }),
-    
+
     body("description")
       .notEmpty()
       .withMessage("Description is required")
@@ -218,24 +227,33 @@ export const educationValidationRules = () => {
 
 export const tutorSettingsValidationRules = () => [
   body("minSubjects")
-    .exists().withMessage("minSubjects is required")
-    .isInt({ min: 1 }).withMessage("minSubjects must be an integer >= 1"),
+    .exists()
+    .withMessage("minSubjects is required")
+    .isInt({ min: 1 })
+    .withMessage("minSubjects must be an integer >= 1"),
   body("maxStudentsDaily")
-    .exists().withMessage("maxStudentsDaily is required")
-    .isInt({ min: 1 }).withMessage("maxStudentsDaily must be an integer >= 1"),
+    .exists()
+    .withMessage("maxStudentsDaily is required")
+    .isInt({ min: 1 })
+    .withMessage("maxStudentsDaily must be an integer >= 1"),
   body("subjectCosts")
-    .exists().withMessage("subjectCosts is required")
-    .isObject().withMessage("subjectCosts must be an object")
+    .exists()
+    .withMessage("subjectCosts is required")
+    .isObject()
+    .withMessage("subjectCosts must be an object")
     .custom((value) => {
       if (typeof value !== "object" || Array.isArray(value)) return false;
       for (const key in value) {
         const entry = value[key];
         if (
           typeof entry !== "object" ||
-          typeof entry.cost !== "number" || entry.cost < 0 ||
+          typeof entry.cost !== "number" ||
+          entry.cost < 0 ||
           typeof entry.active !== "boolean"
         ) {
-          throw new Error("Each subject must have a cost (number >= 0) and active (boolean)");
+          throw new Error(
+            "Each subject must have a cost (number >= 0) and active (boolean)"
+          );
         }
       }
       return true;
@@ -244,8 +262,10 @@ export const tutorSettingsValidationRules = () => [
 
 export const paymentRequestValidationRules = () => [
   body("amount")
-    .exists().withMessage("Amount is required")
-    .isFloat({ min: 0.01 }).withMessage("Amount must be a positive number")
+    .exists()
+    .withMessage("Amount is required")
+    .isFloat({ min: 0.01 })
+    .withMessage("Amount must be a positive number")
     .toFloat(),
 ];
 

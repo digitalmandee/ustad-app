@@ -1,11 +1,11 @@
-import { Request, Response } from 'express';
-import { GenericError } from '../../errors/generic-error';
-import { sendSuccessResponse, sendErrorResponse } from '../../helper/response';
-import InfoMessages from '../../constant/messages';
-import GoogleAuthService, { GoogleUserData } from './google-auth.service';
-import jwt from 'jsonwebtoken';
-import { Session, User } from '@ustaad/shared';
-import { Op } from 'sequelize';
+import { Request, Response } from "express";
+import { GenericError } from "../../errors/generic-error";
+import { sendSuccessResponse, sendErrorResponse } from "../../helper/response";
+import InfoMessages from "../../constant/messages";
+import GoogleAuthService, { GoogleUserData } from "./google-auth.service";
+import jwt from "jsonwebtoken";
+import { Session, User } from "@ustaad/shared";
+import { Op } from "sequelize";
 
 export default class GoogleAuthController {
   private googleAuthService = new GoogleAuthService();
@@ -13,18 +13,33 @@ export default class GoogleAuthController {
   // Handle Google signup with user data from frontend
   googleSignup = async (req: Request, res: Response) => {
     try {
-      const { email, googleId, fullName, image, accessToken, role, gender } = req.body;
+      const {
+        email,
+        googleId,
+        fullName,
+        image,
+        accessToken,
+        role,
+        gender,
+        city,
+        country,
+        state,
+      } = req.body;
       const deviceId = req.headers.deviceid as string;
 
       // Validate required fields
       if (!email || !googleId || !fullName) {
-        return sendErrorResponse(res, 'Email, Google ID, and full name are required', 400);
+        return sendErrorResponse(
+          res,
+          "Email, Google ID, and full name are required",
+          400
+        );
       }
 
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        return sendErrorResponse(res, 'Invalid email format', 400);
+        return sendErrorResponse(res, "Invalid email format", 400);
       }
 
       const googleUserData: GoogleUserData = {
@@ -35,10 +50,16 @@ export default class GoogleAuthController {
         accessToken,
         gender,
         role,
+        city,
+        country,
+        state,
       };
 
       // Process Google signup
-      const user = await this.googleAuthService.processGoogleSignup(googleUserData, deviceId);
+      const user = await this.googleAuthService.processGoogleSignup(
+        googleUserData,
+        deviceId
+      );
 
       // Generate JWT token
       const token = jwt.sign(
@@ -75,9 +96,9 @@ export default class GoogleAuthController {
         { ...sanitizedUser, token }
       );
     } catch (error: any) {
-      console.error('Google login error:', error);
-      
-      if (error.message === 'Email and Google ID are required') {
+      console.error("Google login error:", error);
+
+      if (error.message === "Email and Google ID are required") {
         return sendErrorResponse(res, error.message, 400);
       }
 
@@ -93,27 +114,24 @@ export default class GoogleAuthController {
 
       // Validate required fields
       if (!email || !googleId) {
-        return sendErrorResponse(res, 'Email and Google ID are required', 400);
+        return sendErrorResponse(res, "Email and Google ID are required", 400);
       }
 
       // Validate email format
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
-        return sendErrorResponse(res, 'Invalid email format', 400);
+        return sendErrorResponse(res, "Invalid email format", 400);
       }
 
       // Check if user exists by Google ID or email
-      let user = await User.findOne({ 
-        where: { 
-          [Op.or]: [
-            { googleId },
-            { email }
-          ]
-        } 
+      let user = await User.findOne({
+        where: {
+          [Op.or]: [{ googleId }, { email }],
+        },
       });
 
       if (!user || user.isDeleted) {
-        return sendErrorResponse(res, 'User is not registered or deleted', 404);
+        return sendErrorResponse(res, "User is not registered or deleted", 404);
       }
 
       // Update device ID if provided
@@ -150,14 +168,12 @@ export default class GoogleAuthController {
       delete sanitizedUser.password;
       delete sanitizedUser.isActive;
 
-      return sendSuccessResponse(
-        res,
-        InfoMessages.AUTH.SIGNIN_SUCESS,
-        200,
-        { ...sanitizedUser, token }
-      );
+      return sendSuccessResponse(res, InfoMessages.AUTH.SIGNIN_SUCESS, 200, {
+        ...sanitizedUser,
+        token,
+      });
     } catch (error: any) {
-      console.error('Google login error:', error);
+      console.error("Google login error:", error);
       throw new GenericError(error, `Error from googleLogin ${__filename}`);
     }
   };

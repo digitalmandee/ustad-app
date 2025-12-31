@@ -6,6 +6,7 @@ export interface TutorExperienceAttributes {
   id: number;
   tutorId: string;
   company: string;
+  designation: string;
   startDate: Date;
   endDate: Date;
   description: string;
@@ -17,14 +18,18 @@ export class TutorExperience extends Model<TutorExperienceAttributes> {
   public id!: number;
   public tutorId!: string;
   public company!: string;
+  public designation!: string;
   public startDate!: Date;
   public endDate!: Date;
   public description!: string;
+
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
-export function initTutorExperienceModel(sequelize: Sequelize): typeof TutorExperience {
+export function initTutorExperienceModel(
+  sequelize: Sequelize
+): typeof TutorExperience {
   TutorExperience.init(
     {
       id: {
@@ -56,6 +61,11 @@ export function initTutorExperienceModel(sequelize: Sequelize): typeof TutorExpe
         type: DataTypes.TEXT,
         allowNull: false,
       },
+      designation: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        field: "dasignation",
+      },
     },
     {
       sequelize,
@@ -67,4 +77,4 @@ export function initTutorExperienceModel(sequelize: Sequelize): typeof TutorExpe
   User.hasMany(TutorExperience, { foreignKey: "tutorId" });
 
   return TutorExperience;
-} 
+}

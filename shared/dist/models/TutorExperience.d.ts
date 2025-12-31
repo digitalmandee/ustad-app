@@ -3,6 +3,7 @@ export interface TutorExperienceAttributes {
     id: number;
     tutorId: string;
     company: string;
+    designation: string;
     startDate: Date;
     endDate: Date;
     description: string;
@@ -13,6 +14,7 @@ export declare class TutorExperience extends Model<TutorExperienceAttributes> {
     id: number;
     tutorId: string;
     company: string;
+    designation: string;
     startDate: Date;
     endDate: Date;
     description: string;

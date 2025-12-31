@@ -355,7 +355,7 @@ export default class ParentService {
           },
           {
             model: TutorEducation,
-            attributes: ["institute", "startDate", "endDate", "description", "degreeUrl"],
+            attributes: ["institute", "startDate", "endDate", "description", "degree"],
           },
           {
             model: TutorExperience,

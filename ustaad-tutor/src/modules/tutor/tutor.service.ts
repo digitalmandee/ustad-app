@@ -34,14 +34,12 @@ import {
   TutorTransactionType,
   PaymentRequests,
   ParentSubscriptionStatus,
-
 } from "@ustaad/shared";
 import { HelpRequests } from "@ustaad/shared";
 import { TutorPaymentStatus, TutorSessionStatus } from "@ustaad/shared";
 import { UserRole, HelpRequestStatus, OfferStatus } from "@ustaad/shared";
 import { QueryTypes } from "sequelize";
 import { sendNotificationToUser } from "../../services/notification.service";
-
 
 interface TutorProfileData extends ITutorOnboardingDTO {
   resume: Express.Multer.File;
@@ -68,6 +66,7 @@ interface ExperienceData {
   startDate: Date;
   endDate: Date;
   description: string;
+  designation: string;
 }
 
 interface EducationData {
@@ -75,7 +74,7 @@ interface EducationData {
   startDate: Date;
   endDate: Date;
   description: string;
-  degree?: Express.Multer.File;
+  degree?: string;
 }
 
 interface PaymentRequestData {
@@ -140,14 +139,14 @@ export default class TutorService {
       const formattedSubjects = Array.isArray(data.subjects)
         ? data.subjects.map((s: string) => s.toLowerCase())
         : (data.subjects as string)
-          .replace(/^\[|\]$/g, "")
-          .split(",")
-          .map((s: string) =>
-            s
-              .trim()
-              .replace(/^['"]|['"]$/g, "")
-              .toLowerCase()
-          );
+            .replace(/^\[|\]$/g, "")
+            .split(",")
+            .map((s: string) =>
+              s
+                .trim()
+                .replace(/^['"]|['"]$/g, "")
+                .toLowerCase()
+            );
 
       const tutor = await Tutor.create({
         userId: data.userId,
@@ -222,7 +221,11 @@ export default class TutorService {
     }
   }
 
-  async updateBankDetails(userId: string, bankName: string, accountNumber: string) {
+  async updateBankDetails(
+    userId: string,
+    bankName: string,
+    accountNumber: string
+  ) {
     try {
       const tutor = await Tutor.findOne({ where: { userId } });
       if (!tutor) {
@@ -331,9 +334,11 @@ export default class TutorService {
 
       // Calculate average rating and total reviews
       const totalReviews = reviews.length;
-      const averageRating = totalReviews > 0
-        ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
-        : 0;
+      const averageRating =
+        totalReviews > 0
+          ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+            totalReviews
+          : 0;
 
       // Format reviews with parent information
       const formattedReviews = reviews.map((review) => {
@@ -342,12 +347,14 @@ export default class TutorService {
           id: review.id,
           rating: review.rating,
           review: review.review,
-          parent: reviewData.reviewer ? {
-            id: reviewData.reviewer.id,
-            fullName: reviewData.reviewer.fullName,
-            email: reviewData.reviewer.email,
-            image: reviewData.reviewer.image,
-          } : null,
+          parent: reviewData.reviewer
+            ? {
+                id: reviewData.reviewer.id,
+                fullName: reviewData.reviewer.fullName,
+                email: reviewData.reviewer.email,
+                image: reviewData.reviewer.image,
+              }
+            : null,
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
         };
@@ -382,6 +389,7 @@ export default class TutorService {
         startDate: data.startDate,
         endDate: data.endDate,
         description: data.description,
+        designation: data.designation,
       });
 
       return experience;
@@ -469,19 +477,13 @@ export default class TutorService {
         throw new UnProcessableEntityError("Tutor profile not found");
       }
 
-      let degreeUrl = null;
-      if (data.degree) {
-        const userFolder = path.join("uploads", "tutors", userId.toString(), "education");
-        degreeUrl = await uploadFile(data.degree, userFolder, "degree");
-      }
-
       const education = await TutorEducation.create({
         tutorId: tutor.userId,
         institute: data.institute,
         startDate: data.startDate,
         endDate: data.endDate,
         description: data.description,
-        degreeUrl,
+        degree: data.degree,
       });
 
       return education;
@@ -595,7 +597,6 @@ export default class TutorService {
   }
 
   async getTutorByUserId(userId: string) {
-
     console.log("we herere");
 
     return await Tutor.findOne({ where: { userId: userId } });
@@ -652,9 +653,11 @@ export default class TutorService {
 
       // Calculate average rating and total reviews
       const totalReviews = reviews.length;
-      const averageRating = totalReviews > 0
-        ? reviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
-        : 0;
+      const averageRating =
+        totalReviews > 0
+          ? reviews.reduce((sum, review) => sum + review.rating, 0) /
+            totalReviews
+          : 0;
 
       // Format reviews with tutor information
       const formattedReviews = reviews.map((review) => {
@@ -663,12 +666,14 @@ export default class TutorService {
           id: review.id,
           rating: review.rating,
           review: review.review,
-          tutor: reviewData.reviewer ? {
-            id: reviewData.reviewer.id,
-            fullName: reviewData.reviewer.fullName,
-            email: reviewData.reviewer.email,
-            image: reviewData.reviewer.image,
-          } : null,
+          tutor: reviewData.reviewer
+            ? {
+                id: reviewData.reviewer.id,
+                fullName: reviewData.reviewer.fullName,
+                email: reviewData.reviewer.email,
+                image: reviewData.reviewer.image,
+              }
+            : null,
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
         };
@@ -978,9 +983,11 @@ export default class TutorService {
 
           // Calculate review stats
           const totalReviews = tutorReviews.length;
-          const averageRating = totalReviews > 0
-            ? tutorReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
-            : 0;
+          const averageRating =
+            totalReviews > 0
+              ? tutorReviews.reduce((sum, review) => sum + review.rating, 0) /
+                totalReviews
+              : 0;
 
           // Format reviews with parent information
           const formattedReviews = tutorReviews.map((review) => {
@@ -989,12 +996,14 @@ export default class TutorService {
               id: review.id,
               rating: review.rating,
               review: review.review,
-              parent: reviewData.reviewer ? {
-                id: reviewData.reviewer.id,
-                fullName: reviewData.reviewer.fullName,
-                email: reviewData.reviewer.email,
-                image: reviewData.reviewer.image,
-              } : null,
+              parent: reviewData.reviewer
+                ? {
+                    id: reviewData.reviewer.id,
+                    fullName: reviewData.reviewer.fullName,
+                    email: reviewData.reviewer.email,
+                    image: reviewData.reviewer.image,
+                  }
+                : null,
               createdAt: review.createdAt,
               updatedAt: review.updatedAt,
             };
@@ -1160,9 +1169,11 @@ export default class TutorService {
 
         // Calculate review stats
         const totalReviews = tutorReviews.length;
-        const averageRating = totalReviews > 0
-          ? tutorReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
-          : 0;
+        const averageRating =
+          totalReviews > 0
+            ? tutorReviews.reduce((sum, review) => sum + review.rating, 0) /
+              totalReviews
+            : 0;
 
         // Format reviews with parent information
         const formattedReviews = tutorReviews.map((review) => {
@@ -1171,12 +1182,14 @@ export default class TutorService {
             id: review.id,
             rating: review.rating,
             review: review.review,
-            parent: reviewData.reviewer ? {
-              id: reviewData.reviewer.id,
-              fullName: reviewData.reviewer.fullName,
-              email: reviewData.reviewer.email,
-              image: reviewData.reviewer.image,
-            } : null,
+            parent: reviewData.reviewer
+              ? {
+                  id: reviewData.reviewer.id,
+                  fullName: reviewData.reviewer.fullName,
+                  email: reviewData.reviewer.email,
+                  image: reviewData.reviewer.image,
+                }
+              : null,
             createdAt: review.createdAt,
             updatedAt: review.updatedAt,
           };
@@ -1223,9 +1236,9 @@ export default class TutorService {
     const a =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(toRad(lat1)) *
-      Math.cos(toRad(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   }
@@ -1305,7 +1318,6 @@ export default class TutorService {
 
       console.log("11111");
 
-
       // Check if tutor has sufficient balance
       if (tutor.balance < data.amount) {
         throw new BadRequestError(
@@ -1317,18 +1329,18 @@ export default class TutorService {
       const paymentRequest = await PaymentRequests.findOne({
         where: {
           tutorId: tutor.userId,
-          status: TutorPaymentStatus.PENDING || TutorPaymentStatus.REQUESTED || TutorPaymentStatus.IN_REVIEW,
+          status:
+            TutorPaymentStatus.PENDING ||
+            TutorPaymentStatus.REQUESTED ||
+            TutorPaymentStatus.IN_REVIEW,
         },
       });
-
-
 
       console.log("22222");
 
       if (paymentRequest) {
         throw new UnProcessableEntityError("Payment request already exists");
       }
-
 
       await PaymentRequests.create({
         tutorId: tutor.userId,
@@ -1394,7 +1406,6 @@ export default class TutorService {
         WHERE tsd."tutorId" = :userId
           AND tsd."status" = 'CREATED';
       `;
-
       } else if (role === "PARENT") {
         // Parent → get tutor info from tutorSessions
         sessionsQuery = `
@@ -1439,13 +1450,6 @@ export default class TutorService {
       throw error;
     }
   }
-
-
-
-
-
-
-
 
   async getTutorSession(userId: string, sessionId: string, role: UserRole) {
     try {
@@ -1609,10 +1613,12 @@ export default class TutorService {
   }
 
   async editTutorSession(data: TutorSessionsDetail) {
-
-
     const mainSession = await TutorSessions.findOne({
-      where: { id: data.sessionId, tutorId: data.tutorId, parentId: data.parentId }
+      where: {
+        id: data.sessionId,
+        tutorId: data.tutorId,
+        parentId: data.parentId,
+      },
     });
 
     if (!mainSession) {
@@ -1631,9 +1637,6 @@ export default class TutorService {
     if (!session) {
       throw new NotFoundError("Session not found");
     }
-
-
-
 
     const oldStatus = session.status;
     await session.update({ ...data });
@@ -1823,7 +1826,7 @@ export default class TutorService {
           where: {
             id: againstId,
             ...(requesterRole !== UserRole.ADMIN &&
-              requesterRole !== UserRole.SUPER_ADMIN
+            requesterRole !== UserRole.SUPER_ADMIN
               ? { role: expectedRole }
               : {}),
           },
@@ -2038,9 +2041,9 @@ export default class TutorService {
           user: otherParty, // Consistent key for the other party
           ...(userRole === UserRole.ADMIN || userRole === UserRole.SUPER_ADMIN
             ? {
-              sender: contractData.sender,
-              receiver: contractData.receiver,
-            }
+                sender: contractData.sender,
+                receiver: contractData.receiver,
+              }
             : {}),
         };
       });
@@ -2160,7 +2163,9 @@ export default class TutorService {
   async terminateContract(
     tutorId: string,
     contractId: string,
-    status: ParentSubscriptionStatus.DISPUTE | ParentSubscriptionStatus.PENDING_COMPLETION,
+    status:
+      | ParentSubscriptionStatus.DISPUTE
+      | ParentSubscriptionStatus.PENDING_COMPLETION,
     reason?: string
   ) {
     try {
@@ -2182,18 +2187,27 @@ export default class TutorService {
         throw new NotFoundError("Contract not found");
       }
 
-
       console.log("we here 11");
 
-
       // 2. Check if contract can be terminated (not already completed/disputed/cancelled)
-      if ([ParentSubscriptionStatus.COMPLETED, ParentSubscriptionStatus.DISPUTE, ParentSubscriptionStatus.CANCELLED].includes(contract.status as any)) {
+      if (
+        [
+          ParentSubscriptionStatus.COMPLETED,
+          ParentSubscriptionStatus.DISPUTE,
+          ParentSubscriptionStatus.CANCELLED,
+        ].includes(contract.status as any)
+      ) {
         throw new BadRequestError(`Contract is already ${contract.status}`);
       }
 
       // 3. Validate reason if status is dispute
-      if (status === ParentSubscriptionStatus.DISPUTE && (!reason || reason.trim().length === 0)) {
-        throw new BadRequestError("Cancellation reason is required for dispute");
+      if (
+        status === ParentSubscriptionStatus.DISPUTE &&
+        (!reason || reason.trim().length === 0)
+      ) {
+        throw new BadRequestError(
+          "Cancellation reason is required for dispute"
+        );
       }
 
       // 4. Calculate completed days for payment
@@ -2211,7 +2225,6 @@ export default class TutorService {
       //     },
       //   ],
       // });
-
 
       console.log("we here 22");
 
@@ -2239,23 +2252,25 @@ export default class TutorService {
         if (status === ParentSubscriptionStatus.DISPUTE) {
           await this.pushToUser(
             contract.parentId,
-            '⚠️ Contract Disputed',
-            `${tutor?.fullName || 'Your tutor'} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ''}. Reason: ${reason?.substring(0, 50) || ''}${reason && reason.length > 50 ? '...' : ''}`,
+            "⚠️ Contract Disputed",
+            `${tutor?.fullName || "Your tutor"} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ""}. Reason: ${reason?.substring(0, 50) || ""}${reason && reason.length > 50 ? "..." : ""}`,
             {
               type: NotificationType.CONTRACT_DISPUTED,
               contractId: contract.id,
               disputedBy: tutorId,
-              reason: reason?.substring(0, 100) || '',
+              reason: reason?.substring(0, 100) || "",
             },
             undefined,
             `/contracts/${contract.id}`
           );
-          console.log(`✅ Sent dispute notification to parent ${contract.parentId}`);
+          console.log(
+            `✅ Sent dispute notification to parent ${contract.parentId}`
+          );
         } else if (status === ParentSubscriptionStatus.PENDING_COMPLETION) {
           await this.pushToUser(
             contract.parentId,
-            '✅ Contract Completed',
-            `${tutor?.fullName || 'Your tutor'} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ''} as completed.`,
+            "✅ Contract Completed",
+            `${tutor?.fullName || "Your tutor"} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ""} as completed.`,
             {
               type: NotificationType.CONTRACT_COMPLETED,
               contractId: contract.id,
@@ -2264,19 +2279,22 @@ export default class TutorService {
             undefined,
             `/contracts/${contract.id}`
           );
-          console.log(`✅ Sent completion notification to parent ${contract.parentId}`);
+          console.log(
+            `✅ Sent completion notification to parent ${contract.parentId}`
+          );
         }
       } catch (notificationError) {
-        console.error('❌ Error sending notification:', notificationError);
+        console.error("❌ Error sending notification:", notificationError);
       }
 
       // 7. Return contract with completed sessions count
       return {
         contract,
         // completedSessions,
-        message: status === ParentSubscriptionStatus.DISPUTE
-          ? 'Contract has been disputed and forwarded to admin for review'
-          : 'Contract has been marked as completed',
+        message:
+          status === ParentSubscriptionStatus.DISPUTE
+            ? "Contract has been disputed and forwarded to admin for review"
+            : "Contract has been marked as completed",
       };
     } catch (error) {
       console.error("Error in terminateContract:", error);
@@ -2324,7 +2342,7 @@ export default class TutorService {
         contractId: contractId,
         reviewerId: tutorId,
         reviewedId: contract.parentId,
-        reviewerRole: 'TUTOR',
+        reviewerRole: "TUTOR",
         rating,
         review: review || undefined,
       });
@@ -2345,16 +2363,19 @@ export default class TutorService {
           endDate: new Date(),
         });
 
-        await TutorSessions.update({
-          status: "cancelled",
-        }, {
-          where: {
-            offerId: contract.offerId,
-            tutorId: contract.tutorId,
-            parentId: contract.parentId,
-            status: "active",
+        await TutorSessions.update(
+          {
+            status: "cancelled",
           },
-        });
+          {
+            where: {
+              offerId: contract.offerId,
+              tutorId: contract.tutorId,
+              parentId: contract.parentId,
+              status: "active",
+            },
+          }
+        );
 
         // Notify both parties
         try {
@@ -2363,23 +2384,32 @@ export default class TutorService {
 
           await this.pushToUser(
             contract.parentId,
-            '✅ Contract Completed',
-            'Both parties have submitted their ratings. Contract is now completed.',
-            { type: NotificationType.CONTRACT_COMPLETED, contractId: contract.id },
+            "✅ Contract Completed",
+            "Both parties have submitted their ratings. Contract is now completed.",
+            {
+              type: NotificationType.CONTRACT_COMPLETED,
+              contractId: contract.id,
+            },
             undefined,
             `/contracts/${contract.id}`
           );
 
           await this.pushToUser(
             tutorId,
-            '✅ Contract Completed',
-            'Both parties have submitted their ratings. Contract is now completed.',
-            { type: NotificationType.CONTRACT_COMPLETED, contractId: contract.id },
+            "✅ Contract Completed",
+            "Both parties have submitted their ratings. Contract is now completed.",
+            {
+              type: NotificationType.CONTRACT_COMPLETED,
+              contractId: contract.id,
+            },
             undefined,
             `/contracts/${contract.id}`
           );
         } catch (notificationError) {
-          console.error('❌ Error sending completion notification:', notificationError);
+          console.error(
+            "❌ Error sending completion notification:",
+            notificationError
+          );
         }
       } else {
         // Only tutor rated - mark as pending_completion
@@ -2387,15 +2417,14 @@ export default class TutorService {
           status: ParentSubscriptionStatus.PENDING_COMPLETION,
         });
 
-
         // Notify parent to submit rating
         try {
           const tutor = await User.findByPk(tutorId);
 
           await this.pushToUser(
             contract.parentId,
-            '⭐ Rating Request',
-            `${tutor?.fullName || 'The tutor'} has submitted their rating. Please submit yours to complete the contract.`,
+            "⭐ Rating Request",
+            `${tutor?.fullName || "The tutor"} has submitted their rating. Please submit yours to complete the contract.`,
             {
               type: NotificationType.CONTRACT_RATING_SUBMITTED,
               contractId: contract.id,
@@ -2405,15 +2434,18 @@ export default class TutorService {
             `/contracts/${contract.id}`
           );
         } catch (notificationError) {
-          console.error('❌ Error sending rating notification:', notificationError);
+          console.error(
+            "❌ Error sending rating notification:",
+            notificationError
+          );
         }
       }
 
       return {
         contract,
         message: parentReview
-          ? 'Contract completed! Both parties have rated.'
-          : 'Rating submitted. Waiting for parent to rate.',
+          ? "Contract completed! Both parties have rated."
+          : "Rating submitted. Waiting for parent to rate.",
       };
     } catch (error) {
       console.error("Error in submitContractRating:", error);
@@ -2434,33 +2466,30 @@ export default class TutorService {
         include: [
           {
             model: User,
-            foreignKey: 'parentId',
-            attributes: ['id', 'fullName', 'email', 'image', 'phone'],
+            foreignKey: "parentId",
+            attributes: ["id", "fullName", "email", "image", "phone"],
           },
           {
             model: Offer,
             attributes: [
-              'id',
-              'childName',
-              'subject',
-              'amountMonthly',
-              'startDate',
-              'startTime',
-              'endTime',
-              'daysOfWeek',
-              'description',
+              "id",
+              "childName",
+              "subject",
+              "amountMonthly",
+              "startDate",
+              "startTime",
+              "endTime",
+              "daysOfWeek",
+              "description",
             ],
           },
         ],
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
         limit,
         offset,
       });
 
-
-
       console.log("fadsfasdf");
-
 
       // Calculate completed sessions and get all related data for each contract
       const contractsWithDetails = await Promise.all(
@@ -2482,14 +2511,13 @@ export default class TutorService {
           });
           console.log("we herer !");
 
-
           // Get total active sessions count
           const totalSessions = await TutorSessions.count({
             where: {
               offerId: contract.offerId,
               tutorId: contract.tutorId,
               parentId: contract.parentId,
-              status: 'active',
+              status: "active",
             },
           });
 
@@ -2501,21 +2529,21 @@ export default class TutorService {
             include: [
               {
                 model: User,
-                as: 'reviewer',
-                attributes: ['id', 'fullName', 'email', 'image'],
+                as: "reviewer",
+                attributes: ["id", "fullName", "email", "image"],
               },
               {
                 model: User,
-                as: 'reviewed',
-                attributes: ['id', 'fullName', 'email', 'image'],
+                as: "reviewed",
+                attributes: ["id", "fullName", "email", "image"],
               },
             ],
-            order: [['createdAt', 'DESC']],
+            order: [["createdAt", "DESC"]],
           });
 
           // Get parent user details
           const parent = await User.findByPk(contract.parentId, {
-            attributes: ['id', 'fullName', 'email', 'image', 'phone'],
+            attributes: ["id", "fullName", "email", "image", "phone"],
           });
 
           // Check if parent has already reviewed
@@ -2533,7 +2561,7 @@ export default class TutorService {
             where: {
               tutorId: tutorId,
             },
-            order: [['createdAt', 'DESC']],
+            order: [["createdAt", "DESC"]],
             limit: 10, // Limit to recent payment requests
           });
 
@@ -2559,24 +2587,28 @@ export default class TutorService {
             }),
             hasParentReview: !!parentReview,
             hasTutorReview: !!tutorReview,
-            parentReview: parentReview ? {
-              id: parentReview.id,
-              reviewerId: parentReview.reviewerId,
-              reviewedId: parentReview.reviewedId,
-              reviewerRole: parentReview.reviewerRole,
-              rating: parentReview.rating,
-              review: parentReview.review,
-              createdAt: parentReview.createdAt,
-            } : null,
-            tutorReview: tutorReview ? {
-              id: tutorReview.id,
-              reviewerId: tutorReview.reviewerId,
-              reviewedId: tutorReview.reviewedId,
-              reviewerRole: tutorReview.reviewerRole,
-              rating: tutorReview.rating,
-              review: tutorReview.review,
-              createdAt: tutorReview.createdAt,
-            } : null,
+            parentReview: parentReview
+              ? {
+                  id: parentReview.id,
+                  reviewerId: parentReview.reviewerId,
+                  reviewedId: parentReview.reviewedId,
+                  reviewerRole: parentReview.reviewerRole,
+                  rating: parentReview.rating,
+                  review: parentReview.review,
+                  createdAt: parentReview.createdAt,
+                }
+              : null,
+            tutorReview: tutorReview
+              ? {
+                  id: tutorReview.id,
+                  reviewerId: tutorReview.reviewerId,
+                  reviewedId: tutorReview.reviewedId,
+                  reviewerRole: tutorReview.reviewerRole,
+                  rating: tutorReview.rating,
+                  review: tutorReview.review,
+                  createdAt: tutorReview.createdAt,
+                }
+              : null,
             paymentRequests: paymentRequests.map((pr) => ({
               id: pr.id,
               amount: pr.amount,
@@ -2601,7 +2633,7 @@ export default class TutorService {
         },
       };
     } catch (error) {
-      console.error('Error in getActiveContractsForDispute:', error);
+      console.error("Error in getActiveContractsForDispute:", error);
       throw error;
     }
   }
@@ -2678,6 +2710,4 @@ export default class TutorService {
       throw error;
     }
   }
-
 }
-

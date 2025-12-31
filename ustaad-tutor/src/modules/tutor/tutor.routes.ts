@@ -13,11 +13,11 @@ import {
   tutorSearchByLocationValidationRules,
   helpRequestValidationRules,
   childNoteValidationRules,
-  updateBankDetailsValidationRules
+  updateBankDetailsValidationRules,
 } from "./tutor.validators";
 import routes from "../../routes/routes";
 import { authenticateJwt } from "../../middlewares/auth";
-import { Router } from 'express';
+import { Router } from "express";
 import { authorizeRoles } from "../../middlewares/role-auth";
 
 const tutorController = new TutorController();
@@ -30,9 +30,7 @@ const uploadFields = upload.fields([
   { name: "idBack", maxCount: 1 },
 ]);
 
-const uploadEducation = upload.fields([
-  { name: "degree", maxCount: 1 },
-]);
+const uploadEducation = upload.fields([{ name: "degree", maxCount: 1 }]);
 
 router.post(
   routes.TUTOR_ONBOARDING,
@@ -54,7 +52,12 @@ router.post(
   tutorController.editProfile
 );
 
-router.get(routes.TUTOR_Profile, authenticateJwt, authorizeRoles("TUTOR"), tutorController.getProfile);
+router.get(
+  routes.TUTOR_Profile,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.getProfile
+);
 
 router.put(
   routes.UPDATE_BANK_DETAILS,
@@ -105,12 +108,16 @@ router.get(
 );
 
 // Education routes
-router.get(routes.ALL_EDUCATION, authenticateJwt, authorizeRoles("TUTOR"), tutorController.allEducation);
+router.get(
+  routes.ALL_EDUCATION,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.allEducation
+);
 
 router.post(
   routes.ADD_EDUCATION,
   authenticateJwt,
-  uploadEducation,
   educationValidationRules(),
   validateRequest,
   authorizeRoles("TUTOR"),
@@ -134,7 +141,12 @@ router.get(
 );
 
 // About routes
-router.post(routes.ADD_TUTOR_ABOUT, authenticateJwt, authorizeRoles("TUTOR"), tutorController.addAbout);
+router.post(
+  routes.ADD_TUTOR_ABOUT,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.addAbout
+);
 
 router.post(
   routes.EDIT_TUTOR_ABOUT,
@@ -172,7 +184,12 @@ router.post(
   validateRequest,
   tutorController.addChildNote
 );
-router.post(routes.ADD_CHILD_REVIEW, authenticateJwt, authorizeRoles("TUTOR"), tutorController.addChildReview);
+router.post(
+  routes.ADD_CHILD_REVIEW,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.addChildReview
+);
 
 router.get(
   routes.GET_TUTORS_LOCATIONS,
@@ -190,7 +207,6 @@ router.post(
   validateRequest,
   tutorController.addTutorLocation
 );
-
 
 // Get all tutor locations
 router.get(
@@ -226,14 +242,44 @@ router.get(
 );
 
 // Tutor Sessions routes
-router.get(routes.GET_TUTOR_SESSIONS, authenticateJwt, authorizeRoles("TUTOR", "PARENT"), tutorController.getTutorSessions);
-router.get(routes.GET_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR", "PARENT"), tutorController.getTutorSession);
-router.post(routes.ADD_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR"), tutorController.addTutorSession);
-router.delete(routes.DELETE_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR"), tutorController.deleteTutorSession);
-router.put(routes.EDIT_TUTOR_SESSION, authenticateJwt, authorizeRoles("TUTOR"), tutorController.editTutorSession);
+router.get(
+  routes.GET_TUTOR_SESSIONS,
+  authenticateJwt,
+  authorizeRoles("TUTOR", "PARENT"),
+  tutorController.getTutorSessions
+);
+router.get(
+  routes.GET_TUTOR_SESSION,
+  authenticateJwt,
+  authorizeRoles("TUTOR", "PARENT"),
+  tutorController.getTutorSession
+);
+router.post(
+  routes.ADD_TUTOR_SESSION,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.addTutorSession
+);
+router.delete(
+  routes.DELETE_TUTOR_SESSION,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.deleteTutorSession
+);
+router.put(
+  routes.EDIT_TUTOR_SESSION,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.editTutorSession
+);
 
 // Analytics routes
-router.get(routes.MONTHLY_EARNINGS, authenticateJwt, authorizeRoles("TUTOR"), tutorController.getMonthlyEarnings);
+router.get(
+  routes.MONTHLY_EARNINGS,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.getMonthlyEarnings
+);
 
 // Help Request routes
 router.post(
@@ -298,10 +344,17 @@ router.post(
 );
 
 // Notifications routes
-router.get(routes.NOTIFICATION_HISTORY, authenticateJwt, authorizeRoles("TUTOR", "PARENT"), tutorController.getNotificationHistory);
-router.put(routes.NOTIFICATION_READ, authenticateJwt, authorizeRoles("TUTOR", "PARENT"), tutorController.markNotificationAsRead);
-
-
-
+router.get(
+  routes.NOTIFICATION_HISTORY,
+  authenticateJwt,
+  authorizeRoles("TUTOR", "PARENT"),
+  tutorController.getNotificationHistory
+);
+router.put(
+  routes.NOTIFICATION_READ,
+  authenticateJwt,
+  authorizeRoles("TUTOR", "PARENT"),
+  tutorController.markNotificationAsRead
+);
 
 export { router as tutorRouter };

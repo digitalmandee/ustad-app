@@ -9,7 +9,7 @@ export interface TutorEducationAttributes {
   startDate: Date;
   endDate: Date;
   description: string;
-  degreeUrl?: string;
+  degree?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -21,12 +21,14 @@ export class TutorEducation extends Model<TutorEducationAttributes> {
   public startDate!: Date;
   public endDate!: Date;
   public description!: string;
-  public degreeUrl?: string;
+  public degree?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
 
-export function initTutorEducationModel(sequelize: Sequelize): typeof TutorEducation {
+export function initTutorEducationModel(
+  sequelize: Sequelize
+): typeof TutorEducation {
   TutorEducation.init(
     {
       id: {
@@ -58,7 +60,7 @@ export function initTutorEducationModel(sequelize: Sequelize): typeof TutorEduca
         type: DataTypes.TEXT,
         allowNull: false,
       },
-      degreeUrl: {
+      degree: {
         type: DataTypes.STRING,
         allowNull: true,
       },
@@ -73,4 +75,4 @@ export function initTutorEducationModel(sequelize: Sequelize): typeof TutorEduca
   User.hasMany(TutorEducation, { foreignKey: "tutorId" });
 
   return TutorEducation;
-} 
+}

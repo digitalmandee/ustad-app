@@ -11,6 +11,9 @@ export interface GoogleUserData {
   image?: string;
   accessToken?: string;
   role: UserRole;
+  city: string;
+  country: string;
+  state: string;
 }
 
 export class GoogleAuthService {
@@ -19,7 +22,17 @@ export class GoogleAuthService {
     deviceId?: string
   ) {
     try {
-      const { email, googleId, fullName, image, role, gender } = googleUserData;
+      const {
+        email,
+        googleId,
+        fullName,
+        image,
+        role,
+        gender,
+        city,
+        country,
+        state,
+      } = googleUserData;
 
       if (!email || !googleId) {
         throw new Error("Email and Google ID are required");
@@ -55,6 +68,9 @@ export class GoogleAuthService {
         password: null,
         image: image || null,
         deviceId: deviceId || null,
+        city,
+        country,
+        state,
       });
 
       return user;
@@ -63,7 +79,6 @@ export class GoogleAuthService {
       throw error;
     }
   }
-
   public generateJWT(user: any): string {
     return jwt.sign(
       {
