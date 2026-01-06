@@ -212,7 +212,7 @@ export default class ChatService {
                 messageType: messageData.type,
                 messageId: message.id,
               },
-              undefined,
+              sender?.image || undefined,
               `/chat/${messageData.conversationId}`
             );
 

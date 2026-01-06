@@ -148,23 +148,29 @@ export default class AuthService implements IAuthService {
             user.id,
             user.deviceId,
             "Login Success",
-            `Welcome back, ${user.fullName || 'User'}! You have successfully logged in to your account.`,
+            `Welcome back, ${user.fullName || "User"}! You have successfully logged in to your account.`,
             {
               loginTime: new Date().toISOString(),
               deviceId: deviceId,
               role: user.role,
               userId: user.id,
             },
-            undefined, // imageUrl
+            "http://15.235.204.49:5000/logo.png", // imageUrl
             "/profile" // clickAction
           );
-          console.log("✅ Login notification sent successfully to user:", user.id);
+          console.log(
+            "✅ Login notification sent successfully to user:",
+            user.id
+          );
         } else {
           console.log("⚠️ User has no device token, skipping notification");
         }
       } catch (notificationError) {
         // Don't fail login if notification fails
-        console.error("❌ Error sending login notification:", notificationError);
+        console.error(
+          "❌ Error sending login notification:",
+          notificationError
+        );
       }
 
       return { ...sanitizedUser, token };
@@ -372,7 +378,7 @@ export default class AuthService implements IAuthService {
     try {
       // Find and delete the session
       const session = await Session.findOne({ where: { token } });
-      
+
       if (!session) {
         throw new NotAuthorizedError("Invalid session");
       }
@@ -389,7 +395,7 @@ export default class AuthService implements IAuthService {
   public async validateSession(token: string): Promise<any> {
     try {
       const session = await Session.findOne({
-        where: { 
+        where: {
           token,
           expiresAt: {
             [Op.gt]: new Date(), // Not expired
@@ -398,7 +404,7 @@ export default class AuthService implements IAuthService {
         include: [
           {
             model: User,
-            attributes: ['id', 'email', 'phone', 'role', 'isActive'],
+            attributes: ["id", "email", "phone", "role", "isActive"],
           },
         ],
       });
@@ -439,7 +445,7 @@ export default class AuthService implements IAuthService {
       console.log(`Cleaned up ${result} expired sessions`);
       return result;
     } catch (err: any) {
-      console.error('Error cleaning up expired sessions:', err);
+      console.error("Error cleaning up expired sessions:", err);
       throw new GenericError(err, "Failed to cleanup expired sessions");
     }
   }
