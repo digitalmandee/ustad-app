@@ -14,9 +14,9 @@ export default class ChatController {
   createMessage = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const senderId = req.user.id;
-      const role=req.user.role;
+      const role = req.user.role;
       const messageData = req.body;
-      let user = await this.chatService.createMessage(senderId, messageData,role);
+      let user = await this.chatService.createMessage(senderId, messageData, role);
       sendSuccessResponse(
         res,
         InfoMessages.GENERIC.ITEM_CREATED_SUCCESSFULLY('message'),
@@ -106,8 +106,9 @@ export default class ChatController {
   getConversationById = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const userId = req.user?.id;
+      const role = req.user?.role;
       const { conversationId } = req.params;
-      const conversation = await this.chatService.getConversationById(conversationId, userId);
+      const conversation = await this.chatService.getConversationById(conversationId, userId, role);
       sendSuccessResponse(res, 'user coversation got by id sucessfully', 200, conversation);
     } catch (e: any) {
       throw new GenericError(e, ` Error from create message ${__filename}`);
@@ -164,18 +165,18 @@ export default class ChatController {
     console.log(senderId, 'sender id', data, 'data');
 
     try {
-      const savedMessage = await this.chatService.createMessage(senderId, data,role);
+      const savedMessage = await this.chatService.createMessage(senderId, data, role);
       socket.to(data.conversationId).emit('newMessage', savedMessage);
 
-      console.log("savedMessage", savedMessage);
-      
+      console.log('savedMessage', savedMessage);
+
       socket.emit('newMessage', savedMessage);
     } catch (err) {
       console.error('Error saving message:', err);
       socket.emit('error', 'Failed to send/save message');
     }
   };
-  
+
   markAsReadS = async (socket: Socket, data: string) => {
     const senderId = socket.data.user.user.id;
     console.log(senderId, 'sender id', data, 'data');
@@ -190,7 +191,7 @@ export default class ChatController {
     }
   };
 
-  handleGetMissedMessages=async(socket: Socket, lastSeenAt:string|Date)=> {
+  handleGetMissedMessages = async (socket: Socket, lastSeenAt: string | Date) => {
     const userId = socket.data.user.user.id;
     try {
       const missedMessages = await this.chatService.getMissedMessages(userId, lastSeenAt);
@@ -199,5 +200,5 @@ export default class ChatController {
       console.error('Error fetching missed messages:', err);
       socket.emit('error', 'Failed to fetch messages');
     }
-  }
+  };
 }

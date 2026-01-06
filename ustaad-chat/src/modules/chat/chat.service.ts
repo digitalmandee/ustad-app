@@ -14,7 +14,7 @@ import {
   ConversationStatus,
   ConversationType,
   MessageStatus,
-  MessageType, 
+  MessageType,
   OfferStatus,
   UserRole,
 } from '../../constant/enums';
@@ -106,10 +106,8 @@ export default class ChatService {
           throw new BadRequestError("Offer already exists for this parent's child");
         }
 
+        console.log('offerData', offerData);
 
-        console.log("offerData", offerData);
-        
-        
         const savedOfferdata = await Offer.create(
           {
             conversationId: messageData.conversationId,
@@ -192,42 +190,33 @@ export default class ChatService {
           if (!receiverToken) {
             console.log('⚠️ Receiver has no device token, skipping notification');
           } else {
+            // Determine notification body based on message type
+            let notificationBody = messageData.content || '';
+            if (messageData.type === MessageType.FILE) {
+              notificationBody = '📷 Sent an image';
+            }
+            if (notificationBody.length > 100) {
+              notificationBody = notificationBody.substring(0, 100) + '...';
+            }
 
-          // Determine notification body based on message type
-          let notificationBody = messageData.content || '';
-          if (messageData.type === MessageType.IMAGE) {
-            notificationBody = '📷 Sent an image';
-          } else if (messageData.type === MessageType.FILE) {
-            notificationBody = '📎 Sent a file';
-          } else if (messageData.type === MessageType.AUDIO) {
-            notificationBody = '🎤 Sent an audio message';
-          } else if (messageData.type === MessageType.OFFER) {
-            notificationBody = '💼 Sent a tutoring offer';
-          }
+            await sendNotificationToUser(
+              receiver.userId,
+              receiverToken,
+              `${sender?.fullName || 'Someone'}`,
+              notificationBody,
+              {
+                type: 'NEW_MESSAGE',
+                conversationId: messageData.conversationId,
+                senderId,
+                senderName: sender?.fullName || 'Unknown',
+                messageType: messageData.type,
+                messageId: message.id,
+              },
+              undefined,
+              `/chat/${messageData.conversationId}`
+            );
 
-          // Truncate long messages
-          if (notificationBody.length > 100) {
-            notificationBody = notificationBody.substring(0, 100) + '...';
-          }
-
-          await sendNotificationToUser(
-            receiver.userId,
-            receiverToken,
-            `${sender?.fullName || 'Someone'}`,
-            notificationBody,
-            {
-              type: 'NEW_MESSAGE',
-              conversationId: messageData.conversationId,
-              senderId,
-              senderName: sender?.fullName || 'Unknown',
-              messageType: messageData.type,
-              messageId: message.id,
-            },
-            undefined,
-            `/chat/${messageData.conversationId}`
-          );
-
-          console.log(`✅ Sent chat notification to user ${receiver.userId}`);
+            console.log(`✅ Sent chat notification to user ${receiver.userId}`);
           }
         }
       } catch (notificationError) {
@@ -267,10 +256,18 @@ export default class ChatService {
       // First get total count
       const total = await Message.count({ where: whereClause });
 
+      const unreadCount = await Message.count({
+        where: {
+          conversationId,
+          senderId: { [Op.ne]: userId },
+          createdAt: { [Op.gt]: (participant as any).lastReadAt || new Date(0) },
+        },
+      });
+
       // If requested page is beyond available data, return empty array
       if (offset >= total && total > 0) {
         return {
-          messages: [],
+          messages: [] as IMessageResponseDto[],
           pagination: {
             page,
             limit,
@@ -279,6 +276,7 @@ export default class ChatService {
             hasNext: false,
             hasPrev: page > 1,
             messageCount: 0,
+            unreadCount,
           },
         };
       }
@@ -310,6 +308,7 @@ export default class ChatService {
           hasNext: page * limit < total,
           hasPrev: page > 1,
           messageCount: messages.length,
+          unreadCount,
         },
       };
     } catch (err: any) {
@@ -544,7 +543,7 @@ export default class ChatService {
     }
   }
 
-  async getConversationById(conversationId: string, userId: string) {
+  async getConversationById(conversationId: string, userId: string, role?: string) {
     const participant = await ConversationParticipant.findOne({
       where: {
         conversationId,
@@ -572,7 +571,7 @@ export default class ChatService {
 
     const participant2Ids = participant2.userId;
 
-    return this.formatConversationResponse(conversation, userId);
+    return this.formatConversationResponse(conversation, userId, role);
   }
 
   //   async updateConversation(
@@ -735,7 +734,11 @@ export default class ChatService {
     }
   }
 
-  private async formatConversationResponse(conversation: Conversation, currentUserId: string) {
+  private async formatConversationResponse(
+    conversation: Conversation,
+    currentUserId: string,
+    role?: string
+  ) {
     const participantCount = await ConversationParticipant.count({
       where: {
         conversationId: conversation.id,
@@ -774,13 +777,32 @@ export default class ChatService {
         console.log(otherParticipant, conversationName, 'hj');
       }
     }
-
     const lastMessage = await Message.findOne({
       where: {
         conversationId: conversation.id,
       },
       order: [['createdAt', 'DESC']],
     });
+
+    let children: any[] = [];
+    if (role === UserRole.PARENT) {
+      children = await Child.findAll({
+        where: { userId: currentUserId },
+      });
+    } else if (role === UserRole.TUTOR) {
+      const otherParticipant = await ConversationParticipant.findOne({
+        where: {
+          conversationId: conversation.id,
+          userId: { [Op.ne]: currentUserId },
+          isActive: true,
+        },
+      });
+      if (otherParticipant) {
+        children = await Child.findAll({
+          where: { userId: otherParticipant.userId },
+        });
+      }
+    }
 
     return {
       id: conversation.id,
@@ -797,6 +819,7 @@ export default class ChatService {
       participantId,
       participantImage,
       participantRegistrationTime,
+      children,
       lastMessage: lastMessage
         ? {
             id: lastMessage.id,

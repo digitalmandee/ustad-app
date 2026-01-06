@@ -253,7 +253,7 @@ export default class ParentService {
       const averageRating =
         totalReviews > 0
           ? reviews.reduce((sum, review) => sum + review.rating, 0) /
-          totalReviews
+            totalReviews
           : 0;
 
       // Format reviews with tutor information
@@ -265,11 +265,11 @@ export default class ParentService {
           review: review.review,
           tutor: reviewData.reviewer
             ? {
-              id: reviewData.reviewer.id,
-              fullName: reviewData.reviewer.fullName,
-              email: reviewData.reviewer.email,
-              image: reviewData.reviewer.image,
-            }
+                id: reviewData.reviewer.id,
+                fullName: reviewData.reviewer.fullName,
+                email: reviewData.reviewer.email,
+                image: reviewData.reviewer.image,
+              }
             : null,
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
@@ -347,7 +347,7 @@ export default class ParentService {
         include: [
           {
             model: Tutor,
-            attributes: ["subjects", "about", "grade"]
+            attributes: ["subjects", "about", "grade"],
           },
           {
             model: TutorSettings,
@@ -355,7 +355,13 @@ export default class ParentService {
           },
           {
             model: TutorEducation,
-            attributes: ["institute", "startDate", "endDate", "description", "degree"],
+            attributes: [
+              "institute",
+              "startDate",
+              "endDate",
+              "description",
+              "degree",
+            ],
           },
           {
             model: TutorExperience,
@@ -365,6 +371,7 @@ export default class ParentService {
               "startDate",
               "endDate",
               "description",
+              "dasignation",
             ],
           },
         ],
@@ -397,7 +404,7 @@ export default class ParentService {
       const averageRating =
         totalReviews > 0
           ? reviews.reduce((sum, review) => sum + review.rating, 0) /
-          totalReviews
+            totalReviews
           : 0;
 
       // Format reviews with parent information
@@ -409,11 +416,11 @@ export default class ParentService {
           review: review.review,
           parent: reviewData.reviewer
             ? {
-              id: reviewData.reviewer.id,
-              fullName: reviewData.reviewer.fullName,
-              email: reviewData.reviewer.email,
-              image: reviewData.reviewer.image,
-            }
+                id: reviewData.reviewer.id,
+                fullName: reviewData.reviewer.fullName,
+                email: reviewData.reviewer.email,
+                image: reviewData.reviewer.image,
+              }
             : null,
           createdAt: review.createdAt,
           updatedAt: review.updatedAt,
@@ -491,7 +498,10 @@ export default class ParentService {
             `/offers/${offerId}`
           );
         } catch (notificationError) {
-          console.error("❌ Error sending offer rejected notification:", notificationError);
+          console.error(
+            "❌ Error sending offer rejected notification:",
+            notificationError
+          );
         }
 
         return offer;
@@ -586,7 +596,10 @@ export default class ParentService {
           `/offers/${offerId}`
         );
       } catch (notificationError) {
-        console.error("❌ Error sending offer accepted notification:", notificationError);
+        console.error(
+          "❌ Error sending offer accepted notification:",
+          notificationError
+        );
       }
 
       // Return PayFast form data to client
@@ -1185,7 +1198,10 @@ export default class ParentService {
             contract.tutorId,
             "✅ Contract Completed",
             "Both parties have submitted their ratings. Contract is now completed.",
-            { type: NotificationType.CONTRACT_COMPLETED, contractId: contract.id },
+            {
+              type: NotificationType.CONTRACT_COMPLETED,
+              contractId: contract.id,
+            },
             undefined,
             `/contracts/${contract.id}`
           );
@@ -1194,7 +1210,10 @@ export default class ParentService {
             parentId,
             "✅ Contract Completed",
             "Both parties have submitted their ratings. Contract is now completed.",
-            { type: NotificationType.CONTRACT_COMPLETED, contractId: contract.id },
+            {
+              type: NotificationType.CONTRACT_COMPLETED,
+              contractId: contract.id,
+            },
             undefined,
             `/contracts/${contract.id}`
           );
@@ -1379,25 +1398,25 @@ export default class ParentService {
             hasTutorReview: !!tutorReview,
             parentReview: parentReview
               ? {
-                id: parentReview.id,
-                reviewerId: parentReview.reviewerId,
-                reviewedId: parentReview.reviewedId,
-                reviewerRole: parentReview.reviewerRole,
-                rating: parentReview.rating,
-                review: parentReview.review,
-                createdAt: parentReview.createdAt,
-              }
+                  id: parentReview.id,
+                  reviewerId: parentReview.reviewerId,
+                  reviewedId: parentReview.reviewedId,
+                  reviewerRole: parentReview.reviewerRole,
+                  rating: parentReview.rating,
+                  review: parentReview.review,
+                  createdAt: parentReview.createdAt,
+                }
               : null,
             tutorReview: tutorReview
               ? {
-                id: tutorReview.id,
-                reviewerId: tutorReview.reviewerId,
-                reviewedId: tutorReview.reviewedId,
-                reviewerRole: tutorReview.reviewerRole,
-                rating: tutorReview.rating,
-                review: tutorReview.review,
-                createdAt: tutorReview.createdAt,
-              }
+                  id: tutorReview.id,
+                  reviewerId: tutorReview.reviewerId,
+                  reviewedId: tutorReview.reviewedId,
+                  reviewerRole: tutorReview.reviewerRole,
+                  rating: tutorReview.rating,
+                  review: tutorReview.review,
+                  createdAt: tutorReview.createdAt,
+                }
               : null,
             paymentRequests: paymentRequests.map((pr) => ({
               id: pr.id,
@@ -1714,7 +1733,10 @@ export default class ParentService {
               `/subscriptions/${subscription.id}`
             );
           } catch (e) {
-            console.error("❌ Error sending subscription active notification:", e);
+            console.error(
+              "❌ Error sending subscription active notification:",
+              e
+            );
           }
 
           // Create TutorTransaction and TutorSessions
@@ -1985,7 +2007,10 @@ export default class ParentService {
               `/subscriptions/${subscription.id}`
             );
           } catch (e) {
-            console.error("❌ Error sending recurring failure notification:", e);
+            console.error(
+              "❌ Error sending recurring failure notification:",
+              e
+            );
           }
         }
       }
@@ -2108,15 +2133,13 @@ export default class ParentService {
 
       const userMobileNumber = user.phone || "";
 
-      const result = await this.payfastService.getListsOfInstruments(
-        userMobileNumber
-      );
-
+      const result =
+        await this.payfastService.getListsOfInstruments(userMobileNumber);
 
       const cards = result.map((item: any) => ({
         cardNumber: item.instrument_alias || "",
         isExpired: item.is_expired ? true : false,
-        id: item.unique_identifier || ""
+        id: item.unique_identifier || "",
       }));
 
       return cards;
@@ -2164,9 +2187,8 @@ export default class ParentService {
         instrumentToken = subscription.instrumentToken;
       } else {
         // Fetch instruments list and match cardId with unique_identifier
-        const instruments = await this.payfastService.getListsOfInstruments(
-          userMobileNumber
-        );
+        const instruments =
+          await this.payfastService.getListsOfInstruments(userMobileNumber);
 
         // Find the instrument matching the cardId (unique_identifier)
         const matchedInstrument = instruments.find(
@@ -2192,7 +2214,10 @@ export default class ParentService {
       const basketId = this.payfastService.generateBasketId("RECUR");
 
       // Generate order date (current date in required format)
-      const orderDate = new Date().toISOString().replace("T", " ").substring(0, 19);
+      const orderDate = new Date()
+        .toISOString()
+        .replace("T", " ")
+        .substring(0, 19);
 
       // Get amount from subscription if available, otherwise use a default or throw error
       let txnamt: string;
@@ -2270,9 +2295,8 @@ export default class ParentService {
         instrumentToken = subscription.instrumentToken;
       } else {
         // Fetch instruments list and match cardId with unique_identifier
-        const instruments = await this.payfastService.getListsOfInstruments(
-          userMobileNumber
-        );
+        const instruments =
+          await this.payfastService.getListsOfInstruments(userMobileNumber);
 
         const matchedInstrument = instruments.find(
           (item: any) => item.unique_identifier === data.cardId
@@ -2295,7 +2319,10 @@ export default class ParentService {
 
       // Generate basket/order date like OTP endpoint
       const basketId = this.payfastService.generateBasketId("RECUR");
-      const orderDate = new Date().toISOString().replace("T", " ").substring(0, 19);
+      const orderDate = new Date()
+        .toISOString()
+        .replace("T", " ")
+        .substring(0, 19);
 
       // Amount from subscription
       if (!subscription || !subscription.amount) {
@@ -2357,9 +2384,7 @@ export default class ParentService {
       const transactionAmount = queryParams.transaction_amount;
       const isRecurring = queryParams.Recurring_txn === "true";
 
-
       console.log("we here ");
-
 
       if (!basketId) {
         throw new BadRequestError("Missing basket_id in success callback");
@@ -2427,7 +2452,6 @@ export default class ParentService {
       nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
       console.log("FDSFAS");
 
-
       await subscription.update({
         status: ParentSubscriptionStatus.ACTIVE,
         instrumentToken:
@@ -2486,7 +2510,7 @@ export default class ParentService {
       }
 
       offer.status = OfferStatus.ACCEPTED;
-      offer.save()
+      offer.save();
 
       return {
         success: errCode === "000",

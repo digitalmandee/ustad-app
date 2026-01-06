@@ -896,7 +896,14 @@ export default class TutorService {
             {
               model: User,
               as: "tutor",
-              attributes: ["id", "fullName", "email", "phone", "image"],
+              attributes: [
+                "id",
+                "fullName",
+                "email",
+                "phone",
+                "image",
+                "gender",
+              ],
               include: [
                 {
                   model: Tutor,

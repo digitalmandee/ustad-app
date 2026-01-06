@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import { getFirebaseApp } from "./firebase-con";
-// import { Notification, NotificationType } from "@ustaad/shared";
+import { Notification, NotificationType } from "@ustaad/shared";
 
 export interface NotificationResult {
   success: boolean;
@@ -67,25 +67,25 @@ export async function sendNotificationToUser(
     };
 
     // Create notification record in DB
-    // const notification = await Notification.create({
-    //   userId: userId,
-    //   type: NotificationType.SYSTEM_NOTIFICATION,
-    //   title: headline,
-    //   body: message,
-    //   deviceToken: token,
-    //   status: "pending",
-    //   isRead: false,
-    //   sentAt: new Date(),
-    // });
+    const notification = await Notification.create({
+      userId: userId,
+      type: NotificationType.SYSTEM_NOTIFICATION,
+      title: headline,
+      body: message,
+      deviceToken: token,
+      status: "pending",
+      isRead: false,
+      sentAt: new Date(),
+    });
 
     const response = await firebaseApp.messaging().send(notificationMessage);
 
     console.log("✅ Notification sent successfully:", response);
 
     // Update notification status
-    // notification.status = "sent";
-    // notification.sentAt = new Date();
-    // await notification.save();
+    notification.status = "sent";
+    notification.sentAt = new Date();
+    await notification.save();
 
     return {
       success: true,
@@ -93,19 +93,19 @@ export async function sendNotificationToUser(
     };
   } catch (error: any) {
     console.error(`❌ Error sending notification to user ${userId}:`, error);
-    
+
     // Update notification status to failed if it was created
-    // try {
-    //   const notification = await Notification.findOne({
-    //     where: { userId, title: headline, body: message },
-    //     order: [["createdAt", "DESC"]],
-    //   });
-    //   if (notification && notification.status === "pending") {
-    //     await notification.update({ status: "failed" });
-    //   }
-    // } catch (updateError) {
-    //   // Ignore update errors
-    // }
+    try {
+      const notification = await Notification.findOne({
+        where: { userId, title: headline, body: message },
+        order: [["createdAt", "DESC"]],
+      });
+      if (notification && notification.status === "pending") {
+        await notification.update({ status: "failed" });
+      }
+    } catch (updateError) {
+      // Ignore update errors
+    }
 
     return {
       success: false,
@@ -113,4 +113,3 @@ export async function sendNotificationToUser(
     };
   }
 }
-

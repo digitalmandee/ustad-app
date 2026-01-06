@@ -1,4 +1,4 @@
-import { MessageType } from "@ustaad/shared";
+import { MessageType } from '@ustaad/shared';
 
 export interface ICreateMessageDto {
   conversationId: string;
@@ -6,8 +6,8 @@ export interface ICreateMessageDto {
   type?: MessageType;
   replyToId?: string;
   metadata?: object;
-  offer?:object;
-  fileId?: string; 
+  offer?: object;
+  fileId?: string;
 }
 
 export interface OfferData {
@@ -53,13 +53,9 @@ export interface PaginatedMessagesDto {
     totalPages: number;
     hasNext: boolean;
     hasPrev: boolean;
+    unreadCount: number;
   };
 }
-
-
-
-
-
 
 export interface CreateConversationDto {
   name?: string;

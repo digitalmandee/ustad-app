@@ -83,9 +83,9 @@ export async function sendNotificationToUser(
     console.log("✅ Notification sent successfully:", response);
 
     // Update notification status
-    // notification.status = "sent";
-    // notification.sentAt = new Date();
-    // await notification.save();
+    notification.status = "sent";
+    notification.sentAt = new Date();
+    await notification.save();
 
     return {
       success: true,
