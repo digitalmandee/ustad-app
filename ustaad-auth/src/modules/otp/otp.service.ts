@@ -1,22 +1,22 @@
-import sgMail from '@sendgrid/mail';
-import { EmailTemplates, EmailTemplateParams } from './types';
-import { templates } from './templates';
-import { InternalServerError } from '../../errors/internal-server-error';
-import { BadRequestError } from '../../errors/bad-request-error';
-import { GenericError } from '../../errors/generic-error';
-import { UnProcessableEntityError } from '../../errors/unprocessable-entity.error';
+import sgMail from "@sendgrid/mail";
+import { EmailTemplates, EmailTemplateParams } from "./types";
+import { templates } from "./templates";
+import { InternalServerError } from "../../errors/internal-server-error";
+import { BadRequestError } from "../../errors/bad-request-error";
+import { GenericError } from "../../errors/generic-error";
+import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
 // import { User } from '../../models/user.model';
 // import { Otp } from '../../models/otp.model';
 
 import { User, Otp } from "@ustaad/shared";
-import { NotAuthorizedError } from '../../errors/not-authorized-error';
-import { generateOtp } from '../../helper/generic';
-import { IOtpSendDTO, IOtpVerifyDTO } from './otp.dto';
-import { addMinutes } from 'date-fns';
-import { OtpPurpose, OtpStatus } from '../../constant/enums';
-import { Op } from 'sequelize';
-import { smsService } from '../sms/sms.service';
-import { sendNotification } from '@ustaad/shared';
+import { NotAuthorizedError } from "../../errors/not-authorized-error";
+import { generateOtp } from "../../helper/generic";
+import { IOtpSendDTO, IOtpVerifyDTO } from "./otp.dto";
+import { addMinutes } from "date-fns";
+import { OtpPurpose, OtpStatus } from "../../constant/enums";
+import { Op } from "sequelize";
+import { smsService } from "../sms/sms.service";
+import { sendNotification } from "@ustaad/shared";
 
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY!;
 const FROM_EMAIL = process.env.FROM_EMAIL!;
@@ -27,7 +27,11 @@ export class OtpServices {
   /**
    * Sends a raw HTML email
    */
-  public async sendEmail(to: string, subject: string, html: string): Promise<void> {
+  public async sendEmail(
+    to: string,
+    subject: string,
+    html: string
+  ): Promise<void> {
     const msg = {
       to,
       from: FROM_EMAIL,
@@ -44,7 +48,7 @@ export class OtpServices {
         error: error?.response?.body || error.message || error,
       });
 
-      throw new InternalServerError('Failed to send email [email001]');
+      throw new InternalServerError("Failed to send email [email001]");
     }
   }
 
@@ -69,28 +73,30 @@ export class OtpServices {
    * Sends OTP via email or SMS based on the type
    */
   public async sendOtp(dto: IOtpSendDTO) {
-    const { userId, type, purpose } = dto;
+    const { userId, type, purpose, email, phone } = dto;
 
     try {
-      if (type !== 'email' && type !== 'phone') {
-        throw new UnProcessableEntityError('Invalid OTP type. Must be email or phone');
+      if (type !== "email" && type !== "phone") {
+        throw new UnProcessableEntityError(
+          "Invalid OTP type. Must be email or phone"
+        );
       }
 
       const user = await User.findByPk(userId);
       if (!user) {
-        throw new NotAuthorizedError('User not found');
+        throw new NotAuthorizedError("User not found");
       }
 
       // Validate user has the required contact method
-      if (type === 'email' && !user.email) {
-        throw new NotAuthorizedError('User email not registered');
+      if (type === "email" && !user.email) {
+        throw new NotAuthorizedError("User email not registered");
       }
 
-      if (type === 'phone' && !user.phone) {
-        throw new NotAuthorizedError('User phone number not registered');
+      if (type === "phone" && !user.phone) {
+        throw new NotAuthorizedError("User phone number not registered");
       }
 
-      const otpCode = '1111'
+      const otpCode = "1111";
       // const otpCode = generateOtp(4);
       const expiryDate = addMinutes(new Date(), 10);
 
@@ -103,16 +109,19 @@ export class OtpServices {
         expiry: expiryDate,
       });
 
+      const userEmail = email ? email : user.email;
+      const userPhone = phone ? phone : user.phone;
+
       // Send OTP based on type
-      if (type === 'email') {
-        // await this.sendEmailByTemplate(user.email, 'otp', {
+      if (type === "email") {
+        // await this.sendEmailByTemplate(userEmail, 'otp', {
         //   name: user.fullName || 'User',
         //   otp: otpCode,
         //   expiryMinutes: 10,
         // });
-      } else if (type === 'phone') {
+      } else if (type === "phone") {
         // Send SMS OTP using VeevoTech service
-        // const formattedPhone = smsService.formatPhoneNumber(user.phone);
+        // const formattedPhone = smsService.formatPhoneNumber(userPhone);
         // await smsService.sendOtpSms(formattedPhone, otpCode, 10);
       }
 
@@ -127,7 +136,7 @@ export class OtpServices {
         throw err;
       }
 
-      throw new GenericError(err, 'Unable to send OTP');
+      throw new GenericError(err, "Unable to send OTP");
     }
   }
 
@@ -150,19 +159,19 @@ export class OtpServices {
             [Op.gt]: now, // Not expired
           },
         },
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       if (!otpEntry) {
-        throw new BadRequestError('OTP invalid or expired');
+        throw new BadRequestError("OTP invalid or expired");
       }
 
       if (otpEntry.otp !== enteredOtp) {
-        throw new BadRequestError('Invalid OTP code');
+        throw new BadRequestError("Invalid OTP code");
       }
 
       const user = await User.findByPk(userId);
-      if (!user) throw new BadRequestError('User not found');
+      if (!user) throw new BadRequestError("User not found");
 
       // Update user verification status based on purpose
       if (purpose === OtpPurpose.EMAIL_VERIFICATION) {
@@ -180,9 +189,14 @@ export class OtpServices {
 
       await user.save();
 
-      await sendNotification(userId,user.deviceId, 'OTP Verified', 'Your OTP has been verified successfully');
+      await sendNotification(
+        userId,
+        user.deviceId,
+        "OTP Verified",
+        "Your OTP has been verified successfully"
+      );
 
-      return { success: true, message: 'OTP verified successfully' };
+      return { success: true, message: "OTP verified successfully" };
     } catch (err: any) {
       if (
         err instanceof BadRequestError ||
@@ -192,7 +206,7 @@ export class OtpServices {
         throw err;
       }
 
-      throw new GenericError(err, 'Failed to verify OTP');
+      throw new GenericError(err, "Failed to verify OTP");
     }
   }
 
@@ -228,7 +242,7 @@ export class OtpServices {
         throw err;
       }
 
-      throw new GenericError(err, 'Unable to resend OTP');
+      throw new GenericError(err, "Unable to resend OTP");
     }
   }
 

@@ -1,10 +1,11 @@
-import { OtpPurpose, OtpType } from "@ustaad/shared"
-
+import { OtpPurpose, OtpType } from "@ustaad/shared";
 
 export interface IOtpSendDTO {
-  userId:string
-  purpose:OtpPurpose
-  type:OtpType
+  userId: string;
+  purpose: OtpPurpose;
+  type: OtpType;
+  email?: string;
+  phone?: string;
 }
 
 export interface IOtpVerifyDTO {
