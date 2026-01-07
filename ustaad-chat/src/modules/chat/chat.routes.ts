@@ -22,7 +22,7 @@ router.get('/health', (req, res) => {
   res.json({
     success: true,
     message: 'Chat service is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -122,5 +122,29 @@ router.get(
 //   // validateRequest,
 //   chatController.leaveConversation
 // );
+
+// Bulk delete messages
+router.post(
+  routes.BULK_DELETE_MESSAGES,
+  authenticateJwt,
+  validateRequest,
+  chatController.bulkDeleteMessages
+);
+
+// Delete conversation
+router.delete(
+  routes.DELETE_CONVERSATION,
+  authenticateJwt,
+  validateRequest,
+  chatController.deleteConversation
+);
+
+// Bulk delete conversations
+router.post(
+  routes.BULK_DELETE_CONVERSATIONS,
+  authenticateJwt,
+  validateRequest,
+  chatController.bulkDeleteConversations
+);
 
 export { router as chatRouter };

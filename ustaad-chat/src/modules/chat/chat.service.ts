@@ -440,6 +440,49 @@ export default class ChatService {
     }
   }
 
+  async bulkDeleteMessages(messageIds: string[], userId: string): Promise<void> {
+    await Message.update(
+      {
+        status: MessageStatus.DELETED,
+        content: 'This message was deleted',
+      },
+      {
+        where: {
+          id: { [Op.in]: messageIds },
+          senderId: userId,
+        },
+      }
+    );
+  }
+
+  async deleteConversation(conversationId: string, userId: string): Promise<void> {
+    const participant = await ConversationParticipant.findOne({
+      where: {
+        conversationId,
+        userId,
+        isActive: true,
+      },
+    });
+
+    if (!participant) {
+      throw new Error('User is not a participant of this conversation');
+    }
+
+    await participant.update({ isActive: false });
+  }
+
+  async bulkDeleteConversations(conversationIds: string[], userId: string): Promise<void> {
+    await ConversationParticipant.update(
+      { isActive: false },
+      {
+        where: {
+          conversationId: { [Op.in]: conversationIds },
+          userId,
+        },
+      }
+    );
+  }
+
   // ///////////     conversation
 
   async createConversation(createdBy: string, conversationData: CreateConversationDto) {

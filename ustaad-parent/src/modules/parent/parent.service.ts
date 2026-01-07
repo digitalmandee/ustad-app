@@ -7,9 +7,12 @@ import { NotFoundError } from "../../errors/not-found-error";
 import { BadRequestError } from "../../errors/bad-request-error";
 import { IParentOnboardingDTO } from "./parent.dto";
 import bcrypt from "bcrypt";
+import { Service } from "typedi";
 import {
   Parent,
   User,
+  Child,
+  IsOnBaord,
   Tutor,
   TutorEducation,
   TutorExperience,
@@ -20,7 +23,6 @@ import {
   Offer,
   ParentTransaction,
   TutorTransaction,
-  Child,
   ContractReview,
   TutorSessionsDetail,
   PaymentRequests,
@@ -28,9 +30,12 @@ import {
   TutorTransactionType,
   TutorSessionStatus,
   ParentSubscriptionStatus,
+  Notification, // Added this
+  OfferStatus,
+  sequelize, // Needed for transaction
 } from "@ustaad/shared";
 import Stripe from "stripe";
-import { TutorPaymentStatus, OfferStatus } from "@ustaad/shared";
+import { TutorPaymentStatus } from "@ustaad/shared";
 import { Op } from "sequelize";
 import PayFastService from "../../services/payfast.service";
 import { sendNotificationToUser } from "../../services/notification.service";
@@ -2524,5 +2529,32 @@ export default class ParentService {
       console.error("Error in handlePayFastSuccess:", error);
       throw error;
     }
+  }
+
+  async deleteNotification(
+    notificationId: string,
+    userId: string
+  ): Promise<void> {
+    const notification = await Notification.findOne({
+      where: { id: notificationId, userId },
+    });
+
+    if (!notification) {
+      throw new Error("Notification not found");
+    }
+
+    await notification.destroy();
+  }
+
+  async deleteNotifications(
+    notificationIds: string[],
+    userId: string
+  ): Promise<void> {
+    await Notification.destroy({
+      where: {
+        id: notificationIds,
+        userId,
+      },
+    });
   }
 }

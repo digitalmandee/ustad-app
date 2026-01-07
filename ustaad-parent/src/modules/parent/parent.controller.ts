@@ -148,7 +148,6 @@ export default class ParentController {
     }
   };
 
-
   getPaymentMethods = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
@@ -231,7 +230,6 @@ export default class ParentController {
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
-
 
   cancelSubscription = async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -332,14 +330,17 @@ export default class ParentController {
       const { id: parentId } = req.user;
       const spending = await this.parentService.getMonthlySpending(parentId);
       return sendSuccessResponse(
-        res, 
-        "Monthly spending retrieved successfully", 
-        200, 
+        res,
+        "Monthly spending retrieved successfully",
+        200,
         spending
       );
     } catch (error: any) {
-      console.error('Get monthly spending error:', error);
-      throw new GenericError(error, `Error from getMonthlySpending ${__filename}`);
+      console.error("Get monthly spending error:", error);
+      throw new GenericError(
+        error,
+        `Error from getMonthlySpending ${__filename}`
+      );
     }
   };
 
@@ -350,13 +351,30 @@ export default class ParentController {
       const { status, reason } = req.body;
 
       // Validate status
-      if (!status || ![ParentSubscriptionStatus.DISPUTE, ParentSubscriptionStatus.PENDING_COMPLETION].includes(status as any)) {
-        return sendErrorResponse(res, "Status must be either 'dispute' or 'completed'", 400);
+      if (
+        !status ||
+        ![
+          ParentSubscriptionStatus.DISPUTE,
+          ParentSubscriptionStatus.PENDING_COMPLETION,
+        ].includes(status as any)
+      ) {
+        return sendErrorResponse(
+          res,
+          "Status must be either 'dispute' or 'completed'",
+          400
+        );
       }
 
       // Validate reason only if status is dispute
-      if (status === ParentSubscriptionStatus.DISPUTE && (!reason || reason.trim().length === 0)) {
-        return sendErrorResponse(res, "Cancellation reason is required for dispute", 400);
+      if (
+        status === ParentSubscriptionStatus.DISPUTE &&
+        (!reason || reason.trim().length === 0)
+      ) {
+        return sendErrorResponse(
+          res,
+          "Cancellation reason is required for dispute",
+          400
+        );
       }
 
       const result = await this.parentService.terminateContract(
@@ -366,16 +384,12 @@ export default class ParentController {
         reason
       );
 
-      const successMessage = status === ParentSubscriptionStatus.DISPUTE 
-        ? "Contract terminated and forwarded to admin"
-        : "Contract marked as completed";
+      const successMessage =
+        status === ParentSubscriptionStatus.DISPUTE
+          ? "Contract terminated and forwarded to admin"
+          : "Contract marked as completed";
 
-      return sendSuccessResponse(
-        res,
-        successMessage,
-        200,
-        result
-      );
+      return sendSuccessResponse(res, successMessage, 200, result);
     } catch (error: any) {
       console.error("Terminate contract error:", error);
 
@@ -383,8 +397,7 @@ export default class ParentController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage =
-        error?.message || "Failed to terminate contract";
+      const errorMessage = error?.message || "Failed to terminate contract";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -403,15 +416,10 @@ export default class ParentController {
         parentId,
         contractId,
         rating,
-        review || ''
+        review || ""
       );
 
-      return sendSuccessResponse(
-        res,
-        result.message,
-        200,
-        result
-      );
+      return sendSuccessResponse(res, result.message, 200, result);
     } catch (error: any) {
       console.error("Submit contract rating error:", error);
 
@@ -419,13 +427,15 @@ export default class ParentController {
         return sendErrorResponse(res, error.message, 400);
       }
 
-      const errorMessage =
-        error?.message || "Failed to submit rating";
+      const errorMessage = error?.message || "Failed to submit rating";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
 
-  getActiveContractsForDispute = async (req: AuthenticatedRequest, res: Response) => {
+  getActiveContractsForDispute = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
     try {
       const { id: parentId } = req.user;
       const page = parseInt(req.query.page as string) || 1;
@@ -475,7 +485,7 @@ export default class ParentController {
 
       const result = await this.parentService.initiatePayFastSubscription({
         userId,
-        offerId
+        offerId,
       });
 
       return sendSuccessResponse(
@@ -492,7 +502,8 @@ export default class ParentController {
       }
 
       const errorMessage =
-        error?.message || "Something went wrong while initiating PayFast subscription";
+        error?.message ||
+        "Something went wrong while initiating PayFast subscription";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -504,7 +515,6 @@ export default class ParentController {
     try {
       // PayFast sends data as form-urlencoded
       const ipnData = req.body;
-
 
       console.log("ipnData", ipnData);
 
@@ -540,9 +550,8 @@ export default class ParentController {
         return sendErrorResponse(res, "basketId is required", 400);
       }
 
-      const result = await this.parentService.getSubscriptionStatusByBasketId(
-        basketId
-      );
+      const result =
+        await this.parentService.getSubscriptionStatusByBasketId(basketId);
 
       return sendSuccessResponse(
         res,
@@ -558,7 +567,8 @@ export default class ParentController {
       }
 
       const errorMessage =
-        error?.message || "Something went wrong while retrieving subscription status";
+        error?.message ||
+        "Something went wrong while retrieving subscription status";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -577,9 +587,8 @@ export default class ParentController {
         return sendErrorResponse(res, "subscriptionId is required", 400);
       }
 
-      const result = await this.parentService.chargeRecurringSubscription(
-        subscriptionId
-      );
+      const result =
+        await this.parentService.chargeRecurringSubscription(subscriptionId);
 
       return sendSuccessResponse(
         res,
@@ -643,19 +652,11 @@ export default class ParentController {
       const { cvv, cardId, offerId } = req.body;
 
       if (!cvv) {
-        return sendErrorResponse(
-          res,
-          "CVV is required",
-          400
-        );
+        return sendErrorResponse(res, "CVV is required", 400);
       }
 
       if (!cardId) {
-        return sendErrorResponse(
-          res,
-          "cardId is required",
-          400
-        );
+        return sendErrorResponse(res, "cardId is required", 400);
       }
 
       const result = await this.parentService.recurringTransactionOTP(userId, {
@@ -678,7 +679,8 @@ export default class ParentController {
       }
 
       const errorMessage =
-        error?.message || "Something went wrong while initiating recurring transaction OTP";
+        error?.message ||
+        "Something went wrong while initiating recurring transaction OTP";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -696,11 +698,7 @@ export default class ParentController {
         req.body;
 
       if (!cvv) {
-        return sendErrorResponse(
-          res,
-          "CVV is required",
-          400
-        );
+        return sendErrorResponse(res, "CVV is required", 400);
       }
 
       if (!cardId) {
@@ -730,7 +728,8 @@ export default class ParentController {
       }
 
       const errorMessage =
-        error?.message || "Something went wrong while initiating recurring payment";
+        error?.message ||
+        "Something went wrong while initiating recurring payment";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -738,10 +737,7 @@ export default class ParentController {
   /**
    * Handle PayFast Success Callback
    */
-  handlePayFastSuccess = async (
-    req: Request,
-    res: Response
-  ): Promise<void> => {
+  handlePayFastSuccess = async (req: Request, res: Response): Promise<void> => {
     try {
       // Get all query parameters
       const queryParams = req.query as any;
@@ -763,7 +759,8 @@ export default class ParentController {
       }
 
       const errorMessage =
-        error?.message || "Something went wrong while processing payment success";
+        error?.message ||
+        "Something went wrong while processing payment success";
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
@@ -774,63 +771,105 @@ export default class ParentController {
       console.log("=".repeat(80));
       console.log("📥 3DS CALLBACK WEBHOOK RECEIVED");
       console.log("=".repeat(80));
-      
+
       // Log timestamp
       console.log("⏰ Timestamp:", new Date().toISOString());
-      
+
       // Log HTTP Method
       console.log("🔹 Method:", req.method);
-      
+
       // Log URL
       console.log("🔹 URL:", req.url);
       console.log("🔹 Original URL:", req.originalUrl);
       console.log("🔹 Path:", req.path);
-      
+
       // Log Headers
       console.log("\n📋 Headers:");
       console.log(JSON.stringify(req.headers, null, 2));
-      
+
       // Log Query Parameters
       console.log("\n🔍 Query Parameters:");
       console.log(JSON.stringify(req.query, null, 2));
-      
+
       // Log Body
       console.log("\n📦 Request Body:");
       console.log(JSON.stringify(req.body, null, 2));
-      
+
       // Log Params
       console.log("\n🎯 Route Params:");
       console.log(JSON.stringify(req.params, null, 2));
-      
+
       // Log IP Address
       console.log("\n🌐 IP Address:", req.ip);
       console.log("🌐 Remote Address:", req.socket.remoteAddress);
-      
+
       // Log Raw Body if available
       if ((req as any).rawBody) {
         console.log("\n📄 Raw Body:");
         console.log((req as any).rawBody);
       }
-      
+
       console.log("=".repeat(80));
       console.log("✅ 3DS CALLBACK WEBHOOK LOGGED SUCCESSFULLY");
       console.log("=".repeat(80));
-      
+
       // Return success response
-      return sendSuccessResponse(
-        res,
-        "3DS callback received and logged",
-        200,
-        {
-          logged: true,
-          timestamp: new Date().toISOString(),
-        }
-      );
+      return sendSuccessResponse(res, "3DS callback received and logged", 200, {
+        logged: true,
+        timestamp: new Date().toISOString(),
+      });
     } catch (error: any) {
       console.error("❌ Error logging 3DS callback:", error);
+      return sendErrorResponse(res, "Error processing 3DS callback", 400);
+    }
+  };
+
+  deleteNotification = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { id } = req.params;
+
+      await this.parentService.deleteNotification(id, userId);
+
+      return sendSuccessResponse(res, "Notification deleted successfully", 200);
+    } catch (error: any) {
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
       return sendErrorResponse(
         res,
-        "Error processing 3DS callback",
+        error.message || "Failed to delete notification",
+        400
+      );
+    }
+  };
+
+  bulkDeleteNotifications = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
+    try {
+      const { id: userId } = req.user;
+      const { ids } = req.body;
+
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return sendErrorResponse(res, "Notification IDs are required", 400);
+      }
+
+      await this.parentService.deleteNotifications(ids, userId);
+
+      return sendSuccessResponse(
+        res,
+        "Notifications deleted successfully",
+        200
+      );
+    } catch (error: any) {
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+      return sendErrorResponse(
+        res,
+        error.message || "Failed to delete notifications",
         400
       );
     }

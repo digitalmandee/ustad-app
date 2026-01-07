@@ -152,6 +152,39 @@ export default class ChatController {
   //   }
   // };
 
+  bulkDeleteMessages = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      const { messageIds } = req.body;
+      await this.chatService.bulkDeleteMessages(messageIds, userId);
+      sendSuccessResponse(res, 'Messages deleted successfully', 200);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from bulk delete messages ${__filename}`);
+    }
+  };
+
+  deleteConversation = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      const { conversationId } = req.params;
+      await this.chatService.deleteConversation(conversationId, userId);
+      sendSuccessResponse(res, 'Conversation deleted successfully', 200);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from delete conversation ${__filename}`);
+    }
+  };
+
+  bulkDeleteConversations = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      const { conversationIds } = req.body;
+      await this.chatService.bulkDeleteConversations(conversationIds, userId);
+      sendSuccessResponse(res, 'Conversations deleted successfully', 200);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from bulk delete conversations ${__filename}`);
+    }
+  };
+
   /////////////////  sockets     ///////////////////////////////////
 
   handleJoinConversation = async (socket: Socket, conversationId: string) => {

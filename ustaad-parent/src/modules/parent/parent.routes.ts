@@ -59,7 +59,6 @@ router.get(
   parentController.getPaymentMethods
 );
 
-
 router.patch(
   routes.OFFER_UPDATE_STATUS,
   authenticateJwt,
@@ -128,7 +127,6 @@ router.post(
   parentController.submitContractRating
 );
 
-
 // PayFast routes
 router.post(
   routes.PAYFAST_SUBSCRIPTION_INITIATE,
@@ -138,10 +136,7 @@ router.post(
 );
 
 // PayFast IPN endpoint (no authentication - called by PayFast server)
-router.post(
-  routes.PAYFAST_IPN,
-  parentController.handlePayFastIPN
-);
+router.post(routes.PAYFAST_IPN, parentController.handlePayFastIPN);
 
 router.get(
   routes.SUBSCRIPTION_STATUS,
@@ -180,15 +175,24 @@ router.post(
 );
 
 // PayFast Success Callback (no authentication - called by PayFast redirect)
-router.get(
-  routes.PAYFAST_SUCCESS,
-  parentController.handlePayFastSuccess
-);
+router.get(routes.PAYFAST_SUCCESS, parentController.handlePayFastSuccess);
 
 // 3DS Callback Webhook (no authentication - called by PayFast server)
+router.post(routes.PAYFAST_3DS_CALLBACK, parentController.handle3DSCallback);
+
+// Notifications
+router.delete(
+  routes.DELETE_NOTIFICATION,
+  authenticateJwt,
+  authorizeRoles("PARENT", "TUTOR"),
+  parentController.deleteNotification
+);
+
 router.post(
-  routes.PAYFAST_3DS_CALLBACK,
-  parentController.handle3DSCallback
+  routes.BULK_DELETE_NOTIFICATIONS,
+  authenticateJwt,
+  authorizeRoles("PARENT", "TUTOR"),
+  parentController.bulkDeleteNotifications
 );
 
 export { router as tutorRouter };
