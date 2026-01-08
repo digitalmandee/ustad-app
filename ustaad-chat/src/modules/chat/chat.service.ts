@@ -296,7 +296,6 @@ export default class ChatService {
       });
 
       const messages = rows.map((message) => this.formatMessageResponse(message));
-      console.log(messages, 'mewssages');
 
       return {
         messages,
@@ -847,6 +846,14 @@ export default class ChatService {
       }
     }
 
+    const unreadCount = await Message.count({
+      where: {
+        conversationId: conversation.id,
+        senderId: { [Op.ne]: currentUserId },
+        status: { [Op.ne]: MessageStatus.SENT },
+      },
+    });
+
     return {
       id: conversation.id,
       name: conversationName,
@@ -856,6 +863,7 @@ export default class ChatService {
       createdBy: conversation.createdBy,
       lastMessageAt: conversation.lastMessageAt,
       lastReadAt: currentParticipant?.lastReadAt || null,
+      unreadCount,
       isPrivate: conversation.isPrivate,
       maxParticipants: conversation.maxParticipants,
       participantCount,
@@ -874,5 +882,43 @@ export default class ChatService {
       createdAt: conversation.createdAt,
       updatedAt: conversation.updatedAt,
     };
+  }
+
+  async markConversationAsRead(conversationId: string, userId: string): Promise<void> {
+    const transaction = await sequelize.transaction();
+    try {
+      const [updatedRows] = await ConversationParticipant.update(
+        { lastReadAt: new Date() },
+        {
+          where: {
+            conversationId,
+            userId,
+          },
+          transaction,
+        }
+      );
+
+      if (updatedRows === 0) {
+        throw new BadRequestError('Invalid conversation or user. Participant not found.');
+      }
+
+      // Mark messages sent by others as READ
+      await Message.update(
+        { status: MessageStatus.READ },
+        {
+          where: {
+            conversationId,
+            senderId: { [Op.ne]: userId },
+            status: { [Op.ne]: MessageStatus.SENT },
+          },
+          transaction,
+        }
+      );
+
+      await transaction.commit();
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
   }
 }

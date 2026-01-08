@@ -185,6 +185,17 @@ export default class ChatController {
     }
   };
 
+  markConversationAsRead = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      const { conversationId } = req.params;
+      await this.chatService.markConversationAsRead(conversationId, userId);
+      sendSuccessResponse(res, 'Conversation marked as read successfully', 200);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from mark conversation as read ${__filename}`);
+    }
+  };
+
   /////////////////  sockets     ///////////////////////////////////
 
   handleJoinConversation = async (socket: Socket, conversationId: string) => {

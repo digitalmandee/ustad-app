@@ -139,6 +139,14 @@ router.delete(
   chatController.deleteConversation
 );
 
+// Mark conversation as read
+router.patch(
+  routes.MARK_CONVERSATION_READ,
+  authenticateJwt,
+  validateRequest,
+  chatController.markConversationAsRead
+);
+
 // Bulk delete conversations
 router.post(
   routes.BULK_DELETE_CONVERSATIONS,

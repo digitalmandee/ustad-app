@@ -7,6 +7,7 @@ export default {
   CREATE_CONVERSATION: '/chat/conversations',
   GET_ALL_CONVERSATION: '/chat/conversations',
   GET_ID_CONVERSATION: '/chat/conversations/:conversationId',
+  MARK_CONVERSATION_READ: '/chat/conversations/:conversationId/read',
   BULK_DELETE_MESSAGES: '/chat/messages/bulk-delete',
   DELETE_CONVERSATION: '/chat/conversations/:conversationId',
   BULK_DELETE_CONVERSATIONS: '/chat/conversations/bulk-delete',

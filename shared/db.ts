@@ -19,6 +19,11 @@ export const connectToPostgres = async (retryCount = 0): Promise<Sequelize> => {
       port: DB_PORT ? parseInt(DB_PORT, 10) : 5432,
       dialect: "postgres",
       logging: false,
+
+      timezone: "+00:00", // ✅ Force UTC
+      dialectOptions: {
+        useUTC: true, // ✅ PostgreSQL reads/writes UTC
+      },
     });
 
     await sequelize.authenticate();
@@ -33,7 +38,7 @@ export const connectToPostgres = async (retryCount = 0): Promise<Sequelize> => {
   } catch (err) {
     console.error("❌ DB connection error:", err);
     if (retryCount < MAX_RETRIES) {
-      await new Promise(res => setTimeout(res, RETRY_DELAY));
+      await new Promise((res) => setTimeout(res, RETRY_DELAY));
       return connectToPostgres(retryCount + 1);
     }
     process.exit(1);
