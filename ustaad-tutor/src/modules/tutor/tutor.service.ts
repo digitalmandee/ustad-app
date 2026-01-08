@@ -172,9 +172,6 @@ export default class TutorService {
         throw new UnProcessableEntityError("User not found");
       }
 
-      let emailChanged = false;
-      let phoneChanged = false;
-
       if (data.email && data.email !== user.email) {
         const existingUser = await User.findOne({
           where: { email: data.email },
@@ -182,7 +179,6 @@ export default class TutorService {
         if (existingUser) {
           throw new ConflictError("Email is already taken");
         }
-        emailChanged = true;
       }
 
       if (data.phone && data.phone !== user.phone) {
@@ -192,16 +188,6 @@ export default class TutorService {
         if (existingUser) {
           throw new ConflictError("Phone number is already taken");
         }
-        phoneChanged = true;
-      }
-
-      // ✅ Reset verification flags if changed
-      if (emailChanged) {
-        data.isEmailVerified = false;
-      }
-
-      if (phoneChanged) {
-        data.isPhoneVerified = false;
       }
 
       if (data.password) {

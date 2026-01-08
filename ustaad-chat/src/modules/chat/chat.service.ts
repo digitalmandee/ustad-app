@@ -31,6 +31,7 @@ import {
   sequelize,
   File,
   Child,
+  NotificationType,
 } from '@ustaad/shared';
 import { sendNotificationToUser } from '../../services/notification.service';
 
@@ -192,12 +193,25 @@ export default class ChatService {
           } else {
             // Determine notification body based on message type
             let notificationBody = messageData.content || '';
-            if (messageData.type === MessageType.FILE) {
+            if (messageData.type === MessageType.IMAGE) {
               notificationBody = '📷 Sent an image';
+            } else if (messageData.type === MessageType.AUDIO) {
+              notificationBody = '🎤 Sent a voice message';
+            } else if (messageData.type === MessageType.FILE) {
+              notificationBody = '� Sent a file';
+            } else if (messageData.type === MessageType.OFFER) {
+              notificationBody = '📄 Sent an offer';
             }
+
             if (notificationBody.length > 100) {
               notificationBody = notificationBody.substring(0, 100) + '...';
             }
+
+            // Determine notification type
+            const notificationType =
+              messageData.type === MessageType.OFFER
+                ? NotificationType.OFFER_RECEIVED
+                : NotificationType.NEW_MESSAGE;
 
             await sendNotificationToUser(
               receiver.userId,
@@ -213,7 +227,8 @@ export default class ChatService {
                 messageId: message.id,
               },
               sender?.image || undefined,
-              `/chat/${messageData.conversationId}`
+              `/chat/${messageData.conversationId}`,
+              notificationType
             );
 
             console.log(`✅ Sent chat notification to user ${receiver.userId}`);
@@ -801,7 +816,6 @@ export default class ChatService {
     let participantImage = '';
     let participantRegistrationTime = null;
     if (conversation.type === 'DIRECT' && participantCount === 2) {
-      console.log('helooooooooo n n n');
       const otherParticipant = await ConversationParticipant.findOne({
         where: {
           conversationId: conversation.id,
@@ -816,7 +830,6 @@ export default class ChatService {
         participantId = (otherParticipant as any).User.id;
         participantImage = (otherParticipant as any).User.image || '';
         participantRegistrationTime = (otherParticipant as any).User.createdAt;
-        console.log(otherParticipant, conversationName, 'hj');
       }
     }
     const lastMessage = await Message.findOne({
@@ -845,12 +858,11 @@ export default class ChatService {
         });
       }
     }
-
     const unreadCount = await Message.count({
       where: {
         conversationId: conversation.id,
-        senderId: { [Op.ne]: currentUserId },
-        status: { [Op.ne]: MessageStatus.SENT },
+        senderId: participantId,
+        status: MessageStatus.SENT,
       },
     });
 
@@ -874,7 +886,15 @@ export default class ChatService {
       lastMessage: lastMessage
         ? {
             id: lastMessage.id,
-            content: lastMessage.content,
+            content: (() => {
+              if (lastMessage.type === MessageType.TEXT) return lastMessage.content;
+              if (lastMessage.type === MessageType.IMAGE) return '📷 Image';
+              if (lastMessage.type === MessageType.AUDIO) return '🎤 Voice message';
+              if (lastMessage.type === MessageType.FILE) return '📄 File';
+              if (lastMessage.type === MessageType.OFFER) return '📄 Offer';
+              return lastMessage.content;
+            })(),
+            type: lastMessage.type,
             senderName: 'Unknown', // Ideally you join the User model for this too
             createdAt: lastMessage.createdAt,
           }

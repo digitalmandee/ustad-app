@@ -26,7 +26,8 @@ export async function sendNotificationToUser(
   message: string,
   data?: any,
   imageUrl?: string,
-  clickAction?: string
+  clickAction?: string,
+  notificationType?: NotificationType
 ): Promise<NotificationResult> {
   try {
     // Get Firebase app and send notification
@@ -69,7 +70,7 @@ export async function sendNotificationToUser(
     // Create notification record in DB
     const notification = await Notification.create({
       userId: userId,
-      type: NotificationType.SYSTEM_NOTIFICATION,
+      type: notificationType || NotificationType.SYSTEM_NOTIFICATION,
       title: headline,
       body: message,
       deviceToken: token,
