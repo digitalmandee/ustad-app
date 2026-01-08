@@ -1,5 +1,6 @@
-import { Model, DataTypes, Optional, Sequelize } from 'sequelize';
-import { MessageType, MessageStatus } from '../constant/enums';
+import { Model, DataTypes, Optional, Sequelize } from "sequelize";
+import { MessageType, MessageStatus } from "../constant/enums";
+import { User } from "./User";
 
 export interface MessageAttributes {
   id: string;
@@ -17,11 +18,19 @@ export interface MessageAttributes {
 
 export type MessageCreationAttributes = Optional<
   MessageAttributes,
-  'id' | 'status' | 'replyToId' | 'editedAt' | 'metadata' | 'createdAt' | 'updatedAt'
+  | "id"
+  | "status"
+  | "replyToId"
+  | "editedAt"
+  | "metadata"
+  | "createdAt"
+  | "updatedAt"
 >;
 
-export class Message extends Model<MessageAttributes, MessageCreationAttributes> 
-  implements MessageAttributes {
+export class Message
+  extends Model<MessageAttributes, MessageCreationAttributes>
+  implements MessageAttributes
+{
   public id!: string;
   public conversationId!: string;
   public senderId!: string;
@@ -47,8 +56,8 @@ export function initMessageModel(sequelize: Sequelize): typeof Message {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: 'conversations',
-          key: 'id',
+          model: "conversations",
+          key: "id",
         },
       },
       senderId: {
@@ -73,8 +82,8 @@ export function initMessageModel(sequelize: Sequelize): typeof Message {
         type: DataTypes.UUID,
         allowNull: true,
         references: {
-          model: 'messages',
-          key: 'id',
+          model: "messages",
+          key: "id",
         },
       },
       editedAt: {
@@ -95,11 +104,13 @@ export function initMessageModel(sequelize: Sequelize): typeof Message {
       },
     },
     {
-      tableName: 'messages',
+      tableName: "messages",
       sequelize,
       timestamps: true,
     }
   );
 
+  Message.belongsTo(User, { foreignKey: "senderId", as: "sender" });
+
   return Message;
-} 
+}

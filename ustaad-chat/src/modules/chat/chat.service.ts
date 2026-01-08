@@ -107,8 +107,6 @@ export default class ChatService {
           throw new BadRequestError("Offer already exists for this parent's child");
         }
 
-        console.log('offerData', offerData);
-
         const savedOfferdata = await Offer.create(
           {
             conversationId: messageData.conversationId,
@@ -189,7 +187,6 @@ export default class ChatService {
           const receiverUser = await User.findByPk(receiver.userId);
           const receiverToken = receiverUser?.deviceId;
           if (!receiverToken) {
-            console.log('⚠️ Receiver has no device token, skipping notification');
           } else {
             // Determine notification body based on message type
             let notificationBody = messageData.content || '';
@@ -230,8 +227,6 @@ export default class ChatService {
               `/chat/${messageData.conversationId}`,
               notificationType
             );
-
-            console.log(`✅ Sent chat notification to user ${receiver.userId}`);
           }
         }
       } catch (notificationError) {
@@ -326,7 +321,6 @@ export default class ChatService {
         },
       };
     } catch (err: any) {
-      console.log(err, 'err');
       if (err instanceof ForbiddenError) {
         throw err;
       }
@@ -416,7 +410,6 @@ export default class ChatService {
 
       return messages.map((message) => this.formatMessageResponse(message));
     } catch (err: any) {
-      console.log(err, 'err');
       if (err instanceof ForbiddenError || err instanceof BadRequestError) {
         throw err;
       }
@@ -444,8 +437,6 @@ export default class ChatService {
       }
       return lastReadAt;
     } catch (err: any) {
-      console.log(err, 'err');
-
       if (err instanceof BadRequestError) {
         throw err;
       }
@@ -502,13 +493,12 @@ export default class ChatService {
   async createConversation(createdBy: string, conversationData: CreateConversationDto) {
     try {
       const { participantIds, ...data } = conversationData;
-      console.log(participantIds, 'participantIds');
 
       // For direct conversations, ensure only 2 participants
       if (data.type === ConversationType.DIRECT && participantIds.length !== 1) {
         throw new BadRequestError('Direct conversations must have exactly 2 participants');
       }
-      console.log('hello2 participantIds');
+
       const users = await User.findAll({
         where: { id: participantIds },
         attributes: ['id'],
@@ -552,7 +542,6 @@ export default class ChatService {
       );
 
       await Promise.all(participantPromises);
-      console.log('hello participantIds');
 
       return this.formatConversationResponse(conversation, createdBy);
     } catch (err: any) {
@@ -564,8 +553,6 @@ export default class ChatService {
   }
 
   async getUserConversations(userId: string) {
-    console.log('hello1');
-
     try {
       const participantRecords = await ConversationParticipant.findAll({
         where: {
@@ -583,16 +570,13 @@ export default class ChatService {
         ],
         order: [['updatedAt', 'DESC']],
       });
-      console.log('hello2');
 
       const conversations = participantRecords.map((p) => p.get('conversation') as Conversation);
-      console.log('hello3', conversations, participantRecords);
 
       return Promise.all(
         conversations.map((conv) => this.formatConversationResponse(conv, userId))
       );
     } catch (err: any) {
-      console.log(err);
       // if (err instanceof BadRequestError ){
       //   throw err;
       // }
@@ -749,7 +733,6 @@ export default class ChatService {
   }
 
   private async findDirectConversation(user1Id: string, user2Id: string) {
-    console.log(user1Id, user2Id, 'users');
     try {
       const conversations = await Conversation.findAll({
         where: {
@@ -771,16 +754,12 @@ export default class ChatService {
       for (const conversation of conversations) {
         const participants = conversation.get('participants') as ConversationParticipant[];
 
-        console.log('hello3', participants);
         if (participants.length === 2) {
-          console.log('hello5', participants);
-
           const userIds = participants.map((p) => p.userId);
           if (userIds.includes(user1Id) && userIds.includes(user2Id)) {
             return conversation;
           }
         }
-        console.log('hello4', participants);
       }
       return null;
     } catch (err: any) {
@@ -836,6 +815,7 @@ export default class ChatService {
       where: {
         conversationId: conversation.id,
       },
+      include: [{ model: User, as: 'sender', attributes: ['fullName'] }],
       order: [['createdAt', 'DESC']],
     });
 
@@ -861,7 +841,7 @@ export default class ChatService {
     const unreadCount = await Message.count({
       where: {
         conversationId: conversation.id,
-        senderId: participantId,
+        senderId: { [Op.ne]: currentUserId },
         status: MessageStatus.SENT,
       },
     });
@@ -895,7 +875,8 @@ export default class ChatService {
               return lastMessage.content;
             })(),
             type: lastMessage.type,
-            senderName: 'Unknown', // Ideally you join the User model for this too
+            senderId: lastMessage.senderId,
+            senderName: (lastMessage as any).sender?.fullName || 'Unknown',
             createdAt: lastMessage.createdAt,
           }
         : undefined,
@@ -907,33 +888,42 @@ export default class ChatService {
   async markConversationAsRead(conversationId: string, userId: string): Promise<void> {
     const transaction = await sequelize.transaction();
     try {
-      const [updatedRows] = await ConversationParticipant.update(
-        { lastReadAt: new Date() },
-        {
-          where: {
-            conversationId,
-            userId,
-          },
-          transaction,
-        }
-      );
+      const participants = await ConversationParticipant.findAll({
+        where: { conversationId },
+        transaction,
+      });
 
-      if (updatedRows === 0) {
-        throw new BadRequestError('Invalid conversation or user. Participant not found.');
+      if (participants.length === 0) {
+        throw new BadRequestError('Conversation not found or has no participants.');
       }
 
+      const currentParticipant = participants.find((p) => p.userId === userId);
+      if (!currentParticipant) {
+        throw new BadRequestError('User is not a participant of this conversation.');
+      }
+
+      // Update lastReadAt for current user
+      await currentParticipant.update({ lastReadAt: new Date() }, { transaction });
+
+      // Identify other participant IDs
+      const otherParticipantIds = participants
+        .filter((p) => p.userId !== userId)
+        .map((p) => p.userId);
+
       // Mark messages sent by others as READ
-      await Message.update(
-        { status: MessageStatus.READ },
-        {
-          where: {
-            conversationId,
-            senderId: { [Op.ne]: userId },
-            status: { [Op.ne]: MessageStatus.SENT },
-          },
-          transaction,
-        }
-      );
+      if (otherParticipantIds.length > 0) {
+        await Message.update(
+          { status: MessageStatus.READ },
+          {
+            where: {
+              conversationId,
+              senderId: { [Op.in]: otherParticipantIds },
+              status: { [Op.ne]: MessageStatus.READ },
+            },
+            transaction,
+          }
+        );
+      }
 
       await transaction.commit();
     } catch (error) {

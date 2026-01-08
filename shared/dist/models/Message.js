@@ -4,6 +4,7 @@ exports.Message = void 0;
 exports.initMessageModel = initMessageModel;
 const sequelize_1 = require("sequelize");
 const enums_1 = require("../constant/enums");
+const User_1 = require("./User");
 class Message extends sequelize_1.Model {
 }
 exports.Message = Message;
@@ -18,8 +19,8 @@ function initMessageModel(sequelize) {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: 'conversations',
-                key: 'id',
+                model: "conversations",
+                key: "id",
             },
         },
         senderId: {
@@ -44,8 +45,8 @@ function initMessageModel(sequelize) {
             type: sequelize_1.DataTypes.UUID,
             allowNull: true,
             references: {
-                model: 'messages',
-                key: 'id',
+                model: "messages",
+                key: "id",
             },
         },
         editedAt: {
@@ -65,9 +66,10 @@ function initMessageModel(sequelize) {
             defaultValue: sequelize_1.DataTypes.NOW,
         },
     }, {
-        tableName: 'messages',
+        tableName: "messages",
         sequelize,
         timestamps: true,
     });
+    Message.belongsTo(User_1.User, { foreignKey: "senderId", as: "sender" });
     return Message;
 }

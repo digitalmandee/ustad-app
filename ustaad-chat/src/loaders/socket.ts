@@ -12,26 +12,24 @@ export let io: Server;
 const userSocketMap = new Map<string, string>();
 
 function registerSocketHandlers(socket: Socket) {
+  console.log('.data', socket.data);
+
   // Register user's socket connection
   const userId = (socket.data.user as any)?.id;
   if (userId) {
     userSocketMap.set(userId, socket.id);
     console.log(`🔌 Registered user ${userId} with socket ${socket.id}`);
-    
+
     // Join user to their personal notification room
     socket.join(`user:${userId}`);
   }
-  
+
   socket.on('joinConversation', (conversationId) =>
     chatController.handleJoinConversation(socket, conversationId)
   );
 
-  socket.on('sendMessage', (data) =>
-    chatController.handleSendMessage(socket, data)
-  );
-  socket.on('markAsRead', (data) =>
-    chatController.markAsReadS(socket, data)
-  );
+  socket.on('sendMessage', (data) => chatController.handleSendMessage(socket, data));
+  socket.on('markAsRead', (data) => chatController.markAsReadS(socket, data));
 
   // socket.on('getMissedMessages', (payload) =>
   //   chatController.handleGetMissedMessages(socket, payload)
@@ -39,7 +37,7 @@ function registerSocketHandlers(socket: Socket) {
 
   socket.on('disconnect', () => {
     console.log(`❌ User disconnected: ${socket.id}`);
-    
+
     // Remove user from socket map
     if (userId) {
       userSocketMap.delete(userId);
@@ -58,7 +56,7 @@ export function emitNotificationToUser(userId: string, notification: any) {
     console.warn('⚠️ Socket.IO not initialized, cannot emit notification');
     return;
   }
-  
+
   // Emit to user's personal room
   io.to(`user:${userId}`).emit('notification', notification);
   console.log(`📤 Emitted real-time notification to user ${userId}`);
@@ -74,8 +72,8 @@ export function emitNotificationToUsers(userIds: string[], notification: any) {
     console.warn('⚠️ Socket.IO not initialized, cannot emit notifications');
     return;
   }
-  
-  userIds.forEach(userId => {
+
+  userIds.forEach((userId) => {
     io.to(`user:${userId}`).emit('notification', notification);
   });
   console.log(`📤 Emitted real-time notification to ${userIds.length} users`);
