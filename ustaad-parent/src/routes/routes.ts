@@ -59,6 +59,9 @@ const routes = {
   // Notifications
   DELETE_NOTIFICATION: "/parent/notification/:id",
   BULK_DELETE_NOTIFICATIONS: "/parent/notifications/bulk-delete",
+
+  // Bypass routes
+  PAYMENT_INTENT_BYPASS: "/parent/payment/intent-bypass",
 };
 
 export default routes;

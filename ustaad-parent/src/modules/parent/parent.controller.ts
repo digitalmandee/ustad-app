@@ -765,6 +765,55 @@ export default class ParentController {
     }
   };
 
+  /**
+   * Bypass payment flow and auto-success the transaction
+   */
+  paymentIntentBypass = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
+    try {
+      const { id: userId } = req.user;
+      const { offerId } = req.body;
+
+      if (!offerId) {
+        return sendErrorResponse(res, "offerId is required", 400);
+      }
+
+      // 1. Initiate subscription (creates transaction/subscription records)
+      const initiationResult =
+        await this.parentService.initiatePayFastSubscription({
+          userId,
+          offerId,
+        });
+
+      // 2. Immediately call success handler to auto-success the payment
+      const successResult = await this.parentService.handlePayFastSuccess({
+        basket_id: initiationResult.basketId,
+        err_code: "000",
+        transaction_id: `BYPASS_${Date.now()}`,
+        transaction_amount: "0", // Amount is fetched from subscription in handlePayFastSuccess
+      });
+
+      return sendSuccessResponse(
+        res,
+        "Payment bypassed and auto-succeeded successfully",
+        200,
+        successResult
+      );
+    } catch (error: any) {
+      console.error("Payment intent bypass error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong during payment bypass";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
   handle3DSCallback = async (req: Request, res: Response): Promise<void> => {
     try {
       // Log the entire request

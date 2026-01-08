@@ -180,6 +180,14 @@ router.get(routes.PAYFAST_SUCCESS, parentController.handlePayFastSuccess);
 // 3DS Callback Webhook (no authentication - called by PayFast server)
 router.post(routes.PAYFAST_3DS_CALLBACK, parentController.handle3DSCallback);
 
+// Bypass route
+router.post(
+  routes.PAYMENT_INTENT_BYPASS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.paymentIntentBypass
+);
+
 // Notifications
 router.delete(
   routes.DELETE_NOTIFICATION,
