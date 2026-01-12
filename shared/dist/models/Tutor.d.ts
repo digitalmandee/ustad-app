@@ -11,7 +11,8 @@ export interface TutorAttributes {
     idFrontUrl: string;
     idBackUrl: string;
     about: string;
-    grade: string;
+    grade: string[];
+    curriculum: string[];
     balance: number;
     createdAt?: Date;
     updatedAt?: Date;
@@ -27,7 +28,8 @@ export declare class Tutor extends Model<TutorAttributes, TutorCreationAttribute
     idFrontUrl: string;
     idBackUrl: string;
     about: string;
-    grade: string;
+    grade: string[];
+    curriculum: string[];
     balance: number;
     readonly createdAt: Date;
     readonly updatedAt: Date;

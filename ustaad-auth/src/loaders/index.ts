@@ -1,13 +1,19 @@
-import expressLoader from './express';
-import { Application } from 'express';
+import expressLoader from "./express";
+import { Application } from "express";
 // import { connectToPostgres } from '../connection/postgres';
-import { connectToPostgres, Gender, IsOnBaord, User, UserRole } from "@ustaad/shared";
+import {
+  connectToPostgres,
+  Gender,
+  IsOnBaord,
+  User,
+  UserRole,
+} from "@ustaad/shared";
 import { initializeFirebase } from "../services/firebase-con";
 import { hashPassword } from "../helper/generic";
 
 export default async ({ expressApp }: { expressApp: Application }) => {
-  console.log("hello1")
-  
+  console.log("hello1");
+
   await connectToPostgres();
 
   // Ensure super admin exists (owned by auth service; password is hashed here)
@@ -49,14 +55,17 @@ export default async ({ expressApp }: { expressApp: Application }) => {
   } catch (e) {
     console.error("❌ Failed to ensure super admin in auth:", e);
   }
-  
+
   // Initialize Firebase for notifications
   try {
     initializeFirebase();
   } catch (error) {
-    console.warn("⚠️ Firebase initialization failed, notifications may not work:", error);
+    console.warn(
+      "⚠️ Firebase initialization failed, notifications may not work:",
+      error
+    );
   }
-  
+
   expressLoader({ app: expressApp });
   // Logger.info("✌️ Express loaded ");
 };

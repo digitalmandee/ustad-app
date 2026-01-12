@@ -20,7 +20,7 @@ export default class TutorController {
     try {
       let subjects = req.body.subjects;
       const { id: userId } = req.user;
-      const { bankName, accountNumber } = req.body;
+      const { bankName, accountNumber, grade, curriculum } = req.body;
 
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
@@ -35,6 +35,8 @@ export default class TutorController {
       const result = await this.tutorService.createTutorProfile({
         userId,
         subjects,
+        grade,
+        curriculum,
         bankName,
         accountNumber,
         resume: files.resume[0],
@@ -413,9 +415,14 @@ export default class TutorController {
   addAbout = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-      const { about, grade } = req.body;
+      const { about, grade, curriculum } = req.body;
 
-      const result = await this.tutorService.addAbout(userId, about, grade);
+      const result = await this.tutorService.addAbout(
+        userId,
+        about,
+        grade,
+        curriculum
+      );
 
       return sendSuccessResponse(
         res,

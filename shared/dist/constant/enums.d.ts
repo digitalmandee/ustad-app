@@ -75,7 +75,8 @@ export declare enum TutorSessionStatus {
     TUTOR_HOLIDAY = "TUTOR_HOLIDAY",
     PUBLIC_HOLIDAY = "PUBLIC_HOLIDAY",
     CANCELLED_BY_PARENT = "CANCELLED_BY_PARENT",
-    CANCELLED_BY_TUTOR = "CANCELLED_BY_TUTOR"
+    CANCELLED_BY_TUTOR = "CANCELLED_BY_TUTOR",
+    PAUSED = "PAUSED"
 }
 export declare enum HelpRequestStatus {
     OPEN = "OPEN",

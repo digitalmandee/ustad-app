@@ -100,11 +100,12 @@ export default class ChatService {
             senderId,
             receiverId: offerData.receiverId,
             childName: offerData.childName.toLowerCase(),
+            status: { [Op.in]: [OfferStatus.PENDING, OfferStatus.ACCEPTED] },
           },
         });
 
         if (existingOffer) {
-          throw new BadRequestError("Offer already exists for this parent's child");
+          throw new BadRequestError("An active offer already exists for this parent's child");
         }
 
         const savedOfferdata = await Offer.create(
@@ -259,7 +260,10 @@ export default class ChatService {
         throw new ForbiddenError('User is not a participant of this conversation');
       }
 
-      const whereClause: any = { conversationId };
+      const whereClause: any = {
+        conversationId,
+        status: { [Op.ne]: MessageStatus.DELETED },
+      };
 
       const offset = (page - 1) * limit;
 
@@ -271,6 +275,7 @@ export default class ChatService {
           conversationId,
           senderId: { [Op.ne]: userId },
           createdAt: { [Op.gt]: (participant as any).lastReadAt || new Date(0) },
+          status: { [Op.ne]: MessageStatus.DELETED },
         },
       });
 
@@ -400,9 +405,10 @@ export default class ChatService {
         where: {
           conversationId: { [Op.in]: conversationIds },
           createdAt: { [Op.gt]: new Date(lastSeenAt) },
+          status: { [Op.ne]: MessageStatus.DELETED },
         },
         include: [
-          { model: User, as: 'sender', attributes: ['id', 'name'] },
+          { model: User, as: 'sender', attributes: ['id', 'fullName'] },
           { model: Offer, as: 'offer', required: false },
         ],
         order: [['createdAt', 'ASC']],
@@ -552,8 +558,26 @@ export default class ChatService {
     }
   }
 
-  async getUserConversations(userId: string) {
+  async getUserConversations(userId: string, page: number = 1, limit: number = 20) {
     try {
+      const offset = (page - 1) * limit;
+
+      const total = await ConversationParticipant.count({
+        where: {
+          userId,
+          isActive: true,
+        },
+        include: [
+          {
+            model: Conversation,
+            as: 'conversation',
+            where: {
+              status: ConversationStatus.ACTIVE,
+            },
+          },
+        ],
+      });
+
       const participantRecords = await ConversationParticipant.findAll({
         where: {
           userId,
@@ -569,17 +593,28 @@ export default class ChatService {
           },
         ],
         order: [['updatedAt', 'DESC']],
+        limit,
+        offset,
       });
 
       const conversations = participantRecords.map((p) => p.get('conversation') as Conversation);
 
-      return Promise.all(
+      const items = await Promise.all(
         conversations.map((conv) => this.formatConversationResponse(conv, userId))
       );
+
+      return {
+        conversations: items,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+          hasNext: page * limit < total,
+          hasPrev: page > 1,
+        },
+      };
     } catch (err: any) {
-      // if (err instanceof BadRequestError ){
-      //   throw err;
-      // }
       throw new GenericError(err, 'Unable to get conversation');
     }
   }
@@ -814,6 +849,7 @@ export default class ChatService {
     const lastMessage = await Message.findOne({
       where: {
         conversationId: conversation.id,
+        status: { [Op.ne]: MessageStatus.DELETED },
       },
       include: [{ model: User, as: 'sender', attributes: ['fullName'] }],
       order: [['createdAt', 'DESC']],

@@ -32,6 +32,8 @@ import {
   ParentSubscriptionStatus,
   Notification, // Added this
   OfferStatus,
+  Message,
+  ConversationParticipant,
   sequelize, // Needed for transaction
 } from "@ustaad/shared";
 import Stripe from "stripe";
@@ -182,6 +184,26 @@ export default class ParentService {
 
   async getProfile(userId: string) {
     try {
+      const participants = await ConversationParticipant.findAll({
+        where: { userId, isActive: true },
+        attributes: ["conversationId", "lastReadAt"],
+      });
+
+      let unreadMessageCount = 0;
+      if (participants.length > 0) {
+        const conditions = participants.map((p) => ({
+          conversationId: p.conversationId,
+          createdAt: { [Op.gt]: p.lastReadAt || new Date(0) },
+        }));
+
+        unreadMessageCount = await Message.count({
+          where: {
+            senderId: { [Op.ne]: userId },
+            [Op.or]: conditions,
+          },
+        });
+      }
+
       const user = await User.findByPk(userId, {
         attributes: { exclude: ["password"] },
         include: [
@@ -289,6 +311,7 @@ export default class ParentService {
           totalReviews,
           averageRating: parseFloat(averageRating.toFixed(1)),
         },
+        unreadMessageCount,
       };
     } catch (error) {
       console.error("Error in getProfile:", error);
@@ -352,7 +375,7 @@ export default class ParentService {
         include: [
           {
             model: Tutor,
-            attributes: ["subjects", "about", "grade"],
+            attributes: ["subjects", "about", "grade", "curriculum"],
           },
           {
             model: TutorSettings,
@@ -1053,6 +1076,12 @@ export default class ParentService {
           disputedAt: new Date(),
           endDate: new Date(), // Set end date to now
         } as any);
+
+        // Pause associated sessions
+        await TutorSessions.update(
+          { status: "paused" },
+          { where: { offerId: contract.offerId } }
+        );
       } else if (status === ParentSubscriptionStatus.PENDING_COMPLETION) {
         await contract.update({
           status: ParentSubscriptionStatus.PENDING_COMPLETION,

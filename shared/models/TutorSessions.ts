@@ -15,7 +15,7 @@ export interface TutorSessionsAttributes {
   daysOfWeek: string[]; // Array of days like ["mon", "tue", "fri"] or ["mon-fri"]
   price: number; // Price per session in cents (e.g., 2500 for $25.00)
   meta?: object;
-  status: 'active' | 'cancelled';
+  status: "active" | "cancelled" | "paused";
   createdAt?: Date;
   updatedAt?: Date;
   month: string; // yyyy-mm-dd format
@@ -23,7 +23,10 @@ export interface TutorSessionsAttributes {
   sessionsCompleted: number; // yyyy-mm-dd format
 }
 
-export type TutorSessionsCreationAttributes = Optional<TutorSessionsAttributes, "id">;
+export type TutorSessionsCreationAttributes = Optional<
+  TutorSessionsAttributes,
+  "id"
+>;
 
 export class TutorSessions
   extends Model<TutorSessionsAttributes, TutorSessionsCreationAttributes>
@@ -41,13 +44,15 @@ export class TutorSessions
   public meta?: object;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
-  public status!: 'active' | 'cancelled';
+  public status!: "active" | "cancelled" | "paused";
   public month!: string; // yyyy-mm-dd format
   public totalSessions!: number;
   public sessionsCompleted!: number;
 }
 
-export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessions {
+export function initTutorSessionsModel(
+  sequelize: Sequelize
+): typeof TutorSessions {
   TutorSessions.init(
     {
       id: {
@@ -106,9 +111,9 @@ export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessio
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM('active', 'cancelled'),
+        type: DataTypes.ENUM("active", "cancelled", "paused"),
         allowNull: false,
-        defaultValue: 'active',
+        defaultValue: "active",
       },
       month: {
         type: DataTypes.STRING,
@@ -140,4 +145,4 @@ export function initTutorSessionsModel(sequelize: Sequelize): typeof TutorSessio
   Offer.hasMany(TutorSessions, { foreignKey: "offerId" });
 
   return TutorSessions;
-} 
+}

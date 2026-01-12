@@ -15,6 +15,14 @@ export const tutorOnboardingValidationRules = () => {
       .withMessage("Account number is required")
       .isNumeric()
       .withMessage("Account number must be numeric"),
+    body("grade")
+      .optional()
+      .isArray()
+      .withMessage("Grade must be an array of strings"),
+    body("curriculum")
+      .optional()
+      .isArray()
+      .withMessage("Curriculum must be an array of strings"),
   ];
 };
 

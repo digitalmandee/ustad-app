@@ -1,7 +1,6 @@
 import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { User } from "./User";
 
-
 export interface TutorAttributes {
   id: string;
   userId: string;
@@ -14,13 +13,17 @@ export interface TutorAttributes {
   idFrontUrl: string;
   idBackUrl: string;
   about: string;
-  grade: string;
+  grade: string[];
+  curriculum: string[];
   balance: number; // Added balance field
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-export type TutorCreationAttributes = Optional<TutorAttributes, "id" | "balance">;
+export type TutorCreationAttributes = Optional<
+  TutorAttributes,
+  "id" | "balance"
+>;
 
 export class Tutor
   extends Model<TutorAttributes, TutorCreationAttributes>
@@ -35,7 +38,8 @@ export class Tutor
   public idFrontUrl!: string;
   public idBackUrl!: string;
   public about!: string;
-  public grade!: string;
+  public grade!: string[];
+  public curriculum!: string[];
   public balance!: number; // Added balance field
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -87,7 +91,11 @@ export function initTutorModel(sequelize: Sequelize): typeof Tutor {
         allowNull: true,
       },
       grade: {
-        type: DataTypes.STRING,
+        type: DataTypes.ARRAY(DataTypes.STRING),
+        allowNull: true,
+      },
+      curriculum: {
+        type: DataTypes.ARRAY(DataTypes.STRING),
         allowNull: true,
       },
       balance: {

@@ -128,7 +128,7 @@ export function initOfferModel(sequelize: Sequelize): typeof Offer {
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM("PENDING", "ACCEPTED", "REJECTED"),
+        type: DataTypes.ENUM("PENDING", "ACCEPTED", "REJECTED", "CANCELLED"),
         allowNull: false,
         defaultValue: "PENDING",
       },

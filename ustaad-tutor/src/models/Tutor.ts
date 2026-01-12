@@ -1,7 +1,6 @@
 import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { User } from "./User";
 
-
 export interface TutorAttributes {
   id: string;
   userId: string;
@@ -14,7 +13,8 @@ export interface TutorAttributes {
   idFrontUrl: string;
   idBackUrl: string;
   about: string;
-  grade: string;
+  grade: string[];
+  curriculum: string[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -34,7 +34,8 @@ export class Tutor
   public idFrontUrl: string;
   public idBackUrl: string;
   public about: string;
-  public grade: string;
+  public grade: string[];
+  public curriculum: string[];
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -85,7 +86,11 @@ export function initTutorModel(sequelize: Sequelize): typeof Tutor {
         allowNull: true,
       },
       grade: {
-        type: DataTypes.STRING,
+        type: DataTypes.ARRAY(DataTypes.STRING),
+        allowNull: true,
+      },
+      curriculum: {
+        type: DataTypes.ARRAY(DataTypes.STRING),
         allowNull: true,
       },
     },

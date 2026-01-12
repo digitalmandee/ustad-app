@@ -30,6 +30,8 @@ import {
   ParentSubscription,
   ContractReview,
   sequelize,
+  Message,
+  ConversationParticipant,
   HelpRequestType,
   TutorTransactionType,
   PaymentRequests,
@@ -136,9 +138,12 @@ export default class TutorService {
         uploadFile(data.idBack, userFolder, "id-back"),
       ]);
 
-      const formattedSubjects = Array.isArray(data.subjects)
-        ? data.subjects.map((s: string) => s.toLowerCase())
-        : (data.subjects as string)
+      const formatStringArray = (field: any) => {
+        if (Array.isArray(field)) {
+          return field.map((s: string) => s.toLowerCase());
+        }
+        if (typeof field === "string") {
+          return field
             .replace(/^\[|\]$/g, "")
             .split(",")
             .map((s: string) =>
@@ -147,11 +152,20 @@ export default class TutorService {
                 .replace(/^['"]|['"]$/g, "")
                 .toLowerCase()
             );
+        }
+        return [];
+      };
+
+      const formattedSubjects = formatStringArray(data.subjects);
+      const formattedGrade = formatStringArray(data.grade);
+      const formattedCurriculum = formatStringArray(data.curriculum);
 
       const tutor = await Tutor.create({
         userId: data.userId,
         bankName: data.bankName,
         subjects: formattedSubjects,
+        grade: formattedGrade,
+        curriculum: formattedCurriculum,
         accountNumber: data.accountNumber,
         resumeUrl,
         idFrontUrl,
@@ -232,6 +246,26 @@ export default class TutorService {
 
   async getProfile(userId: string) {
     try {
+      const participants = await ConversationParticipant.findAll({
+        where: { userId, isActive: true },
+        attributes: ["conversationId", "lastReadAt"],
+      });
+
+      let unreadMessageCount = 0;
+      if (participants.length > 0) {
+        const conditions = participants.map((p) => ({
+          conversationId: p.conversationId,
+          createdAt: { [Op.gt]: p.lastReadAt || new Date(0) },
+        }));
+
+        unreadMessageCount = await Message.count({
+          where: {
+            senderId: { [Op.ne]: userId },
+            [Op.or]: conditions,
+          },
+        });
+      }
+
       const user = await User.findByPk(userId, {
         attributes: { exclude: ["password"] },
         include: [
@@ -246,6 +280,7 @@ export default class TutorService {
               "subjects",
               "about",
               "grade",
+              "curriculum",
               "balance",
             ],
           },
@@ -355,6 +390,7 @@ export default class TutorService {
           totalReviews,
           averageRating: parseFloat(averageRating.toFixed(1)),
         },
+        unreadMessageCount,
       };
     } catch (error) {
       console.error("Error in getProfile:", error);
@@ -550,14 +586,19 @@ export default class TutorService {
     }
   }
 
-  async addAbout(userId: string, about: string, grade: string) {
+  async addAbout(
+    userId: string,
+    about: string,
+    grade: string[],
+    curriculum: string[]
+  ) {
     try {
       const tutor = await Tutor.findOne({ where: { userId } });
       if (!tutor) {
         throw new UnProcessableEntityError("Tutor profile not found");
       }
 
-      await tutor.update({ about, grade });
+      await tutor.update({ about, grade, curriculum });
 
       return tutor;
     } catch (error) {
@@ -893,7 +934,7 @@ export default class TutorService {
               include: [
                 {
                   model: Tutor,
-                  attributes: ["subjects", "about", "grade"],
+                  attributes: ["subjects", "about", "grade", "curriculum"],
                   required: false, // Always include Tutor data
                 },
                 {
@@ -1056,7 +1097,7 @@ export default class TutorService {
             include: [
               {
                 model: Tutor,
-                attributes: ["subjects", "about", "grade"],
+                attributes: ["subjects", "about", "grade", "curriculum"],
                 required: false, // Always include Tutor data
               },
               {
@@ -1505,6 +1546,12 @@ export default class TutorService {
       throw new UnProcessableEntityError("Tutor session not found");
     }
 
+    if (session.status !== "active") {
+      throw new UnProcessableEntityError(
+        `Tutor session is ${session.status} and cannot be updated`
+      );
+    }
+
     // Check if session detail already exists for the same day
     const existingSessionDetail = await TutorSessionsDetail.findOne({
       where: {
@@ -1709,18 +1756,22 @@ export default class TutorService {
 
   async getMonthlyEarnings(tutorId: string) {
     try {
-      // Calculate date range for last 6 months
+      // Calculate date range for last 6 months (start of the month 5 months ago)
       const currentDate = new Date();
-      const sixMonthsAgo = new Date();
-      sixMonthsAgo.setMonth(currentDate.getMonth() - 6);
+      const startDate = new Date(
+        currentDate.getFullYear(),
+        currentDate.getMonth() - 5,
+        1
+      );
 
       // Get all tutor transactions for the last 6 months
       const transactions = await TutorTransaction.findAll({
         where: {
           tutorId: tutorId,
           createdAt: {
-            [Op.gte]: sixMonthsAgo,
+            [Op.gte]: startDate,
           },
+          transactionType: TutorTransactionType.PAYMENT,
           status: {
             [Op.in]: [TutorPaymentStatus.PAID, TutorPaymentStatus.PENDING], // Include both paid and pending
           },
@@ -1735,9 +1786,14 @@ export default class TutorService {
 
       // Initialize last 6 months with zero earnings
       for (let i = 5; i >= 0; i--) {
-        const date = new Date();
-        date.setMonth(currentDate.getMonth() - i);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+        const date = new Date(
+          currentDate.getFullYear(),
+          currentDate.getMonth() - i,
+          1
+        );
+        const monthKey = `${date.getFullYear()}-${String(
+          date.getMonth() + 1
+        ).padStart(2, "0")}`;
         const monthName = date.toLocaleDateString("en-US", {
           year: "numeric",
           month: "long",
@@ -1753,7 +1809,9 @@ export default class TutorService {
       // Sum up earnings by month
       transactions.forEach((transaction) => {
         const transactionDate = new Date(transaction.createdAt);
-        const monthKey = `${transactionDate.getFullYear()}-${String(transactionDate.getMonth() + 1).padStart(2, "0")}`;
+        const monthKey = `${transactionDate.getFullYear()}-${String(
+          transactionDate.getMonth() + 1
+        ).padStart(2, "0")}`;
 
         if (monthlyData[monthKey]) {
           monthlyData[monthKey].earnings += transaction.amount;
@@ -1934,6 +1992,7 @@ export default class TutorService {
                   "subjects",
                   "about",
                   "grade",
+                  "curriculum",
                 ],
                 required: false,
               },
@@ -1961,6 +2020,7 @@ export default class TutorService {
                   "subjects",
                   "about",
                   "grade",
+                  "curriculum",
                 ],
                 required: false,
               },
@@ -1980,6 +2040,7 @@ export default class TutorService {
                   "subjects",
                   "about",
                   "grade",
+                  "curriculum",
                 ],
                 required: false,
               },

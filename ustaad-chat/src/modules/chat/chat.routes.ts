@@ -5,6 +5,11 @@ import {
   createMessageValidator,
   deleteMessageValidator,
   getMessagesValidator,
+  conversationIdParamValidator,
+  markConversationAsReadValidator,
+  deleteConversationValidator,
+  bulkDeleteMessagesValidator,
+  bulkDeleteConversationsValidator,
   // joinConversationValidator,
   markAsReadValidator,
   // updateConversationValidator,
@@ -40,6 +45,7 @@ router.get(
   routes.GET_MESSAGES,
   // '/messages/conversation/:conversationId',
   authenticateJwt,
+  conversationIdParamValidator(),
   getMessagesValidator(),
   validateRequest,
   chatController.getMessages
@@ -48,6 +54,7 @@ router.put(
   routes.UPDATE_MESSAGE,
   // '/messages/:messageId',
   authenticateJwt,
+  deleteMessageValidator(),
   updateMessageValidator(),
   validateRequest,
   chatController.updateMessage
@@ -83,10 +90,9 @@ router.post(
 
 router.get(
   routes.GET_ALL_CONVERSATION,
-  // '/conversations',
   authenticateJwt,
-  // getMessagesValidator(),
-  // validateRequest,
+  getMessagesValidator(),
+  validateRequest,
   chatController.getUserConversations
 );
 
@@ -94,8 +100,8 @@ router.get(
   routes.GET_ID_CONVERSATION,
   // '/conversations/:conversationId',
   authenticateJwt,
-  // getMessagesValidator(),
-  // validateRequest,
+  conversationIdParamValidator(),
+  validateRequest,
   chatController.getConversationById
 );
 
@@ -127,6 +133,7 @@ router.get(
 router.post(
   routes.BULK_DELETE_MESSAGES,
   authenticateJwt,
+  bulkDeleteMessagesValidator(),
   validateRequest,
   chatController.bulkDeleteMessages
 );
@@ -135,6 +142,7 @@ router.post(
 router.delete(
   routes.DELETE_CONVERSATION,
   authenticateJwt,
+  conversationIdParamValidator(),
   validateRequest,
   chatController.deleteConversation
 );
@@ -143,6 +151,7 @@ router.delete(
 router.patch(
   routes.MARK_CONVERSATION_READ,
   authenticateJwt,
+  conversationIdParamValidator(),
   validateRequest,
   chatController.markConversationAsRead
 );
@@ -151,6 +160,7 @@ router.patch(
 router.post(
   routes.BULK_DELETE_CONVERSATIONS,
   authenticateJwt,
+  bulkDeleteConversationsValidator(),
   validateRequest,
   chatController.bulkDeleteConversations
 );

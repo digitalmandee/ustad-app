@@ -10,7 +10,7 @@ export interface TutorSessionsAttributes {
     daysOfWeek: string[];
     price: number;
     meta?: object;
-    status: 'active' | 'cancelled';
+    status: "active" | "cancelled" | "paused";
     createdAt?: Date;
     updatedAt?: Date;
     month: string;
@@ -31,7 +31,7 @@ export declare class TutorSessions extends Model<TutorSessionsAttributes, TutorS
     meta?: object;
     readonly createdAt: Date;
     readonly updatedAt: Date;
-    status: 'active' | 'cancelled';
+    status: "active" | "cancelled" | "paused";
     month: string;
     totalSessions: number;
     sessionsCompleted: number;

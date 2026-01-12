@@ -95,6 +95,7 @@ var TutorSessionStatus;
     TutorSessionStatus["PUBLIC_HOLIDAY"] = "PUBLIC_HOLIDAY";
     TutorSessionStatus["CANCELLED_BY_PARENT"] = "CANCELLED_BY_PARENT";
     TutorSessionStatus["CANCELLED_BY_TUTOR"] = "CANCELLED_BY_TUTOR";
+    TutorSessionStatus["PAUSED"] = "PAUSED";
 })(TutorSessionStatus || (exports.TutorSessionStatus = TutorSessionStatus = {}));
 var HelpRequestStatus;
 (function (HelpRequestStatus) {

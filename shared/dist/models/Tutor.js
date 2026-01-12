@@ -52,7 +52,11 @@ function initTutorModel(sequelize) {
             allowNull: true,
         },
         grade: {
-            type: sequelize_1.DataTypes.STRING,
+            type: sequelize_1.DataTypes.ARRAY(sequelize_1.DataTypes.STRING),
+            allowNull: true,
+        },
+        curriculum: {
+            type: sequelize_1.DataTypes.ARRAY(sequelize_1.DataTypes.STRING),
             allowNull: true,
         },
         balance: {

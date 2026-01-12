@@ -96,10 +96,12 @@ export default class ChatController {
   getUserConversations = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
     try {
       const userId = req.user?.id;
-      const conversations = await this.chatService.getUserConversations(userId);
-      sendSuccessResponse(res, 'user coversations got sucessfully', 200, conversations);
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const result = await this.chatService.getUserConversations(userId, page, limit);
+      sendSuccessResponse(res, 'user conversations got successfully', 200, result);
     } catch (e: any) {
-      throw new GenericError(e, ` Error from create message ${__filename}`);
+      throw new GenericError(e, ` Error from get user conversations ${__filename}`);
     }
   };
 

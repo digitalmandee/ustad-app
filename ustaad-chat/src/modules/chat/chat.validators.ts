@@ -186,6 +186,10 @@ export const getMessagesValidator = () => {
   ];
 };
 
+export const conversationIdParamValidator = () => [
+  param('conversationId').isUUID().withMessage('conversationId must be a valid UUID'),
+];
+
 export const deleteMessageValidator = () => [
   param('messageId').isUUID().withMessage('messageId must be a valid UUID'),
 ];
@@ -193,4 +197,28 @@ export const deleteMessageValidator = () => [
 export const markAsReadValidator = () => [
   param('conversationId').isUUID().withMessage('conversationId must be a valid UUID'),
   param('messageId').isUUID().withMessage('messageId must be a valid UUID'),
+];
+
+export const markConversationAsReadValidator = () => [
+  param('conversationId').isUUID().withMessage('conversationId must be a valid UUID'),
+];
+
+export const deleteConversationValidator = () => [
+  param('conversationId').isUUID().withMessage('conversationId must be a valid UUID'),
+];
+
+export const bulkDeleteMessagesValidator = () => [
+  body('messageIds')
+    .isArray({ min: 1 })
+    .withMessage('messageIds must be a non-empty array')
+    .custom((arr) => arr.every((id: string) => /^[0-9a-fA-F-]{36}$/.test(id)))
+    .withMessage('Each messageId must be a valid UUID'),
+];
+
+export const bulkDeleteConversationsValidator = () => [
+  body('conversationIds')
+    .isArray({ min: 1 })
+    .withMessage('conversationIds must be a non-empty array')
+    .custom((arr) => arr.every((id: string) => /^[0-9a-fA-F-]{36}$/.test(id)))
+    .withMessage('Each conversationId must be a valid UUID'),
 ];
