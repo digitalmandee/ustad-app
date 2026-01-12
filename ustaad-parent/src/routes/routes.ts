@@ -62,6 +62,7 @@ const routes = {
 
   // Bypass routes
   PAYMENT_INTENT_BYPASS: "/parent/payment/intent-bypass",
+  UPDATE_PARENT_DOCUMENTS: "/parent/update-documents",
 };
 
 export default routes;

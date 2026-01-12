@@ -2703,4 +2703,57 @@ export default class TutorService {
       throw error;
     }
   }
+
+  async updateTutorDocuments(
+    userId: string,
+    data: {
+      resume?: Express.Multer.File;
+      idFront?: Express.Multer.File;
+      idBack?: Express.Multer.File;
+    }
+  ) {
+    try {
+      const tutor = await Tutor.findOne({ where: { userId } });
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      const userFolder = path.join("uploads", "tutors", userId.toString());
+      const updateData: any = {};
+
+      const uploadPromises = [];
+      if (data.resume) {
+        uploadPromises.push(
+          uploadFile(data.resume, userFolder, "resume").then((url) => {
+            updateData.resumeUrl = url;
+          })
+        );
+      }
+      if (data.idFront) {
+        uploadPromises.push(
+          uploadFile(data.idFront, userFolder, "id-front").then((url) => {
+            updateData.idFrontUrl = url;
+          })
+        );
+      }
+      if (data.idBack) {
+        uploadPromises.push(
+          uploadFile(data.idBack, userFolder, "id-back").then((url) => {
+            updateData.idBackUrl = url;
+          })
+        );
+      }
+
+      await Promise.all(uploadPromises);
+
+      if (Object.keys(updateData).length > 0) {
+        await tutor.update(updateData);
+      }
+
+      return tutor;
+    } catch (error) {
+      console.error("Error in updateTutorDocuments:", error);
+      throw error;
+    }
+  }
 }

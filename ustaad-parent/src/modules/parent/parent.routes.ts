@@ -203,4 +203,12 @@ router.post(
   parentController.bulkDeleteNotifications
 );
 
+router.put(
+  routes.UPDATE_PARENT_DOCUMENTS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  uploadFields,
+  parentController.updateDocuments
+);
+
 export { router as tutorRouter };

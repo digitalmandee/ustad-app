@@ -21,11 +21,9 @@ const routes = {
   ADD_TUTOR_SESSION: "/tutor/session",
   DELETE_TUTOR_SESSION: "/tutor/session",
   EDIT_TUTOR_SESSION: "/tutor/session",
-  
-  
-  
-  // Child 
-  
+
+  // Child
+
   ADD_CHILD_NOTE: "/tutor/child/notes",
   ADD_CHILD_REVIEW: "/tutor/child/reviews",
 
@@ -34,14 +32,14 @@ const routes = {
   GET_PARENT_PROFILE: "/tutor/parent/:parentId",
   ADD_PAYMENT_REQUEST: "/tutor/payment-request",
   GET_PAYMENT_REQUESTS: "/tutor/payment-request",
-  
+
   // Analytics
   MONTHLY_EARNINGS: "/tutor/monthly-earnings",
-  
+
   // Help Request
   HELP_REQUEST: "/tutor/help-requests",
   GET_HELP_REQUESTS: "/tutor/help-requests",
-  
+
   // Contracts
   GET_CONTRACTS: "/tutor/contracts",
   GET_ACTIVE_CONTRACTS: "/tutor/contracts",
@@ -50,12 +48,10 @@ const routes = {
   SUBMIT_CONTRACT_RATING: "/tutor/contracts/:contractId/rating",
   HELP_REQUEST_CONTRACT: "/tutor/contracts/:contractId/help-request",
 
-
   // Notifications
   NOTIFICATION_HISTORY: "/tutor/notification/history",
   NOTIFICATION_READ: "/tutor/notification/read/:notificationId",
-
-
+  UPDATE_TUTOR_DOCUMENTS: "/tutor/update-documents",
 };
 
 export default routes;

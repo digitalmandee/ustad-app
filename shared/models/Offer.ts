@@ -1,8 +1,8 @@
-import { Model, DataTypes, Optional, Sequelize } from 'sequelize';
-import { OfferStatus } from '../constant/enums';
-import { Conversation } from './Conversation';
-import { User } from './User';
-import { Message } from './Message';
+import { Model, DataTypes, Optional, Sequelize } from "sequelize";
+import { OfferStatus } from "../constant/enums";
+import { Conversation } from "./Conversation";
+import { User } from "./User";
+import { Message } from "./Message";
 
 interface OfferAttributes {
   id: string;
@@ -12,7 +12,7 @@ interface OfferAttributes {
   messageId: string;
   childName: string;
   amountMonthly: number;
-  subject: string;
+  subject: string[];
   startDate: Date;
   startTime: string;
   endTime: string;
@@ -24,13 +24,16 @@ interface OfferAttributes {
   updatedAt?: Date;
 }
 
-interface OfferCreationAttributes extends Optional<
-  OfferAttributes,
-  'id' | 'description' | 'status' | 'createdAt' | 'updatedAt'
-> {}
+interface OfferCreationAttributes
+  extends Optional<
+    OfferAttributes,
+    "id" | "description" | "status" | "createdAt" | "updatedAt"
+  > {}
 
-export class Offer extends Model<OfferAttributes, OfferCreationAttributes>
-  implements OfferAttributes {
+export class Offer
+  extends Model<OfferAttributes, OfferCreationAttributes>
+  implements OfferAttributes
+{
   public id!: string;
   public conversationId!: string;
   public senderId!: string;
@@ -38,7 +41,7 @@ export class Offer extends Model<OfferAttributes, OfferCreationAttributes>
   public messageId!: string;
   public childName!: string;
   public amountMonthly!: number;
-  public subject!: string;
+  public subject!: string[];
   public startDate!: Date;
   public startTime!: string;
   public endTime!: string;
@@ -62,35 +65,35 @@ export function initOfferModel(sequelize: Sequelize): typeof Offer {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: 'conversations',
-          key: 'id',
+          model: "conversations",
+          key: "id",
         },
-        onDelete: 'CASCADE',
+        onDelete: "CASCADE",
       },
       senderId: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: 'users',
-          key: 'id',
+          model: "users",
+          key: "id",
         },
       },
       receiverId: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: 'users',
-          key: 'id',
+          model: "users",
+          key: "id",
         },
       },
       messageId: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
-          model: 'messages',
-          key: 'id',
+          model: "messages",
+          key: "id",
         },
-        onDelete: 'CASCADE',
+        onDelete: "CASCADE",
       },
       childName: {
         type: DataTypes.STRING,
@@ -101,7 +104,7 @@ export function initOfferModel(sequelize: Sequelize): typeof Offer {
         allowNull: false,
       },
       subject: {
-        type: DataTypes.STRING,
+        type: DataTypes.ARRAY(DataTypes.STRING),
         allowNull: false,
       },
       startDate: {
@@ -125,9 +128,9 @@ export function initOfferModel(sequelize: Sequelize): typeof Offer {
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM('PENDING', 'ACCEPTED', 'REJECTED'),
+        type: DataTypes.ENUM("PENDING", "ACCEPTED", "REJECTED"),
         allowNull: false,
-        defaultValue: 'PENDING',
+        defaultValue: "PENDING",
       },
       createdAt: {
         type: DataTypes.DATE,
@@ -144,18 +147,21 @@ export function initOfferModel(sequelize: Sequelize): typeof Offer {
     },
     {
       sequelize,
-      tableName: 'offers',
+      tableName: "offers",
       timestamps: true,
     }
   );
 
   // Associations
-  Offer.belongsTo(Conversation, { foreignKey: 'conversationId', as: 'conversation' });
-  Offer.belongsTo(User, { foreignKey: 'senderId', as: 'sender' });
-  Offer.belongsTo(User, { foreignKey: 'receiverId', as: 'receiver' });
-  Offer.belongsTo(Message, { foreignKey: 'messageId', as: 'message' });
+  Offer.belongsTo(Conversation, {
+    foreignKey: "conversationId",
+    as: "conversation",
+  });
+  Offer.belongsTo(User, { foreignKey: "senderId", as: "sender" });
+  Offer.belongsTo(User, { foreignKey: "receiverId", as: "receiver" });
+  Offer.belongsTo(Message, { foreignKey: "messageId", as: "message" });
 
-  Message.hasOne(Offer, { foreignKey: 'messageId', as: 'offer' });
+  Message.hasOne(Offer, { foreignKey: "messageId", as: "offer" });
 
   return Offer;
 }

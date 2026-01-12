@@ -20,35 +20,35 @@ function initOfferModel(sequelize) {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: 'conversations',
-                key: 'id',
+                model: "conversations",
+                key: "id",
             },
-            onDelete: 'CASCADE',
+            onDelete: "CASCADE",
         },
         senderId: {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: 'users',
-                key: 'id',
+                model: "users",
+                key: "id",
             },
         },
         receiverId: {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: 'users',
-                key: 'id',
+                model: "users",
+                key: "id",
             },
         },
         messageId: {
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
-                model: 'messages',
-                key: 'id',
+                model: "messages",
+                key: "id",
             },
-            onDelete: 'CASCADE',
+            onDelete: "CASCADE",
         },
         childName: {
             type: sequelize_1.DataTypes.STRING,
@@ -59,7 +59,7 @@ function initOfferModel(sequelize) {
             allowNull: false,
         },
         subject: {
-            type: sequelize_1.DataTypes.STRING,
+            type: sequelize_1.DataTypes.ARRAY(sequelize_1.DataTypes.STRING),
             allowNull: false,
         },
         startDate: {
@@ -83,9 +83,9 @@ function initOfferModel(sequelize) {
             allowNull: true,
         },
         status: {
-            type: sequelize_1.DataTypes.ENUM('PENDING', 'ACCEPTED', 'REJECTED'),
+            type: sequelize_1.DataTypes.ENUM("PENDING", "ACCEPTED", "REJECTED"),
             allowNull: false,
-            defaultValue: 'PENDING',
+            defaultValue: "PENDING",
         },
         createdAt: {
             type: sequelize_1.DataTypes.DATE,
@@ -101,14 +101,17 @@ function initOfferModel(sequelize) {
         },
     }, {
         sequelize,
-        tableName: 'offers',
+        tableName: "offers",
         timestamps: true,
     });
     // Associations
-    Offer.belongsTo(Conversation_1.Conversation, { foreignKey: 'conversationId', as: 'conversation' });
-    Offer.belongsTo(User_1.User, { foreignKey: 'senderId', as: 'sender' });
-    Offer.belongsTo(User_1.User, { foreignKey: 'receiverId', as: 'receiver' });
-    Offer.belongsTo(Message_1.Message, { foreignKey: 'messageId', as: 'message' });
-    Message_1.Message.hasOne(Offer, { foreignKey: 'messageId', as: 'offer' });
+    Offer.belongsTo(Conversation_1.Conversation, {
+        foreignKey: "conversationId",
+        as: "conversation",
+    });
+    Offer.belongsTo(User_1.User, { foreignKey: "senderId", as: "sender" });
+    Offer.belongsTo(User_1.User, { foreignKey: "receiverId", as: "receiver" });
+    Offer.belongsTo(Message_1.Message, { foreignKey: "messageId", as: "message" });
+    Message_1.Message.hasOne(Offer, { foreignKey: "messageId", as: "offer" });
     return Offer;
 }

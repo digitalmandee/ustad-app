@@ -357,4 +357,12 @@ router.put(
   tutorController.markNotificationAsRead
 );
 
+router.put(
+  routes.UPDATE_TUTOR_DOCUMENTS,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  uploadFields,
+  tutorController.updateDocuments
+);
+
 export { router as tutorRouter };

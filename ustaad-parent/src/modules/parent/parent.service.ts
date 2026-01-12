@@ -2557,4 +2557,48 @@ export default class ParentService {
       },
     });
   }
+  async updateParentDocuments(
+    userId: string,
+    data: {
+      idFront?: Express.Multer.File;
+      idBack?: Express.Multer.File;
+    }
+  ) {
+    try {
+      const parent = await Parent.findOne({ where: { userId } });
+      if (!parent) {
+        throw new UnProcessableEntityError("Parent profile not found");
+      }
+
+      const userFolder = path.join("uploads", "parents", userId.toString());
+      const updateData: any = {};
+
+      const uploadPromises = [];
+      if (data.idFront) {
+        uploadPromises.push(
+          uploadFile(data.idFront, userFolder, "id-front").then((url) => {
+            updateData.idFrontUrl = url;
+          })
+        );
+      }
+      if (data.idBack) {
+        uploadPromises.push(
+          uploadFile(data.idBack, userFolder, "id-back").then((url) => {
+            updateData.idBackUrl = url;
+          })
+        );
+      }
+
+      await Promise.all(uploadPromises);
+
+      if (Object.keys(updateData).length > 0) {
+        await parent.update(updateData);
+      }
+
+      return parent;
+    } catch (error) {
+      console.error("Error in updateParentDocuments:", error);
+      throw error;
+    }
+  }
 }

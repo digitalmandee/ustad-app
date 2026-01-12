@@ -1,5 +1,5 @@
-import { Model, Optional, Sequelize } from 'sequelize';
-import { OfferStatus } from '../constant/enums';
+import { Model, Optional, Sequelize } from "sequelize";
+import { OfferStatus } from "../constant/enums";
 interface OfferAttributes {
     id: string;
     conversationId: string;
@@ -8,7 +8,7 @@ interface OfferAttributes {
     messageId: string;
     childName: string;
     amountMonthly: number;
-    subject: string;
+    subject: string[];
     startDate: Date;
     startTime: string;
     endTime: string;
@@ -19,7 +19,7 @@ interface OfferAttributes {
     createdAt?: Date;
     updatedAt?: Date;
 }
-interface OfferCreationAttributes extends Optional<OfferAttributes, 'id' | 'description' | 'status' | 'createdAt' | 'updatedAt'> {
+interface OfferCreationAttributes extends Optional<OfferAttributes, "id" | "description" | "status" | "createdAt" | "updatedAt"> {
 }
 export declare class Offer extends Model<OfferAttributes, OfferCreationAttributes> implements OfferAttributes {
     id: string;
@@ -29,7 +29,7 @@ export declare class Offer extends Model<OfferAttributes, OfferCreationAttribute
     messageId: string;
     childName: string;
     amountMonthly: number;
-    subject: string;
+    subject: string[];
     startDate: Date;
     startTime: string;
     endTime: string;

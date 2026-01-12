@@ -14,7 +14,7 @@ export interface OfferData {
   receiverId: string;
   childName: string;
   amountMonthly: number;
-  subject: string;
+  subject: string[];
   startDate: Date;
   startTime: string;
   endTime: string;

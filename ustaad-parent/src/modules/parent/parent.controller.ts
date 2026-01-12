@@ -923,4 +923,36 @@ export default class ParentController {
       );
     }
   };
+  updateDocuments = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+
+      if (!files || Object.keys(files).length === 0) {
+        return sendErrorResponse(res, "No documents provided for update", 400);
+      }
+
+      const result = await this.parentService.updateParentDocuments(userId, {
+        idFront: files.idFront ? files.idFront[0] : undefined,
+        idBack: files.idBack ? files.idBack[0] : undefined,
+      });
+
+      return sendSuccessResponse(
+        res,
+        "Documents updated successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Document update error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while updating documents";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
 }
