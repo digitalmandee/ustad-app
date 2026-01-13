@@ -16,13 +16,35 @@ export const tutorOnboardingValidationRules = () => {
       .isNumeric()
       .withMessage("Account number must be numeric"),
     body("grade")
-      .optional()
+      .customSanitizer((value) => {
+        // If it's a string that looks like an array, parse it
+        if (typeof value === "string") {
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [value];
+          } catch (e) {
+            return [value]; // Fallback to wrapping it in an array
+          }
+        }
+        return value;
+      })
       .isArray()
-      .withMessage("Grade must be an array of strings"),
+      .withMessage("Grade must be an array"),
+
     body("curriculum")
-      .optional()
+      .customSanitizer((value) => {
+        if (typeof value === "string") {
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [value];
+          } catch (e) {
+            return [value];
+          }
+        }
+        return value;
+      })
       .isArray()
-      .withMessage("Curriculum must be an array of strings"),
+      .withMessage("Curriculum must be an array"),
   ];
 };
 
@@ -333,5 +355,56 @@ export const childNoteValidationRules = () => {
       .trim()
       .isLength({ min: 10, max: 1000 })
       .withMessage("Description must be between 10 and 1000 characters"),
+  ];
+};
+
+export const aboutValidationRules = () => {
+  return [
+    body("about").optional().isString().withMessage("About must be a string"),
+    body("subjects")
+      .customSanitizer((value) => {
+        // If it's a string that looks like an array, parse it
+        if (typeof value === "string") {
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [value];
+          } catch (e) {
+            return [value]; // Fallback to wrapping it in an array
+          }
+        }
+        return value;
+      })
+      .isArray()
+      .withMessage("subjects must be an array"),
+    body("grade")
+      .customSanitizer((value) => {
+        // If it's a string that looks like an array, parse it
+        if (typeof value === "string") {
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [value];
+          } catch (e) {
+            return [value]; // Fallback to wrapping it in an array
+          }
+        }
+        return value;
+      })
+      .isArray()
+      .withMessage("Grade must be an array"),
+
+    body("curriculum")
+      .customSanitizer((value) => {
+        if (typeof value === "string") {
+          try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [value];
+          } catch (e) {
+            return [value];
+          }
+        }
+        return value;
+      })
+      .isArray()
+      .withMessage("Curriculum must be an array"),
   ];
 };

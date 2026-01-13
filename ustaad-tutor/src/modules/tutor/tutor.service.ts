@@ -591,7 +591,8 @@ export default class TutorService {
     userId: string,
     about: string,
     grade: string[],
-    curriculum: string[]
+    curriculum: string[],
+    subjects: string[]
   ) {
     try {
       const tutor = await Tutor.findOne({ where: { userId } });
@@ -599,7 +600,7 @@ export default class TutorService {
         throw new UnProcessableEntityError("Tutor profile not found");
       }
 
-      await tutor.update({ about, grade, curriculum });
+      await tutor.update({ about, grade, curriculum, subjects });
 
       return tutor;
     } catch (error) {
@@ -608,14 +609,47 @@ export default class TutorService {
     }
   }
 
-  async editAbout(userId: string, about: string) {
+  async editAbout(
+    userId: string,
+    about?: string,
+    grade?: string[],
+    curriculum?: string[],
+    subjects?: string[]
+  ) {
     try {
       const tutor = await Tutor.findOne({ where: { userId } });
       if (!tutor) {
         throw new UnProcessableEntityError("Tutor profile not found");
       }
 
-      await tutor.update({ about });
+      const updateData: any = {};
+      if (about !== undefined) updateData.about = about;
+
+      const formatStringArray = (field: any) => {
+        if (Array.isArray(field)) {
+          return field.map((s: string) => s.toLowerCase());
+        }
+        if (typeof field === "string") {
+          return field
+            .replace(/^\[|\]$/g, "")
+            .split(",")
+            .map((s: string) =>
+              s
+                .trim()
+                .replace(/^['"]|['"]$/g, "")
+                .toLowerCase()
+            );
+        }
+        return [];
+      };
+
+      if (grade !== undefined) updateData.grade = formatStringArray(grade);
+      if (curriculum !== undefined)
+        updateData.curriculum = formatStringArray(curriculum);
+      if (subjects !== undefined)
+        updateData.subjects = formatStringArray(subjects);
+
+      await tutor.update(updateData);
 
       return tutor;
     } catch (error) {

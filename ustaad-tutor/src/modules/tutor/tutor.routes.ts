@@ -14,6 +14,7 @@ import {
   helpRequestValidationRules,
   childNoteValidationRules,
   updateBankDetailsValidationRules,
+  aboutValidationRules,
 } from "./tutor.validators";
 import routes from "../../routes/routes";
 import { authenticateJwt } from "../../middlewares/auth";
@@ -144,6 +145,8 @@ router.get(
 router.post(
   routes.ADD_TUTOR_ABOUT,
   authenticateJwt,
+  aboutValidationRules(),
+  validateRequest,
   authorizeRoles("TUTOR"),
   tutorController.addAbout
 );
@@ -151,6 +154,8 @@ router.post(
 router.post(
   routes.EDIT_TUTOR_ABOUT,
   authenticateJwt,
+  aboutValidationRules(),
+  validateRequest,
   authorizeRoles("TUTOR"),
   tutorController.editAbout
 );

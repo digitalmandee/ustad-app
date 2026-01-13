@@ -416,13 +416,14 @@ export default class TutorController {
   addAbout = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-      const { about, grade, curriculum } = req.body;
+      const { about, grade, curriculum, subjects } = req.body;
 
       const result = await this.tutorService.addAbout(
         userId,
         about,
         grade,
-        curriculum
+        curriculum,
+        subjects
       );
 
       return sendSuccessResponse(
@@ -447,9 +448,15 @@ export default class TutorController {
   editAbout = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-      const { about } = req.body;
+      const { about, grade, curriculum, subjects } = req.body;
 
-      const result = await this.tutorService.editAbout(userId, about);
+      const result = await this.tutorService.editAbout(
+        userId,
+        about,
+        grade,
+        curriculum,
+        subjects
+      );
 
       return sendSuccessResponse(
         res,
