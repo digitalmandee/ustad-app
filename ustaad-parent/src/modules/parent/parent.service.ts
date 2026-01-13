@@ -422,7 +422,7 @@ export default class ParentService {
             model: User,
             as: "reviewer",
             foreignKey: "reviewerId",
-            attributes: ["id", "fullName", "email", "image"],
+            attributes: ["id", "firstName", "lastName", "email", "image"],
           },
         ],
         order: [["createdAt", "DESC"]],
@@ -657,12 +657,12 @@ export default class ParentService {
       //       userId: offer.senderId, // Tutor
       //       type: NotificationType.OFFER_ACCEPTED,
       //       title: 'Offer Accepted! 🎉',
-      //       body: `${parent?.fullName || 'A parent'} has accepted your tutoring offer for ${offer.childName}`,
+      //       body: `${parent?.firstName} ${parent?.lastName} has accepted your tutoring offer for ${offer.childName}`,
       //       relatedEntityId: offerId,
       //       relatedEntityType: 'offer',
       //       actionUrl: `/offers/${offerId}`,
       //       metadata: {
-      //         parentName: parent?.fullName || 'Unknown',
+      //         parentName: `${parent?.firstName} ${parent?.lastName}`,
       //         childName: offer.childName,
       //         subject: offer.subject,
       //         amountMonthly: offer.amountMonthly.toString(),
@@ -674,7 +674,7 @@ export default class ParentService {
       //       userId: offer.senderId, // Tutor
       //       type: NotificationType.OFFER_REJECTED,
       //       title: 'Offer Declined',
-      //       body: `${parent?.fullName || 'A parent'} has declined your tutoring offer for ${offer.childName}`,
+      //       body: `${parent?.firstName} ${parent?.lastName} has declined your tutoring offer for ${offer.childName}`,
       //       relatedEntityId: offerId,
       //       relatedEntityType: 'offer',
       //       actionUrl: `/offers/${offerId}`,
@@ -874,13 +874,13 @@ export default class ParentService {
   //         userId: tutorId,
   //         type: NotificationType.REVIEW_RECEIVED_TUTOR,
   //         title: '⭐ New Review',
-  //         body: `${parent?.fullName || 'A parent'} gave you ${rating} stars${review ? `: "${review.substring(0, 50)}${review.length > 50 ? '...' : ''}"` : ''}`,
+  //         body: `${parent?.firstName} ${parent?.lastName} gave you ${rating} stars${review ? `: "${review.substring(0, 50)}${review.length > 50 ? '...' : ''}"` : ''}`,
   //         relatedEntityId: tutorReview.id,
   //         relatedEntityType: 'review',
   //         actionUrl: `/reviews/${tutorReview.id}`,
   //         metadata: {
   //           rating: rating.toString(),
-  //           reviewerName: parent?.fullName || 'Unknown',
+  //           reviewerName: `${parent?.firstName} ${parent?.lastName}`,
   //           hasReview: !!review,
   //         },
   //       });
@@ -1314,7 +1314,14 @@ export default class ParentService {
           {
             model: User,
             foreignKey: "tutorId",
-            attributes: ["id", "fullName", "email", "image", "phone"],
+            attributes: [
+              "id",
+              "firstName",
+              "lastName",
+              "email",
+              "image",
+              "phone",
+            ],
           },
           {
             model: Offer,
@@ -1374,12 +1381,12 @@ export default class ParentService {
               {
                 model: User,
                 as: "reviewer",
-                attributes: ["id", "fullName", "email", "image"],
+                attributes: ["id", "firstName", "lastName", "email", "image"],
               },
               {
                 model: User,
                 as: "reviewed",
-                attributes: ["id", "fullName", "email", "image"],
+                attributes: ["id", "firstName", "lastName", "email", "image"],
               },
             ],
             order: [["createdAt", "DESC"]],
@@ -1387,7 +1394,14 @@ export default class ParentService {
 
           // Get tutor user details
           const tutor = await User.findByPk(contract.tutorId, {
-            attributes: ["id", "fullName", "email", "image", "phone"],
+            attributes: [
+              "id",
+              "firstName",
+              "lastName",
+              "email",
+              "image",
+              "phone",
+            ],
           });
 
           // Check if parent has already reviewed

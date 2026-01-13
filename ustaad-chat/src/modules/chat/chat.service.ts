@@ -86,8 +86,19 @@ export default class ChatService {
 
         const offerData = messageData.offer as OfferData;
 
+        const searchName = offerData.childName.toLowerCase();
         const children = await Child.findAll({
-          where: { userId: offerData.receiverId, fullName: offerData.childName.toLowerCase() },
+          where: {
+            userId: offerData.receiverId,
+            [Op.or]: [
+              { firstName: searchName },
+              { lastName: searchName },
+              sequelize.where(
+                sequelize.fn('concat', sequelize.col('firstName'), ' ', sequelize.col('lastName')),
+                searchName
+              ),
+            ],
+          },
         });
 
         if (children.length === 0) {

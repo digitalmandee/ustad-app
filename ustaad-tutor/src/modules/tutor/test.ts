@@ -41,7 +41,7 @@ async cancelContract(tutorId: string, contractId: string) {
             model: User,
             as: "parent",
             foreignKey: "parentId",
-            attributes: ["id", "fullName", "email", "image", "role"],
+            attributes: ["id", "firstName", "lastName", "email", "image", "role"],
           },
           {
             model: Offer,
@@ -129,7 +129,7 @@ async cancelContract(tutorId: string, contractId: string) {
         helpRequest,
         contract: {
           id: contract.id,
-          parentName: contractData.parent?.fullName,
+          parentName: `${contractData.parent?.firstName} ${contractData.parent?.lastName}`,
           childName: contractData.Offer?.childName,
           subject: contractData.Offer?.subject,
         },

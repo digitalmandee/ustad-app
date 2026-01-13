@@ -926,7 +926,8 @@ export default class TutorService {
               as: "tutor",
               attributes: [
                 "id",
-                "fullName",
+                "firstName",
+                "lastName",
                 "email",
                 "phone",
                 "image",
@@ -987,7 +988,7 @@ export default class TutorService {
               model: User,
               as: "reviewer",
               foreignKey: "reviewerId",
-              attributes: ["id", "fullName", "email", "image"],
+              attributes: ["id", "firstName", "lastName", "email", "image"],
             },
           ],
           order: [["createdAt", "DESC"]],
@@ -1034,7 +1035,7 @@ export default class TutorService {
               parent: reviewData.reviewer
                 ? {
                     id: reviewData.reviewer.id,
-                    fullName: reviewData.reviewer.fullName,
+                    fullName: `${reviewData.reviewer.firstName} ${reviewData.reviewer.lastName}`,
                     email: reviewData.reviewer.email,
                     image: reviewData.reviewer.image,
                   }
@@ -1094,7 +1095,14 @@ export default class TutorService {
           {
             model: User,
             as: "tutor",
-            attributes: ["id", "fullName", "email", "phone", "image"],
+            attributes: [
+              "id",
+              "firstName",
+              "lastName",
+              "email",
+              "phone",
+              "image",
+            ],
             include: [
               {
                 model: Tutor,
@@ -1178,7 +1186,7 @@ export default class TutorService {
             model: User,
             as: "reviewer",
             foreignKey: "reviewerId",
-            attributes: ["id", "fullName", "email", "image"],
+            attributes: ["id", "firstName", "lastName", "email", "image"],
           },
         ],
         order: [["createdAt", "DESC"]],
@@ -1220,7 +1228,7 @@ export default class TutorService {
             parent: reviewData.reviewer
               ? {
                   id: reviewData.reviewer.id,
-                  fullName: reviewData.reviewer.fullName,
+                  fullName: `${reviewData.reviewer.firstName} ${reviewData.reviewer.lastName}`,
                   email: reviewData.reviewer.email,
                   image: reviewData.reviewer.image,
                 }
@@ -1424,7 +1432,7 @@ export default class TutorService {
         SELECT 
           ts.*, 
           u.id AS "parentId",
-          u."fullName" AS "parentName"
+          u."firstName" || ' ' || u."lastName" AS "parentName"
         FROM "tutorSessions" ts
         JOIN "users" u ON u.id = ts."parentId"
         WHERE ts."tutorId" = :userId;
@@ -1435,7 +1443,7 @@ export default class TutorService {
         SELECT 
           tsd.*, 
           u.id AS "parentId",
-          u."fullName" AS "parentName"
+          u."firstName" || ' ' || u."lastName" AS "parentName"
         FROM "tutorSessionsDetail" tsd
         JOIN "users" u ON u.id = tsd."parentId"
         WHERE tsd."tutorId" = :userId
@@ -1447,7 +1455,7 @@ export default class TutorService {
         SELECT 
           ts.*, 
           u.id AS "tutorId",
-          u."fullName" AS "tutorName"
+          u."firstName" || ' ' || u."lastName" AS "tutorName"
         FROM "tutorSessions" ts
         JOIN "users" u ON u.id = ts."tutorId"
         WHERE ts."parentId" = :userId;
@@ -1458,7 +1466,7 @@ export default class TutorService {
         SELECT 
           tsd.*, 
           u.id AS "tutorId",
-          u."fullName" AS "tutorName"
+          u."firstName" || ' ' || u."lastName" AS "tutorName"
         FROM "tutorSessionsDetail" tsd
         JOIN "users" u ON u.id = tsd."tutorId"
         WHERE tsd."parentId" = :userId
@@ -1496,7 +1504,7 @@ export default class TutorService {
           SELECT 
             tsd.*, 
             u.id AS "parentId",
-            u."fullName" AS "parentName"
+            u."firstName" || ' ' || u."lastName" AS "parentName"
           FROM "tutorSessionsDetail" tsd
           JOIN "users" u ON u.id = tsd."parentId"
           WHERE tsd."tutorId" = :userId AND tsd."sessionId" = :sessionId
@@ -1508,7 +1516,7 @@ export default class TutorService {
           SELECT 
             tsd.*, 
             u.id AS "tutorId",
-            u."fullName" AS "tutorName"
+            u."firstName" || ' ' || u."lastName" AS "tutorName"
           FROM "tutorSessionsDetail" tsd
           JOIN "users" u ON u.id = tsd."tutorId"
           WHERE tsd."parentId" = :userId AND tsd."sessionId" = :sessionId
@@ -1961,7 +1969,14 @@ export default class TutorService {
           {
             model: User,
             as: "receiver",
-            attributes: ["id", "fullName", "email", "image", "role"],
+            attributes: [
+              "id",
+              "firstName",
+              "lastName",
+              "email",
+              "image",
+              "role",
+            ],
             include: [
               {
                 model: Parent,
@@ -1982,7 +1997,14 @@ export default class TutorService {
           {
             model: User,
             as: "sender",
-            attributes: ["id", "fullName", "email", "image", "role"],
+            attributes: [
+              "id",
+              "firstName",
+              "lastName",
+              "email",
+              "image",
+              "role",
+            ],
             include: [
               {
                 model: Tutor,
@@ -2010,7 +2032,14 @@ export default class TutorService {
           {
             model: User,
             as: "sender",
-            attributes: ["id", "fullName", "email", "image", "role"],
+            attributes: [
+              "id",
+              "firstName",
+              "lastName",
+              "email",
+              "image",
+              "role",
+            ],
             include: [
               {
                 model: Tutor,
@@ -2030,7 +2059,14 @@ export default class TutorService {
           {
             model: User,
             as: "receiver",
-            attributes: ["id", "fullName", "email", "image", "role"],
+            attributes: [
+              "id",
+              "firstName",
+              "lastName",
+              "email",
+              "image",
+              "role",
+            ],
             include: [
               {
                 model: Tutor,
@@ -2189,7 +2225,14 @@ export default class TutorService {
             model: User,
             as: "parent",
             foreignKey: "parentId",
-            attributes: ["id", "fullName", "email", "image", "role"],
+            attributes: [
+              "id",
+              "firstName",
+              "lastName",
+              "email",
+              "image",
+              "role",
+            ],
           },
           {
             model: Offer,
@@ -2522,7 +2565,14 @@ export default class TutorService {
           {
             model: User,
             foreignKey: "parentId",
-            attributes: ["id", "fullName", "email", "image", "phone"],
+            attributes: [
+              "id",
+              "firstName",
+              "lastName",
+              "email",
+              "image",
+              "phone",
+            ],
           },
           {
             model: Offer,
@@ -2585,12 +2635,12 @@ export default class TutorService {
               {
                 model: User,
                 as: "reviewer",
-                attributes: ["id", "fullName", "email", "image"],
+                attributes: ["id", "firstName", "lastName", "email", "image"],
               },
               {
                 model: User,
                 as: "reviewed",
-                attributes: ["id", "fullName", "email", "image"],
+                attributes: ["id", "firstName", "lastName", "email", "image"],
               },
             ],
             order: [["createdAt", "DESC"]],
@@ -2598,7 +2648,14 @@ export default class TutorService {
 
           // Get parent user details
           const parent = await User.findByPk(contract.parentId, {
-            attributes: ["id", "fullName", "email", "image", "phone"],
+            attributes: [
+              "id",
+              "firstName",
+              "lastName",
+              "email",
+              "image",
+              "phone",
+            ],
           });
 
           // Check if parent has already reviewed
@@ -2755,7 +2812,7 @@ export default class TutorService {
         helpRequest,
         contract: {
           id: contract.id,
-          parentName: contractData.parent?.fullName,
+          parentName: `${contractData.parent?.firstName} ${contractData.parent?.lastName}`,
           childName: contractData.Offer?.childName,
           subject: contractData.Offer?.subject,
         },
