@@ -1,6 +1,7 @@
 export class CreateChildDto {
-  fullName: string;
-  gender: 'male' | 'female';
+  firstName: string;
+  lastName: string;
+  gender: "male" | "female";
   grade: string;
   age: number;
   schoolName: string;
@@ -13,4 +14,4 @@ export class UpdateChildDto extends CreateChildDto {
 
 export class DeleteChildDto {
   id: string;
-} 
+}

@@ -1,4 +1,9 @@
-import { Gender, IsOnBaord, ParentSubscriptionStatus, UserRole } from "@ustaad/shared";
+import {
+  Gender,
+  IsOnBaord,
+  ParentSubscriptionStatus,
+  UserRole,
+} from "@ustaad/shared";
 import {
   User,
   Parent,
@@ -27,7 +32,9 @@ export default class AdminService {
 
     const now = new Date();
 
-    const currentStart = isRange ? new Date(now.getTime() - days * 24 * 60 * 60 * 1000) : null;
+    const currentStart = isRange
+      ? new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
+      : null;
     const previousStart = isRange
       ? new Date(now.getTime() - 2 * days * 24 * 60 * 60 * 1000)
       : null;
@@ -121,14 +128,58 @@ export default class AdminService {
           period: `${days} days`,
         },
         change: {
-          totalUsers: { delta: delta(current.totalUsers, previous.totalUsers), percent: pct(current.totalUsers, previous.totalUsers) },
-          totalParents: { delta: delta(current.totalParents, previous.totalParents), percent: pct(current.totalParents, previous.totalParents) },
-          totalTutors: { delta: delta(current.totalTutors, previous.totalTutors), percent: pct(current.totalTutors, previous.totalTutors) },
-          totalSubscriptions: { delta: delta(current.totalSubscriptions, previous.totalSubscriptions), percent: pct(current.totalSubscriptions, previous.totalSubscriptions) },
-          activeSubscriptions: { delta: delta(current.activeSubscriptions, previous.activeSubscriptions), percent: pct(current.activeSubscriptions, previous.activeSubscriptions) },
-          completedSubscriptions: { delta: delta(current.completedSubscriptions, previous.completedSubscriptions), percent: pct(current.completedSubscriptions, previous.completedSubscriptions) },
-          totalTransactions: { delta: delta(current.totalTransactions, previous.totalTransactions), percent: pct(current.totalTransactions, previous.totalTransactions) },
-          totalRevenue: { delta: Number((current.totalRevenue - previous.totalRevenue).toFixed(2)), percent: pct(current.totalRevenue, previous.totalRevenue) },
+          totalUsers: {
+            delta: delta(current.totalUsers, previous.totalUsers),
+            percent: pct(current.totalUsers, previous.totalUsers),
+          },
+          totalParents: {
+            delta: delta(current.totalParents, previous.totalParents),
+            percent: pct(current.totalParents, previous.totalParents),
+          },
+          totalTutors: {
+            delta: delta(current.totalTutors, previous.totalTutors),
+            percent: pct(current.totalTutors, previous.totalTutors),
+          },
+          totalSubscriptions: {
+            delta: delta(
+              current.totalSubscriptions,
+              previous.totalSubscriptions
+            ),
+            percent: pct(
+              current.totalSubscriptions,
+              previous.totalSubscriptions
+            ),
+          },
+          activeSubscriptions: {
+            delta: delta(
+              current.activeSubscriptions,
+              previous.activeSubscriptions
+            ),
+            percent: pct(
+              current.activeSubscriptions,
+              previous.activeSubscriptions
+            ),
+          },
+          completedSubscriptions: {
+            delta: delta(
+              current.completedSubscriptions,
+              previous.completedSubscriptions
+            ),
+            percent: pct(
+              current.completedSubscriptions,
+              previous.completedSubscriptions
+            ),
+          },
+          totalTransactions: {
+            delta: delta(current.totalTransactions, previous.totalTransactions),
+            percent: pct(current.totalTransactions, previous.totalTransactions),
+          },
+          totalRevenue: {
+            delta: Number(
+              (current.totalRevenue - previous.totalRevenue).toFixed(2)
+            ),
+            percent: pct(current.totalRevenue, previous.totalRevenue),
+          },
         },
         range: {
           current: {
@@ -151,7 +202,8 @@ export default class AdminService {
     const userSearchWhere = hasSearch
       ? {
           [Op.or]: [
-            { fullName: { [Op.iLike]: `%${search.trim()}%` } },
+            { firstName: { [Op.iLike]: `%${search.trim()}%` } },
+            { lastName: { [Op.iLike]: `%${search.trim()}%` } },
             { email: { [Op.iLike]: `%${search.trim()}%` } },
           ],
         }
@@ -161,8 +213,22 @@ export default class AdminService {
       include: [
         {
           model: User,
-          attributes: ["id", "fullName", "email", "phone", "image", "role", "isAdminVerified","isOnBoard", "isPhoneVerified", "isEmailVerified"],
-          ...(userSearchWhere ? { where: userSearchWhere, required: true } : {}),
+          attributes: [
+            "id",
+            "firstName",
+            "lastName",
+            "email",
+            "phone",
+            "image",
+            "role",
+            "isAdminVerified",
+            "isOnBoard",
+            "isPhoneVerified",
+            "isEmailVerified",
+          ],
+          ...(userSearchWhere
+            ? { where: userSearchWhere, required: true }
+            : {}),
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -190,7 +256,19 @@ export default class AdminService {
       include: [
         {
           model: User,
-          attributes: ["id", "fullName", "email", "phone", "image", "role", "isAdminVerified","isOnBoard", "isPhoneVerified", "isEmailVerified"],
+          attributes: [
+            "id",
+            "firstName",
+            "lastName",
+            "email",
+            "phone",
+            "image",
+            "role",
+            "isAdminVerified",
+            "isOnBoard",
+            "isPhoneVerified",
+            "isEmailVerified",
+          ],
         },
       ],
     });
@@ -220,7 +298,8 @@ export default class AdminService {
       tutorUserWhere[Op.and] = [
         {
           [Op.or]: [
-            { fullName: { [Op.iLike]: `%${search.trim()}%` } },
+            { firstName: { [Op.iLike]: `%${search.trim()}%` } },
+            { lastName: { [Op.iLike]: `%${search.trim()}%` } },
             { email: { [Op.iLike]: `%${search.trim()}%` } },
           ],
         },
@@ -231,7 +310,19 @@ export default class AdminService {
       include: [
         {
           model: User,
-          attributes: ["id", "fullName", "email", "phone", "image", "role", "isAdminVerified","isOnBoard", "isPhoneVerified", "isEmailVerified"],
+          attributes: [
+            "id",
+            "firstName",
+            "lastName",
+            "email",
+            "phone",
+            "image",
+            "role",
+            "isAdminVerified",
+            "isOnBoard",
+            "isPhoneVerified",
+            "isEmailVerified",
+          ],
           where: tutorUserWhere,
           required: true,
         },
@@ -260,7 +351,19 @@ export default class AdminService {
       include: [
         {
           model: User,
-          attributes: ["id", "fullName", "email", "phone", "image", "role", "isAdminVerified","isOnBoard", "isPhoneVerified", "isEmailVerified"],
+          attributes: [
+            "id",
+            "firstName",
+            "lastName",
+            "email",
+            "phone",
+            "image",
+            "role",
+            "isAdminVerified",
+            "isOnBoard",
+            "isPhoneVerified",
+            "isEmailVerified",
+          ],
         },
       ],
     });
@@ -333,7 +436,9 @@ export default class AdminService {
       throw new Error("User not found");
     }
 
-    const tutor = await Tutor.findOne({ where: { userId: paymentRequest.tutorId } });
+    const tutor = await Tutor.findOne({
+      where: { userId: paymentRequest.tutorId },
+    });
     if (!tutor) {
       throw new Error("Tutor not found");
     }
@@ -344,7 +449,7 @@ export default class AdminService {
         id: tutor.userId,
         bankName: tutor.bankName,
         accountNumber: tutor.accountNumber,
-        name: user.fullName,
+        name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         phone: user.phone,
       },
@@ -354,9 +459,8 @@ export default class AdminService {
   async updatePaymentRequestStatus(id: string, status: string) {
     const paymentRequest = await PaymentRequests.findByPk(id);
 
-
     console.log(paymentRequest, status, "paymentRequest, status");
-    
+
     paymentRequest.status = status as TutorPaymentStatus;
     console.log(paymentRequest, "paymentRequest");
     await paymentRequest.save();
@@ -364,7 +468,8 @@ export default class AdminService {
   }
 
   async createAdmin(userData: {
-    fullName: string;
+    firstName: string;
+    lastName: string;
     email: string;
     password: string;
   }) {
@@ -383,7 +488,8 @@ export default class AdminService {
 
     // Create admin user
     const adminUser = await User.create({
-      fullName: userData.fullName,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
       email: userData.email,
       password: hashedPassword,
       role: UserRole.ADMIN,
@@ -409,7 +515,15 @@ export default class AdminService {
           [Op.in]: [UserRole.ADMIN],
         },
       },
-      attributes: ["id", "fullName", "email", "role", "createdAt", "updatedAt"],
+      attributes: [
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "role",
+        "createdAt",
+        "updatedAt",
+      ],
       order: [["createdAt", "DESC"]],
       limit,
       offset,
@@ -448,18 +562,19 @@ export default class AdminService {
         isDeleted: false,
       },
       attributes: [
-        "id", 
-        "fullName", 
-        "email", 
-        "phone", 
-        "role", 
+        "id",
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "role",
         "image",
         "isOnBoard",
         "isAdminVerified",
         "isEmailVerified",
         "isPhoneVerified",
         "createdAt",
-        "updatedAt"
+        "updatedAt",
       ],
       order: [["createdAt", "DESC"]],
       limit,
@@ -481,7 +596,7 @@ export default class AdminService {
 
   async approveOnboarding(userId: string) {
     const user = await User.findByPk(userId);
-    
+
     if (!user) {
       throw new Error("User not found");
     }
@@ -503,8 +618,8 @@ export default class AdminService {
     // Return updated user without password
     const updatedUser = await User.findByPk(userId, {
       attributes: {
-        exclude: ["password"]
-      }
+        exclude: ["password"],
+      },
     });
 
     return updatedUser;
@@ -512,28 +627,28 @@ export default class AdminService {
 
   async getDisputedContracts(page = 1, limit = 20) {
     const offset = (page - 1) * limit;
-    
+
     const { rows, count } = await ParentSubscription.findAndCountAll({
       where: {
-        status: 'dispute',
+        status: "dispute",
       },
       include: [
         {
           model: User,
-          as: 'parent',
-          attributes: ['id', 'fullName', 'email', 'phone'],
+          as: "parent",
+          attributes: ["id", "firstName", "lastName", "email", "phone"],
         },
         {
           model: User,
-          as: 'tutor',
-          attributes: ['id', 'fullName', 'email', 'phone'],
+          as: "tutor",
+          attributes: ["id", "firstName", "lastName", "email", "phone"],
         },
         {
           model: Offer,
-          attributes: ['id', 'childName', 'subject', 'amountMonthly'],
+          attributes: ["id", "childName", "subject", "amountMonthly"],
         },
       ],
-      order: [['disputedAt', 'DESC']],
+      order: [["disputedAt", "DESC"]],
       limit,
       offset,
     });
@@ -560,7 +675,7 @@ export default class AdminService {
         let disputedByUser = null;
         if (contract.disputedBy) {
           disputedByUser = await User.findByPk(contract.disputedBy, {
-            attributes: ['id', 'fullName', 'email', 'role'],
+            attributes: ["id", "firstName", "lastName", "email", "role"],
           });
         }
 
@@ -587,44 +702,44 @@ export default class AdminService {
 
   async resolveDispute(
     contractId: string,
-    finalStatus: 'cancelled' | 'active' | 'completed',
+    finalStatus: "cancelled" | "active" | "completed",
     adminNotes?: string
   ) {
     const contract = await ParentSubscription.findByPk(contractId, {
       include: [
         {
           model: User,
-          as: 'parent',
-          attributes: ['id', 'fullName', 'email'],
+          as: "parent",
+          attributes: ["id", "firstName", "lastName", "email"],
         },
         {
           model: User,
-          as: 'tutor',
-          attributes: ['id', 'fullName', 'email'],
+          as: "tutor",
+          attributes: ["id", "firstName", "lastName", "email"],
         },
         {
           model: Offer,
-          attributes: ['id', 'childName', 'subject'],
+          attributes: ["id", "childName", "subject"],
         },
       ],
     });
-    
+
     if (!contract) {
       throw new Error("Contract not found");
     }
 
-    if (contract.status !== 'dispute') {
+    if (contract.status !== "dispute") {
       throw new Error("Contract is not in dispute status");
     }
 
     // Update contract
     await contract.update({
       status: finalStatus,
-      endDate: finalStatus === 'cancelled' ? new Date() : contract.endDate,
+      endDate: finalStatus === "cancelled" ? new Date() : contract.endDate,
     });
 
     // If cancelled, ensure tutor gets paid for completed days
-    if (finalStatus === 'cancelled') {
+    if (finalStatus === "cancelled") {
       // Calculate completed sessions
       const completedSessions = await TutorSessionsDetail.findAll({
         where: {
@@ -655,9 +770,11 @@ export default class AdminService {
             amount: totalAmount / 100, // Convert from cents to dollars if needed
             status: TutorPaymentStatus.REQUESTED,
           });
-          console.log(`✅ Created payment request for tutor ${contract.tutorId} for ${completedSessions.length} completed sessions`);
+          console.log(
+            `✅ Created payment request for tutor ${contract.tutorId} for ${completedSessions.length} completed sessions`
+          );
         } catch (paymentError) {
-          console.error('❌ Error creating payment request:', paymentError);
+          console.error("❌ Error creating payment request:", paymentError);
         }
       }
     }
@@ -667,32 +784,35 @@ export default class AdminService {
       await sendNotificationToUser({
         userId: contract.parentId,
         type: NotificationType.CONTRACT_DISPUTE_RESOLVED,
-        title: '📋 Dispute Resolved',
-        body: `Your contract dispute has been resolved. Final status: ${finalStatus}${adminNotes ? `. Notes: ${adminNotes.substring(0, 50)}` : ''}`,
+        title: "📋 Dispute Resolved",
+        body: `Your contract dispute has been resolved. Final status: ${finalStatus}${adminNotes ? `. Notes: ${adminNotes.substring(0, 50)}` : ""}`,
         relatedEntityId: contract.id,
-        relatedEntityType: 'contract',
+        relatedEntityType: "contract",
         actionUrl: `/contracts/${contract.id}`,
         metadata: {
           finalStatus,
-          adminNotes: adminNotes || '',
+          adminNotes: adminNotes || "",
         },
       });
 
       await sendNotificationToUser({
         userId: contract.tutorId,
         type: NotificationType.CONTRACT_DISPUTE_RESOLVED,
-        title: '📋 Dispute Resolved',
-        body: `Your contract dispute has been resolved. Final status: ${finalStatus}${adminNotes ? `. Notes: ${adminNotes.substring(0, 50)}` : ''}`,
+        title: "📋 Dispute Resolved",
+        body: `Your contract dispute has been resolved. Final status: ${finalStatus}${adminNotes ? `. Notes: ${adminNotes.substring(0, 50)}` : ""}`,
         relatedEntityId: contract.id,
-        relatedEntityType: 'contract',
+        relatedEntityType: "contract",
         actionUrl: `/contracts/${contract.id}`,
         metadata: {
           finalStatus,
-          adminNotes: adminNotes || '',
+          adminNotes: adminNotes || "",
         },
       });
     } catch (notificationError) {
-      console.error('❌ Error sending dispute resolution notifications:', notificationError);
+      console.error(
+        "❌ Error sending dispute resolution notifications:",
+        notificationError
+      );
     }
 
     return contract;

@@ -148,7 +148,7 @@ export default class AuthService implements IAuthService {
             user.id,
             user.deviceId,
             "Login Success",
-            `Welcome back, ${user.fullName || "User"}! You have successfully logged in to your account.`,
+            `Welcome back, ${user.firstName} ${user.lastName}! You have successfully logged in to your account.`,
             {
               loginTime: new Date().toISOString(),
               deviceId: deviceId,

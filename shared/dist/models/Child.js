@@ -22,7 +22,11 @@ function initChildModel(sequelize) {
                 key: "id",
             },
         },
-        fullName: {
+        firstName: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: false,
+        },
+        lastName: {
             type: sequelize_1.DataTypes.STRING,
             allowNull: false,
         },

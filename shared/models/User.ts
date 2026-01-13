@@ -12,7 +12,8 @@ interface UserAttributes {
   isOnBoard: IsOnBaord;
   gender: Gender;
 
-  fullName: string;
+  firstName: string;
+  lastName: string;
   password?: string | null;
   cnic?: string | null;
   address?: string | null;
@@ -74,7 +75,8 @@ export class User
   public isOnBoard!: IsOnBaord;
   public gender!: Gender;
 
-  public fullName!: string;
+  public firstName!: string;
+  public lastName!: string;
   public password!: string | null;
   public cnic!: string | null;
   public address!: string | null;
@@ -133,7 +135,11 @@ export function initUserModel(sequelize: Sequelize): typeof User {
         allowNull: false,
         defaultValue: Gender.OTHER,
       },
-      fullName: {
+      firstName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      lastName: {
         type: DataTypes.STRING,
         allowNull: false,
       },

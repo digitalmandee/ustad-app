@@ -14,12 +14,16 @@ export default class AdminController {
   getStats = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const days = req.query.days ? Number(req.query.days) : undefined;
-      
+
       // Validate days parameter if provided
       if (days && ![7, 30, 90].includes(days)) {
-        return sendErrorResponse(res, "Days parameter must be 7, 30, or 90", 400);
+        return sendErrorResponse(
+          res,
+          "Days parameter must be 7, 30, or 90",
+          400
+        );
       }
-      
+
       const stats = await this.adminService.getStats(days);
       sendSuccessResponse(res, "stats fetched successfully", 200, stats);
     } catch (e: any) {
@@ -80,9 +84,17 @@ export default class AdminController {
   getAllPaymentRequests = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const data = await this.adminService.getAllPaymentRequests();
-      sendSuccessResponse(res, "payment requests fetched successfully", 200, data);
+      sendSuccessResponse(
+        res,
+        "payment requests fetched successfully",
+        200,
+        data
+      );
     } catch (e: any) {
-      throw new GenericError(e, ` Error from getAllPaymentRequests ${__filename}`);
+      throw new GenericError(
+        e,
+        ` Error from getAllPaymentRequests ${__filename}`
+      );
     }
   };
 
@@ -90,29 +102,55 @@ export default class AdminController {
     try {
       const { id } = req.params;
       const data = await this.adminService.getPaymentRequestById(id);
-      sendSuccessResponse(res, "payment request fetched successfully", 200, data);
+      sendSuccessResponse(
+        res,
+        "payment request fetched successfully",
+        200,
+        data
+      );
     } catch (e: any) {
-      throw new GenericError(e, ` Error from getPaymentRequestById ${__filename}`);
+      throw new GenericError(
+        e,
+        ` Error from getPaymentRequestById ${__filename}`
+      );
     }
   };
 
-  updatePaymentRequestStatus = async (req: AuthenticatedRequest, res: Response) => {
+  updatePaymentRequestStatus = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
     try {
       const { id, status } = req.body;
-      const data = await this.adminService.updatePaymentRequestStatus(id, status);
-      sendSuccessResponse(res, "payment request status updated successfully", 200, data);
+      const data = await this.adminService.updatePaymentRequestStatus(
+        id,
+        status
+      );
+      sendSuccessResponse(
+        res,
+        "payment request status updated successfully",
+        200,
+        data
+      );
     } catch (e: any) {
-      throw new GenericError(e, ` Error from updatePaymentRequestStatus ${__filename}`);
+      throw new GenericError(
+        e,
+        ` Error from updatePaymentRequestStatus ${__filename}`
+      );
     }
   };
 
   createAdmin = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const { fullName, email, password } = req.body;
-      
+      const { firstName, lastName, email, password } = req.body;
+
       // Validate required fields
-      if (!fullName || !email || !password) {
-        return sendErrorResponse(res, "Full name, email, and password are required", 400);
+      if (!firstName || !lastName || !email || !password) {
+        return sendErrorResponse(
+          res,
+          "First name, last name, email, and password are required",
+          400
+        );
       }
 
       // Validate email format
@@ -123,18 +161,28 @@ export default class AdminController {
 
       // Validate password strength
       if (password.length < 6) {
-        return sendErrorResponse(res, "Password must be at least 6 characters long", 400);
+        return sendErrorResponse(
+          res,
+          "Password must be at least 6 characters long",
+          400
+        );
       }
 
       const adminUser = await this.adminService.createAdmin({
-        fullName,
+        firstName,
+        lastName,
         email,
-        password
+        password,
       });
 
-      sendSuccessResponse(res, "Admin user created successfully", 201, adminUser);
+      sendSuccessResponse(
+        res,
+        "Admin user created successfully",
+        201,
+        adminUser
+      );
     } catch (e: any) {
-      if (e.message === 'User with this email already exists') {
+      if (e.message === "User with this email already exists") {
         return sendErrorResponse(res, e.message, 409);
       }
       throw new GenericError(e, ` Error from createAdmin ${__filename}`);
@@ -145,7 +193,7 @@ export default class AdminController {
     try {
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 20;
-      
+
       const data = await this.adminService.getAllAdmins(page, limit);
       sendSuccessResponse(res, "Admins fetched successfully", 200, data);
     } catch (e: any) {
@@ -167,11 +215,19 @@ export default class AdminController {
     try {
       const page = Number(req.query.page) || 1;
       const limit = Number(req.query.limit) || 20;
-      
+
       const data = await this.adminService.getPendingOnboardUsers(page, limit);
-      sendSuccessResponse(res, "Pending onboard tutors fetched successfully", 200, data);
+      sendSuccessResponse(
+        res,
+        "Pending onboard tutors fetched successfully",
+        200,
+        data
+      );
     } catch (e: any) {
-      throw new GenericError(e, ` Error from getPendingOnboardUsers ${__filename}`);
+      throw new GenericError(
+        e,
+        ` Error from getPendingOnboardUsers ${__filename}`
+      );
     }
   };
 
@@ -185,18 +241,27 @@ export default class AdminController {
       }
 
       // Validate userId format (should be UUID)
-      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
       if (!uuidRegex.test(userId)) {
         return sendErrorResponse(res, "Invalid user ID format", 400);
       }
 
       const data = await this.adminService.approveOnboarding(userId);
-      sendSuccessResponse(res, "User onboarding approved successfully", 200, data);
+      sendSuccessResponse(
+        res,
+        "User onboarding approved successfully",
+        200,
+        data
+      );
     } catch (e: any) {
-      if (e.message === 'User not found') {
+      if (e.message === "User not found") {
         return sendErrorResponse(res, e.message, 404);
       }
-      if (e.message === 'Cannot approve deleted user' || e.message === 'User is already approved') {
+      if (
+        e.message === "Cannot approve deleted user" ||
+        e.message === "User is already approved"
+      ) {
         return sendErrorResponse(res, e.message, 409);
       }
       throw new GenericError(e, ` Error from approveOnboarding ${__filename}`);
@@ -207,9 +272,9 @@ export default class AdminController {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
-      
+
       const result = await this.adminService.getDisputedContracts(page, limit);
-      
+
       return sendSuccessResponse(
         res,
         "Disputed contracts retrieved successfully",
@@ -217,7 +282,10 @@ export default class AdminController {
         result
       );
     } catch (e: any) {
-      throw new GenericError(e, ` Error from getDisputedContracts ${__filename}`);
+      throw new GenericError(
+        e,
+        ` Error from getDisputedContracts ${__filename}`
+      );
     }
   };
 
@@ -226,8 +294,15 @@ export default class AdminController {
       const { contractId } = req.params;
       const { finalStatus, adminNotes } = req.body;
 
-      if (!finalStatus || !['cancelled', 'active', 'completed'].includes(finalStatus)) {
-        return sendErrorResponse(res, "Invalid final status. Must be one of: cancelled, active, completed", 400);
+      if (
+        !finalStatus ||
+        !["cancelled", "active", "completed"].includes(finalStatus)
+      ) {
+        return sendErrorResponse(
+          res,
+          "Invalid final status. Must be one of: cancelled, active, completed",
+          400
+        );
       }
 
       const result = await this.adminService.resolveDispute(
@@ -243,14 +318,13 @@ export default class AdminController {
         result
       );
     } catch (e: any) {
-      if (e.message === 'Contract not found') {
+      if (e.message === "Contract not found") {
         return sendErrorResponse(res, e.message, 404);
       }
-      if (e.message === 'Contract is not in dispute status') {
+      if (e.message === "Contract is not in dispute status") {
         return sendErrorResponse(res, e.message, 400);
       }
       throw new GenericError(e, ` Error from resolveDispute ${__filename}`);
     }
   };
-  
 }

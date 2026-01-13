@@ -6,7 +6,8 @@ import { UnProcessableEntityError } from "src/errors/unprocessable-entity.error"
 export interface GoogleUserData {
   email: string;
   googleId: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   gender?: Gender;
   image?: string;
   accessToken?: string;
@@ -25,7 +26,8 @@ export class GoogleAuthService {
       const {
         email,
         googleId,
-        fullName,
+        firstName,
+        lastName,
         image,
         role,
         gender,
@@ -59,7 +61,8 @@ export class GoogleAuthService {
       user = await User.create({
         googleId,
         email,
-        fullName,
+        firstName,
+        lastName,
         role, // ideally enforce a safe default
         gender: gender || Gender.OTHER,
         isActive: true,

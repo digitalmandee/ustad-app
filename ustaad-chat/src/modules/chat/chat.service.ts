@@ -214,13 +214,13 @@ export default class ChatService {
             await sendNotificationToUser(
               receiver.userId,
               receiverToken,
-              `${sender?.fullName || 'Someone'}`,
+              `${sender?.firstName} ${sender?.lastName}`,
               notificationBody,
               {
                 type: 'NEW_MESSAGE',
                 conversationId: messageData.conversationId,
                 senderId,
-                senderName: sender?.fullName || 'Unknown',
+                senderName: `${sender?.firstName} ${sender?.lastName}`,
                 messageType: messageData.type,
                 messageId: message.id,
               },
@@ -408,7 +408,7 @@ export default class ChatService {
           status: { [Op.ne]: MessageStatus.DELETED },
         },
         include: [
-          { model: User, as: 'sender', attributes: ['id', 'fullName'] },
+          { model: User, as: 'sender', attributes: ['id', 'firstName', 'lastName'] },
           { model: Offer, as: 'offer', required: false },
         ],
         order: [['createdAt', 'ASC']],
@@ -836,11 +836,13 @@ export default class ChatService {
           userId: { [Op.ne]: currentUserId },
           isActive: true,
         },
-        include: [{ model: User, attributes: ['fullName', 'id', 'image', 'createdAt'] }],
+        include: [
+          { model: User, attributes: ['firstName', 'lastName', 'id', 'image', 'createdAt'] },
+        ],
       });
 
       if (otherParticipant && (otherParticipant as any).User) {
-        conversationName = (otherParticipant as any).User.fullName;
+        conversationName = `${(otherParticipant as any).User.firstName} ${(otherParticipant as any).User.lastName}`;
         participantId = (otherParticipant as any).User.id;
         participantImage = (otherParticipant as any).User.image || '';
         participantRegistrationTime = (otherParticipant as any).User.createdAt;
@@ -851,7 +853,7 @@ export default class ChatService {
         conversationId: conversation.id,
         status: { [Op.ne]: MessageStatus.DELETED },
       },
-      include: [{ model: User, as: 'sender', attributes: ['fullName'] }],
+      include: [{ model: User, as: 'sender', attributes: ['firstName', 'lastName'] }],
       order: [['createdAt', 'DESC']],
     });
 
@@ -912,7 +914,7 @@ export default class ChatService {
             })(),
             type: lastMessage.type,
             senderId: lastMessage.senderId,
-            senderName: (lastMessage as any).sender?.fullName || 'Unknown',
+            senderName: `${(lastMessage as any).sender?.firstName} ${(lastMessage as any).sender?.lastName}`,
             createdAt: lastMessage.createdAt,
           }
         : undefined,

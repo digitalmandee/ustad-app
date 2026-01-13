@@ -66,10 +66,11 @@ export default class ParentController {
   editProfile = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-      const { fullName, email, phone, password, image } = req.body;
+      const { firstName, lastName, email, phone, password, image } = req.body;
 
       const result = await this.parentService.updateProfile(userId, {
-        fullName,
+        firstName,
+        lastName,
         email,
         phone,
         password,

@@ -2,14 +2,22 @@ import { body } from "express-validator";
 
 export const addChildValidationRules = () => {
   return [
-    body("fullName")
+    body("firstName")
       .notEmpty()
-      .withMessage("Full name is required")
+      .withMessage("First name is required")
       .isString()
-      .withMessage("Full name must be a string")
+      .withMessage("First name must be a string")
       .trim()
       .isLength({ min: 2 })
-      .withMessage("Full name must be at least 2 characters long"),
+      .withMessage("First name must be at least 2 characters long"),
+    body("lastName")
+      .notEmpty()
+      .withMessage("Last name is required")
+      .isString()
+      .withMessage("Last name must be a string")
+      .trim()
+      .isLength({ min: 1 })
+      .withMessage("Last name must be provided"),
 
     body("gender")
       .notEmpty()
@@ -43,8 +51,6 @@ export const addChildValidationRules = () => {
       .isLength({ min: 2 })
       .withMessage("School name must be at least 2 characters long"),
 
-    body('image')
-      .optional()
-      .isString().withMessage('Image must be a string')
+    body("image").optional().isString().withMessage("Image must be a string"),
   ];
-}; 
+};

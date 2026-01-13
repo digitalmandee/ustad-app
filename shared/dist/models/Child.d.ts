@@ -2,7 +2,8 @@ import { Model, Sequelize, Optional } from "sequelize";
 export interface ChildAttributes {
     id: string;
     userId: string;
-    fullName: string;
+    firstName: string;
+    lastName: string;
     gender: string;
     grade: string;
     age: number;
@@ -15,7 +16,8 @@ export type ChildCreationAttributes = Optional<ChildAttributes, "id">;
 export declare class Child extends Model<ChildAttributes, ChildCreationAttributes> implements ChildAttributes {
     id: string;
     userId: string;
-    fullName: string;
+    firstName: string;
+    lastName: string;
     gender: string;
     grade: string;
     age: number;

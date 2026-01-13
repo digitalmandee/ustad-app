@@ -41,7 +41,11 @@ function initUserModel(sequelize) {
             allowNull: false,
             defaultValue: enums_1.Gender.OTHER,
         },
-        fullName: {
+        firstName: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: false,
+        },
+        lastName: {
             type: sequelize_1.DataTypes.STRING,
             allowNull: false,
         },

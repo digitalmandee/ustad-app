@@ -4,7 +4,8 @@ import { Gender, UserRole } from "@ustaad/shared";
 
 export interface ISignUpCreateDTO {
   role: UserRole; // optional, default to PARENT in model
-  fullName: string;
+  firstName: string;
+  lastName: string;
   gender: Gender;
   password?: string; // optional (for Google login users)
   cnic: string; // required, 13 chars (validate in code)

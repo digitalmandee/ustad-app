@@ -54,7 +54,8 @@ export interface SubjectCostSetting {
 }
 
 interface UpdateProfileData {
-  fullName?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   phone?: string;
   password?: string;
@@ -347,7 +348,7 @@ export default class TutorService {
             model: User,
             as: "reviewer",
             foreignKey: "reviewerId",
-            attributes: ["id", "fullName", "email", "image"],
+            attributes: ["id", "firstName", "lastName", "email", "image"],
           },
         ],
         order: [["createdAt", "DESC"]],
@@ -371,7 +372,7 @@ export default class TutorService {
           parent: reviewData.reviewer
             ? {
                 id: reviewData.reviewer.id,
-                fullName: reviewData.reviewer.fullName,
+                fullName: `${reviewData.reviewer.firstName} ${reviewData.reviewer.lastName}`,
                 email: reviewData.reviewer.email,
                 image: reviewData.reviewer.image,
               }
@@ -672,7 +673,7 @@ export default class TutorService {
             model: User,
             as: "reviewer",
             foreignKey: "reviewerId",
-            attributes: ["id", "fullName", "email", "image"],
+            attributes: ["id", "firstName", "lastName", "email", "image"],
           },
         ],
         order: [["createdAt", "DESC"]],
@@ -696,7 +697,7 @@ export default class TutorService {
           tutor: reviewData.reviewer
             ? {
                 id: reviewData.reviewer.id,
-                fullName: reviewData.reviewer.fullName,
+                fullName: `${reviewData.reviewer.firstName} ${reviewData.reviewer.lastName}`,
                 email: reviewData.reviewer.email,
                 image: reviewData.reviewer.image,
               }
@@ -1599,11 +1600,11 @@ export default class TutorService {
           // This is essentially a check-in
           notificationType = NotificationType.TUTOR_CHECKED_IN;
           title = "✅ Session Started";
-          body = `${tutor?.fullName || "Your tutor"} has started the session with ${sessionInfo.childName}`;
+          body = `${tutor?.firstName} ${tutor?.lastName} has started the session with ${sessionInfo.childName}`;
         } else if (data.status === TutorSessionStatus.TUTOR_HOLIDAY) {
           notificationType = NotificationType.TUTOR_HOLIDAY;
           title = "📅 Tutor Holiday";
-          body = `${tutor?.fullName || "Your tutor"} has marked a holiday for today's session`;
+          body = `${tutor?.firstName} ${tutor?.lastName} has marked a holiday for today's session`;
         } else if (data.status === TutorSessionStatus.PUBLIC_HOLIDAY) {
           notificationType = NotificationType.TUTOR_HOLIDAY;
           title = "📅 Public Holiday";
@@ -1611,7 +1612,7 @@ export default class TutorService {
         } else if (data.status === TutorSessionStatus.CANCELLED_BY_TUTOR) {
           notificationType = NotificationType.SESSION_CANCELLED_BY_TUTOR;
           title = "❌ Session Cancelled";
-          body = `${tutor?.fullName || "Your tutor"} has cancelled today's session`;
+          body = `${tutor?.firstName} ${tutor?.lastName} has cancelled today's session`;
         }
 
         if (notificationType) {
@@ -1623,7 +1624,7 @@ export default class TutorService {
               type: notificationType,
               relatedEntityId: sessionDetail.id,
               relatedEntityType: "sessionDetail",
-              tutorName: tutor?.fullName || "Unknown",
+              tutorName: `${tutor?.firstName} ${tutor?.lastName}`,
               childName: sessionInfo.childName,
               status: data.status,
               sessionId: data.sessionId,
@@ -1696,15 +1697,15 @@ export default class TutorService {
             // Checkout notification
             notificationType = NotificationType.TUTOR_CHECKED_OUT;
             title = "👋 Session Completed";
-            body = `${tutor?.fullName || "Your tutor"} has completed the session with ${sessionInfo.childName}`;
+            body = `${tutor?.firstName} ${tutor?.lastName} has completed the session with ${sessionInfo.childName}`;
           } else if (data.status === TutorSessionStatus.TUTOR_HOLIDAY) {
             notificationType = NotificationType.TUTOR_HOLIDAY;
             title = "📅 Tutor Holiday";
-            body = `${tutor?.fullName || "Your tutor"} has marked a holiday`;
+            body = `${tutor?.firstName} ${tutor?.lastName} has marked a holiday`;
           } else if (data.status === TutorSessionStatus.CANCELLED_BY_TUTOR) {
             notificationType = NotificationType.SESSION_CANCELLED_BY_TUTOR;
             title = "❌ Session Cancelled";
-            body = `${tutor?.fullName || "Your tutor"} has cancelled the session`;
+            body = `${tutor?.firstName} ${tutor?.lastName} has cancelled the session`;
           } else if (data.status === TutorSessionStatus.CANCELLED_BY_PARENT) {
             notificationType = NotificationType.SESSION_CANCELLED_BY_PARENT;
             title = "❌ Session Cancelled";
@@ -1720,7 +1721,7 @@ export default class TutorService {
                 type: notificationType,
                 relatedEntityId: session.id,
                 relatedEntityType: "sessionDetail",
-                tutorName: tutor?.fullName || "Unknown",
+                tutorName: `${tutor?.firstName} ${tutor?.lastName}`,
                 childName: sessionInfo.childName,
                 oldStatus,
                 newStatus: data.status,
@@ -2307,7 +2308,7 @@ export default class TutorService {
           await this.pushToUser(
             contract.parentId,
             "⚠️ Contract Disputed",
-            `${tutor?.fullName || "Your tutor"} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ""}. Reason: ${reason?.substring(0, 50) || ""}${reason && reason.length > 50 ? "..." : ""}`,
+            `${tutor?.firstName} ${tutor?.lastName} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ""}. Reason: ${reason?.substring(0, 50) || ""}${reason && reason.length > 50 ? "..." : ""}`,
             {
               type: NotificationType.CONTRACT_DISPUTED,
               contractId: contract.id,
@@ -2324,7 +2325,7 @@ export default class TutorService {
           await this.pushToUser(
             contract.parentId,
             "✅ Contract Completed",
-            `${tutor?.fullName || "Your tutor"} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ""} as completed.`,
+            `${tutor?.firstName} ${tutor?.lastName} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ""} as completed.`,
             {
               type: NotificationType.CONTRACT_COMPLETED,
               contractId: contract.id,
@@ -2478,7 +2479,7 @@ export default class TutorService {
           await this.pushToUser(
             contract.parentId,
             "⭐ Rating Request",
-            `${tutor?.fullName || "The tutor"} has submitted their rating. Please submit yours to complete the contract.`,
+            `${tutor?.firstName} ${tutor?.lastName} has submitted their rating. Please submit yours to complete the contract.`,
             {
               type: NotificationType.CONTRACT_RATING_SUBMITTED,
               contractId: contract.id,

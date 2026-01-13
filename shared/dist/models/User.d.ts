@@ -8,7 +8,8 @@ interface UserAttributes {
     isAdminVerified: boolean;
     isOnBoard: IsOnBaord;
     gender: Gender;
-    fullName: string;
+    firstName: string;
+    lastName: string;
     password?: string | null;
     cnic?: string | null;
     address?: string | null;
@@ -35,7 +36,8 @@ export declare class User extends Model<UserAttributes, UserCreationAttributes> 
     isAdminVerified: boolean;
     isOnBoard: IsOnBaord;
     gender: Gender;
-    fullName: string;
+    firstName: string;
+    lastName: string;
     password: string | null;
     cnic: string | null;
     address: string | null;

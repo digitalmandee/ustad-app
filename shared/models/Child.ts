@@ -4,7 +4,8 @@ import { User } from "./User";
 export interface ChildAttributes {
   id: string;
   userId: string;
-  fullName: string;
+  firstName: string;
+  lastName: string;
   gender: string;
   grade: string;
   age: number;
@@ -22,7 +23,8 @@ export class Child
 {
   public id!: string;
   public userId!: string;
-  public fullName!: string;
+  public firstName!: string;
+  public lastName!: string;
   public gender!: string;
   public grade!: string;
   public age!: number;
@@ -48,7 +50,11 @@ export function initChildModel(sequelize: Sequelize): typeof Child {
           key: "id",
         },
       },
-      fullName: {
+      firstName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      lastName: {
         type: DataTypes.STRING,
         allowNull: false,
       },
@@ -83,4 +89,4 @@ export function initChildModel(sequelize: Sequelize): typeof Child {
   User.hasMany(Child, { foreignKey: "userId" });
 
   return Child;
-} 
+}

@@ -1,7 +1,6 @@
 // user.model.ts
 import { Model, DataTypes, Optional, Sequelize } from "sequelize";
 
-
 import { UserRole } from "../constant/enums";
 import { IsOnBaord } from "../constant/enums";
 
@@ -12,7 +11,8 @@ interface UserAttributes {
   isAdminVerified: boolean;
   isOnBoard: IsOnBaord;
 
-  fullName: string;
+  firstName: string;
+  lastName: string;
   password?: string | null;
   cnic?: string | null;
   address?: string | null;
@@ -66,7 +66,8 @@ export class User
   public isAdminVerified!: boolean;
   public isOnBoard!: IsOnBaord;
 
-  public fullName!: string;
+  public firstName!: string;
+  public lastName!: string;
   public password!: string | null;
   public cnic!: string | null;
   public address!: string | null;
@@ -115,7 +116,11 @@ export function initUserModel(sequelize: Sequelize): typeof User {
         allowNull: false,
         defaultValue: IsOnBaord.REQUIRED,
       },
-      fullName: {
+      firstName: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      lastName: {
         type: DataTypes.STRING,
         allowNull: false,
       },

@@ -9,14 +9,13 @@ import { UnProcessableEntityError } from "../../errors/unprocessable-entity.erro
 // import { ChildReview } from '../../models/ChildReview';
 import { Child, ChildNotes, ChildReview } from "@ustaad/shared";
 
-
-
 export class ChildService {
   async createChild(data: CreateChildDto, userId: string): Promise<Child> {
     const childData: ChildCreationAttributes = {
       ...data,
       userId,
-      fullName: data.fullName.toLowerCase(),
+      firstName: data.firstName.toLowerCase(),
+      lastName: data.lastName.toLowerCase(),
     };
     return await Child.create(childData);
   }
@@ -35,7 +34,8 @@ export class ChildService {
 
     await child.update({
       ...data,
-      fullName: data.fullName.toLowerCase(),
+      firstName: data.firstName.toLowerCase(),
+      lastName: data.lastName.toLowerCase(),
     });
     return child;
   }

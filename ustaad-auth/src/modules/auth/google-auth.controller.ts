@@ -16,7 +16,8 @@ export default class GoogleAuthController {
       const {
         email,
         googleId,
-        fullName,
+        firstName,
+        lastName,
         image,
         accessToken,
         role,
@@ -28,10 +29,10 @@ export default class GoogleAuthController {
       const deviceId = req.headers.deviceid as string;
 
       // Validate required fields
-      if (!email || !googleId || !fullName) {
+      if (!email || !googleId || !firstName || !lastName) {
         return sendErrorResponse(
           res,
-          "Email, Google ID, and full name are required",
+          "Email, Google ID, first name, and last name are required",
           400
         );
       }
@@ -45,7 +46,8 @@ export default class GoogleAuthController {
       const googleUserData: GoogleUserData = {
         email,
         googleId,
-        fullName,
+        firstName,
+        lastName,
         image,
         accessToken,
         gender,

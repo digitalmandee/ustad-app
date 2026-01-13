@@ -115,7 +115,7 @@ export class OtpServices {
       // Send OTP based on type
       if (type === "email") {
         // await this.sendEmailByTemplate(userEmail, 'otp', {
-        //   name: user.fullName || 'User',
+        //   name: `${user.firstName} ${user.lastName}`,
         //   otp: otpCode,
         //   expiryMinutes: 10,
         // });

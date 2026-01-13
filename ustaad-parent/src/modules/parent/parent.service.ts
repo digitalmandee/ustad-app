@@ -49,7 +49,8 @@ interface ParentProfileData {
 }
 
 interface UpdateProfileData {
-  fullName?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   phone?: string;
   password?: string;
@@ -269,7 +270,7 @@ export default class ParentService {
             model: User,
             as: "reviewer",
             foreignKey: "reviewerId",
-            attributes: ["id", "fullName", "email", "image"],
+            attributes: ["id", "firstName", "lastName", "email", "image"],
           },
         ],
         order: [["createdAt", "DESC"]],
@@ -293,7 +294,7 @@ export default class ParentService {
           tutor: reviewData.reviewer
             ? {
                 id: reviewData.reviewer.id,
-                fullName: reviewData.reviewer.fullName,
+                fullName: `${reviewData.reviewer.firstName} ${reviewData.reviewer.lastName}`,
                 email: reviewData.reviewer.email,
                 image: reviewData.reviewer.image,
               }
@@ -445,7 +446,7 @@ export default class ParentService {
           parent: reviewData.reviewer
             ? {
                 id: reviewData.reviewer.id,
-                fullName: reviewData.reviewer.fullName,
+                fullName: `${reviewData.reviewer.firstName} ${reviewData.reviewer.lastName}`,
                 email: reviewData.reviewer.email,
                 image: reviewData.reviewer.image,
               }
@@ -514,11 +515,11 @@ export default class ParentService {
           await this.pushToUser(
             offer.senderId,
             "Offer Declined",
-            `${parent?.fullName || "A parent"} has declined your tutoring offer for ${offer.childName}`,
+            `${parent?.firstName} ${parent?.lastName} has declined your tutoring offer for ${offer.childName}`,
             {
               type: NotificationType.OFFER_REJECTED,
               offerId,
-              parentName: parent?.fullName || "Unknown",
+              parentName: `${parent?.firstName} ${parent?.lastName}`,
               childName: offer.childName,
               subject: offer.subject,
             },
@@ -610,11 +611,11 @@ export default class ParentService {
         await this.pushToUser(
           offer.senderId,
           "Offer Accepted! 🎉",
-          `${parent?.fullName || "A parent"} has accepted your tutoring offer for ${offer.childName}`,
+          `${parent?.firstName} ${parent?.lastName} has accepted your tutoring offer for ${offer.childName}`,
           {
             type: NotificationType.OFFER_ACCEPTED,
             offerId,
-            parentName: parent?.fullName || "Unknown",
+            parentName: `${parent?.firstName} ${parent?.lastName}`,
             childName: offer.childName,
             subject: offer.subject,
             amountMonthly: String(offer.amountMonthly),
@@ -747,12 +748,12 @@ export default class ParentService {
           await this.pushToUser(
             subscription.tutorId,
             "❌ Subscription Cancelled",
-            `${parentUser?.fullName || "A parent"} has cancelled the subscription for ${offer.childName}`,
+            `${parentUser?.firstName} ${parentUser?.lastName} has cancelled the subscription for ${offer.childName}`,
             {
               type: NotificationType.SUBSCRIPTION_CANCELLED_BY_PARENT,
               relatedEntityId: subscriptionId,
               relatedEntityType: "subscription",
-              parentName: parentUser?.fullName || "Unknown",
+              parentName: `${parentUser?.firstName} ${parentUser?.lastName}`,
               childName: offer.childName,
               subject: offer.subject,
             },
@@ -1098,7 +1099,7 @@ export default class ParentService {
           await this.pushToUser(
             contract.tutorId,
             "⚠️ Contract Disputed",
-            `${parent?.fullName || "A parent"} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ""}. Reason: ${reason?.substring(0, 50) || ""}${reason && reason.length > 50 ? "..." : ""}`,
+            `${parent?.firstName} ${parent?.lastName} has disputed the contract${offer?.childName ? ` for ${offer.childName}` : ""}. Reason: ${reason?.substring(0, 50) || ""}${reason && reason.length > 50 ? "..." : ""}`,
             {
               type: NotificationType.CONTRACT_DISPUTED,
               contractId: contract.id,
@@ -1115,7 +1116,7 @@ export default class ParentService {
           await this.pushToUser(
             contract.tutorId,
             "✅ Contract Completed",
-            `${parent?.fullName || "A parent"} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ""} as completed.`,
+            `${parent?.firstName} ${parent?.lastName} has marked the contract${offer?.childName ? ` for ${offer.childName}` : ""} as completed.`,
             {
               type: NotificationType.CONTRACT_COMPLETED,
               contractId: contract.id,
@@ -1270,7 +1271,7 @@ export default class ParentService {
           await this.pushToUser(
             contract.tutorId,
             "⭐ Rating Request",
-            `${parent?.fullName || "The parent"} has submitted their rating. Please submit yours to complete the contract.`,
+            `${parent?.firstName} ${parent?.lastName} has submitted their rating. Please submit yours to complete the contract.`,
             {
               type: NotificationType.CONTRACT_RATING_SUBMITTED,
               contractId: contract.id,
