@@ -416,15 +416,9 @@ export default class TutorController {
   addAbout = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
-      const { about, grade, curriculum, subjects } = req.body;
+      const { about } = req.body;
 
-      const result = await this.tutorService.addAbout(
-        userId,
-        about,
-        grade,
-        curriculum,
-        subjects
-      );
+      const result = await this.tutorService.addAbout(userId, about);
 
       return sendSuccessResponse(
         res,
@@ -637,6 +631,7 @@ export default class TutorController {
         limit = 20,
         offset = 0,
         category,
+        curriculum,
       } = req.query as unknown as FindTutorsByLocationDto;
       const results = await this.tutorService.findTutorsByLocation(
         latitude,
@@ -644,7 +639,8 @@ export default class TutorController {
         radius,
         limit,
         offset,
-        category
+        category,
+        curriculum
       );
 
       return sendSuccessResponse(

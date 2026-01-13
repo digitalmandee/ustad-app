@@ -5,6 +5,7 @@ export class CreateChildDto {
   grade: string;
   age: number;
   schoolName: string;
+  curriculum: string;
   image?: string;
 }
 

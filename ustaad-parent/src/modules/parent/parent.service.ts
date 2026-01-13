@@ -218,6 +218,9 @@ export default class ParentService {
               "idBackUrl",
             ],
           },
+          {
+            model: Child,
+          },
         ],
       });
 

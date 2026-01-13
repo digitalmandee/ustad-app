@@ -8,6 +8,7 @@ export interface ChildAttributes {
     grade: string;
     age: number;
     schoolName: string;
+    curriculum: string;
     image?: string;
     createdAt?: Date;
     updatedAt?: Date;
@@ -22,6 +23,7 @@ export declare class Child extends Model<ChildAttributes, ChildCreationAttribute
     grade: string;
     age: number;
     schoolName: string;
+    curriculum: string;
     image?: string;
     readonly createdAt: Date;
     readonly updatedAt: Date;

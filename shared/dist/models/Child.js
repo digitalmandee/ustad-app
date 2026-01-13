@@ -46,6 +46,10 @@ function initChildModel(sequelize) {
             type: sequelize_1.DataTypes.STRING,
             allowNull: false,
         },
+        curriculum: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: false,
+        },
         image: {
             type: sequelize_1.DataTypes.TEXT,
             allowNull: true,

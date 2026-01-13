@@ -5,7 +5,7 @@ import { GenericError } from "../../errors/generic-error";
 import { sendSuccessResponse, sendErrorResponse } from "../../helper/response";
 import InfoMessages from "../../constant/messages";
 import { AuthenticatedRequest } from "../../middlewares/auth";
-import {ChildNotes} from "@ustaad/shared"
+import { ChildNotes } from "@ustaad/shared";
 
 export class ChildController {
   private childService: ChildService;
@@ -21,7 +21,7 @@ export class ChildController {
     try {
       const data = req.body as CreateChildDto;
       const userId = req.user.id;
-      const child = await this.childService.createChild(data, userId);
+      const child = await this.childService.createChild(data, userId, req.file);
 
       return sendSuccessResponse(
         res,
@@ -49,7 +49,7 @@ export class ChildController {
     try {
       const data = req.body as UpdateChildDto;
       const userId = req.user.id;
-      const child = await this.childService.updateChild(data, userId);
+      const child = await this.childService.updateChild(data, userId, req.file);
 
       return sendSuccessResponse(
         res,
@@ -75,11 +75,11 @@ export class ChildController {
     res: Response
   ): Promise<void> => {
     try {
-      const {id} = req.params;
+      const { id } = req.params;
       const userId = req.user.id;
 
-      console.log('data', id);
-      
+      console.log("data", id);
+
       await this.childService.deleteChild(id, userId);
 
       return sendSuccessResponse(
@@ -155,12 +155,11 @@ export class ChildController {
     }
   };
 
-  async getChildNotesByChildId(req: AuthenticatedRequest, res: Response) {  
+  async getChildNotesByChildId(req: AuthenticatedRequest, res: Response) {
     try {
       const { childName } = req.params;
       // const notes = await this.childService.getChildNotesByChildId(childName);
-   const notes = await ChildNotes.findAll({ where: { childName } });
-
+      const notes = await ChildNotes.findAll({ where: { childName } });
 
       return sendSuccessResponse(
         res,
@@ -180,5 +179,4 @@ export class ChildController {
       return sendErrorResponse(res, errorMessage, 400);
     }
   }
-
 }

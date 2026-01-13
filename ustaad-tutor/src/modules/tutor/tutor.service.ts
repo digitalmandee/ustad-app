@@ -587,20 +587,14 @@ export default class TutorService {
     }
   }
 
-  async addAbout(
-    userId: string,
-    about: string,
-    grade: string[],
-    curriculum: string[],
-    subjects: string[]
-  ) {
+  async addAbout(userId: string, about: string) {
     try {
       const tutor = await Tutor.findOne({ where: { userId } });
       if (!tutor) {
         throw new UnProcessableEntityError("Tutor profile not found");
       }
 
-      await tutor.update({ about, grade, curriculum, subjects });
+      await tutor.update({ about });
 
       return tutor;
     } catch (error) {
@@ -924,7 +918,8 @@ export default class TutorService {
     radiusKm: number | null,
     limit = 20,
     offset = 0,
-    category?: string
+    category?: string,
+    curriculum?: string
   ) {
     try {
       console.log("Finding tutors with params:", {
@@ -932,6 +927,7 @@ export default class TutorService {
         parentLng,
         radiusKm,
         category,
+        curriculum,
       });
 
       // Build basic query conditions
@@ -943,6 +939,14 @@ export default class TutorService {
         console.log("Adding category filter for:", category);
         tutorWhereCondition.subjects = {
           [Op.contains]: [category.toLowerCase()],
+        };
+      }
+
+      // Add curriculum filter if provided
+      if (curriculum) {
+        console.log("Adding curriculum filter for:", curriculum);
+        tutorWhereCondition.curriculum = {
+          [Op.contains]: [curriculum.toLowerCase()],
         };
       }
 

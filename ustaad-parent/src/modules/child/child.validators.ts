@@ -51,6 +51,15 @@ export const addChildValidationRules = () => {
       .isLength({ min: 2 })
       .withMessage("School name must be at least 2 characters long"),
 
+    body("curriculum")
+      .notEmpty()
+      .withMessage("Curriculum is required")
+      .isString()
+      .withMessage("Curriculum must be a string")
+      .trim()
+      .isLength({ min: 2 })
+      .withMessage("Curriculum must be at least 2 characters long"),
+
     body("image").optional().isString().withMessage("Image must be a string"),
   ];
 };

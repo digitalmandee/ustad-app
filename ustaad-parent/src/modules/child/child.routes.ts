@@ -4,8 +4,11 @@ import { validateRequest } from "../../middlewares";
 import { authenticateJwt } from "../../middlewares/auth";
 import routes from "../../routes/routes";
 import { addChildValidationRules } from "./child.validators";
-import { Router } from 'express';
+import { Router } from "express";
 import { authorizeRoles } from "../../middlewares/role-auth";
+import multer from "multer";
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 const childController = new ChildController();
 const router = Router();
@@ -13,6 +16,7 @@ const router = Router();
 router.post(
   routes.CHILD_CREATE,
   authenticateJwt,
+  upload.single("image"),
   addChildValidationRules(),
   validateRequest,
   authorizeRoles("PARENT"),
@@ -22,6 +26,7 @@ router.post(
 router.put(
   routes.CHILD_UPDATE,
   authenticateJwt,
+  upload.single("image"),
   addChildValidationRules(),
   validateRequest,
   authorizeRoles("PARENT"),
@@ -50,6 +55,11 @@ router.get(
   childController.getChild
 );
 
-router.get(routes.CHILD_GET_NOTES, authenticateJwt, authorizeRoles("PARENT"), childController.getChildNotesByChildId);
+router.get(
+  routes.CHILD_GET_NOTES,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  childController.getChildNotesByChildId
+);
 
-export { router as childRouter }; 
+export { router as childRouter };
