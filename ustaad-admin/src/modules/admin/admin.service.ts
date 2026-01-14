@@ -56,26 +56,26 @@ export default class AdminService {
         completedSubscriptions,
         totalTransactions,
         revenueRaw,
+        pendingUserCount,
       ] = await Promise.all([
         // Exclude admin/super-admin from "totalUsers"
         User.count({
           where: {
             role: { [Op.notIn]: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
-            isOnBoard: { [Op.ne]: IsOnBaord.REQUIRED },
             ...dateFilter,
           },
         }),
         User.count({
           where: {
             role: UserRole.PARENT,
-            isOnBoard: { [Op.ne]: IsOnBaord.REQUIRED },
+            isOnBoard: { [Op.ne]: IsOnBaord.APPROVED },
             ...dateFilter,
           },
         }),
         User.count({
           where: {
             role: UserRole.TUTOR,
-            isOnBoard: { [Op.ne]: IsOnBaord.REQUIRED },
+            isOnBoard: { [Op.ne]: IsOnBaord.APPROVED },
             ...dateFilter,
           },
         }),
@@ -93,6 +93,18 @@ export default class AdminService {
             ...dateFilter,
           },
         }),
+        User.count({
+          where: {
+            isOnBoard: {
+              [Op.in]: [
+                IsOnBaord.PENDING,
+                IsOnBaord.IN_REVIW,
+                IsOnBaord.REQUIRED,
+              ],
+            },
+            ...dateFilter,
+          },
+        }),
       ]);
 
       const totalRevenue = parseFloat(((revenueRaw as any) || 0).toString());
@@ -106,6 +118,7 @@ export default class AdminService {
         completedSubscriptions,
         totalTransactions,
         totalRevenue,
+        pendingUserCount,
       };
     };
 
@@ -218,6 +231,7 @@ export default class AdminService {
             { firstName: { [Op.iLike]: `%${search.trim()}%` } },
             { lastName: { [Op.iLike]: `%${search.trim()}%` } },
             { email: { [Op.iLike]: `%${search.trim()}%` } },
+            { phone: { [Op.iLike]: `%${search.trim()}%` } },
           ],
         }
       : undefined;
@@ -314,6 +328,7 @@ export default class AdminService {
             { firstName: { [Op.iLike]: `%${search.trim()}%` } },
             { lastName: { [Op.iLike]: `%${search.trim()}%` } },
             { email: { [Op.iLike]: `%${search.trim()}%` } },
+            { phone: { [Op.iLike]: `%${search.trim()}%` } },
           ],
         },
       ];
@@ -568,34 +583,59 @@ export default class AdminService {
   async getPendingOnboardUsers(page = 1, limit = 20) {
     const offset = (page - 1) * limit;
 
-    const { rows, count } = await User.findAndCountAll({
-      where: {
-        role: UserRole.TUTOR,
-        isOnBoard: IsOnBaord.PENDING,
-        isDeleted: false,
+    const whereClause = {
+      role: {
+        [Op.in]: [UserRole.TUTOR, UserRole.PARENT],
       },
-      attributes: [
-        "id",
-        "firstName",
-        "lastName",
-        "email",
-        "phone",
-        "role",
-        "image",
-        "isOnBoard",
-        "isAdminVerified",
-        "isEmailVerified",
-        "isPhoneVerified",
-        "createdAt",
-        "updatedAt",
-      ],
-      order: [["createdAt", "DESC"]],
-      limit,
-      offset,
-    });
+      isOnBoard: {
+        [Op.or]: [IsOnBaord.PENDING, IsOnBaord.IN_REVIW, IsOnBaord.REQUIRED],
+      },
+      isDeleted: false,
+    };
+
+    const [usersResult, tutorCount, parentCount] = await Promise.all([
+      User.findAndCountAll({
+        where: whereClause,
+        attributes: [
+          "id",
+          "firstName",
+          "lastName",
+          "email",
+          "phone",
+          "role",
+          "image",
+          "isOnBoard",
+          "isAdminVerified",
+          "isEmailVerified",
+          "isPhoneVerified",
+          "createdAt",
+          "updatedAt",
+        ],
+        order: [["createdAt", "DESC"]],
+        limit,
+        offset,
+      }),
+      User.count({
+        where: {
+          ...whereClause,
+          role: UserRole.TUTOR,
+        },
+      }),
+      User.count({
+        where: {
+          ...whereClause,
+          role: UserRole.PARENT,
+        },
+      }),
+    ]);
+
+    const { rows, count } = usersResult;
 
     return {
       items: rows,
+      totalPending: count,
+      tutorCount,
+      parentCount,
       pagination: {
         page,
         limit,
