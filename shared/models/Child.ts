@@ -79,6 +79,7 @@ export function initChildModel(sequelize: Sequelize): typeof Child {
       curriculum: {
         type: DataTypes.STRING,
         allowNull: false,
+        defaultValue: "",
       },
       image: {
         type: DataTypes.TEXT,
