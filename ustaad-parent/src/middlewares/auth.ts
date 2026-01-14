@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 async function validateSession(token: string): Promise<any> {
   try {
     const session = await Session.findOne({
-      where: { 
+      where: {
         token,
         expiresAt: {
           [Op.gt]: new Date(), // Not expired
@@ -19,7 +19,7 @@ async function validateSession(token: string): Promise<any> {
       include: [
         {
           model: User,
-          attributes: ['id', 'email', 'phone', 'role', 'isActive'],
+          attributes: ["id", "email", "phone", "role", "isActive"],
         },
       ],
     });
@@ -33,9 +33,9 @@ async function validateSession(token: string): Promise<any> {
       throw new NotAuthorizedError("User does not exist or is not active");
     }
 
-    if (user.role !== "PARENT") {
-      throw new NotAuthorizedError("User is not a parent");
-    }
+    // if (user.role !== "PARENT" || user.role !== "TUTOR") {
+    //   throw new NotAuthorizedError("User is not a parent");
+    // }
 
     return {
       id: user.id,
