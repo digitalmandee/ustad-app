@@ -599,6 +599,9 @@ export default class AdminService {
       isOnBoard: {
         [Op.or]: [IsOnBaord.PENDING, IsOnBaord.IN_REVIW, IsOnBaord.REQUIRED],
       },
+      isAdminVerified: false,
+      isEmailVerified: false,
+      isPhoneVerified: false,
       isDeleted: false,
     };
 
