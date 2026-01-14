@@ -593,18 +593,22 @@ export default class AdminService {
     const offset = (page - 1) * limit;
 
     const whereClause = {
-      role: {
-        [Op.in]: [UserRole.TUTOR, UserRole.PARENT],
-      },
+      role: { [Op.in]: [UserRole.TUTOR, UserRole.PARENT] },
       isOnBoard: {
-        [Op.or]: [IsOnBaord.PENDING, IsOnBaord.IN_REVIW, IsOnBaord.REQUIRED],
+        [Op.in]: [
+          IsOnBaord.PENDING,
+          IsOnBaord.IN_REVIW,
+          IsOnBaord.REQUIRED,
+          IsOnBaord.APPROVED,
+        ],
       },
+      isDeleted: false,
+      // Adjust this OR logic based on your business needs
       [Op.or]: [
         { isAdminVerified: false },
         { isEmailVerified: false },
         { isPhoneVerified: false },
       ],
-      isDeleted: false,
     };
 
     const [usersResult, tutorCount, parentCount] = await Promise.all([
