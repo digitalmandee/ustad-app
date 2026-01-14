@@ -225,16 +225,25 @@ export default class AdminService {
     const offset = (page - 1) * limit;
 
     const hasSearch = !!search && search.trim().length > 0;
-    const userSearchWhere = hasSearch
-      ? {
+    const userWhere: any = {
+      isAdminVerified: true,
+      isEmailVerified: true,
+      isPhoneVerified: true,
+      isOnBoard: IsOnBaord.APPROVED,
+    };
+
+    if (hasSearch) {
+      userWhere[Op.and] = [
+        {
           [Op.or]: [
             { firstName: { [Op.iLike]: `%${search.trim()}%` } },
             { lastName: { [Op.iLike]: `%${search.trim()}%` } },
             { email: { [Op.iLike]: `%${search.trim()}%` } },
             { phone: { [Op.iLike]: `%${search.trim()}%` } },
           ],
-        }
-      : undefined;
+        },
+      ];
+    }
 
     const { rows, count } = await Parent.findAndCountAll({
       include: [
@@ -253,9 +262,8 @@ export default class AdminService {
             "isPhoneVerified",
             "isEmailVerified",
           ],
-          ...(userSearchWhere
-            ? { where: userSearchWhere, required: true }
-            : {}),
+          where: userWhere,
+          required: true,
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -319,6 +327,9 @@ export default class AdminService {
     const hasSearch = !!search && search.trim().length > 0;
     const tutorUserWhere: any = {
       isAdminVerified: true,
+      isEmailVerified: true,
+      isPhoneVerified: true,
+      isOnBoard: IsOnBaord.APPROVED,
     };
 
     if (hasSearch) {
