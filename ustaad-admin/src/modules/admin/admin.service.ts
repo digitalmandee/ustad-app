@@ -68,14 +68,12 @@ export default class AdminService {
         User.count({
           where: {
             role: UserRole.PARENT,
-            isOnBoard: { [Op.ne]: IsOnBaord.APPROVED },
             ...dateFilter,
           },
         }),
         User.count({
           where: {
             role: UserRole.TUTOR,
-            isOnBoard: { [Op.ne]: IsOnBaord.APPROVED },
             ...dateFilter,
           },
         }),
