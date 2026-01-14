@@ -61,11 +61,24 @@ export default class AdminService {
         User.count({
           where: {
             role: { [Op.notIn]: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+            isOnBoard: { [Op.ne]: IsOnBaord.REQUIRED },
             ...dateFilter,
           },
         }),
-        User.count({ where: { role: UserRole.PARENT, ...dateFilter } }),
-        User.count({ where: { role: UserRole.TUTOR, ...dateFilter } }),
+        User.count({
+          where: {
+            role: UserRole.PARENT,
+            isOnBoard: { [Op.ne]: IsOnBaord.REQUIRED },
+            ...dateFilter,
+          },
+        }),
+        User.count({
+          where: {
+            role: UserRole.TUTOR,
+            isOnBoard: { [Op.ne]: IsOnBaord.REQUIRED },
+            ...dateFilter,
+          },
+        }),
         ParentSubscription.count({ where: { ...dateFilter } }),
         ParentSubscription.count({
           where: { status: ParentSubscriptionStatus.ACTIVE, ...dateFilter },
