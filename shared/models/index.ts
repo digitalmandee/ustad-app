@@ -14,19 +14,34 @@ import { initTutorExperienceModel, TutorExperience } from "./TutorExperience";
 import { initTutorSettingsModel, TutorSettings } from "./TutorSettings";
 import { initTutorLocationModel, TutorLocation } from "./TutorLocations";
 import { initTutorReviewModel, TutorReview } from "./TutorReview";
-import { initParentSubscriptionModel, ParentSubscription } from "./ParentSubscription";
-import { initParentTransactionModel, ParentTransaction } from "./ParentTransaction";
+import {
+  initParentSubscriptionModel,
+  ParentSubscription,
+} from "./ParentSubscription";
+import {
+  initParentTransactionModel,
+  ParentTransaction,
+} from "./ParentTransaction";
 import { initTutorSessionsModel, TutorSessions } from "./TutorSessions";
 import { initPaymentMethodModel, PaymentMethod } from "./PaymentMethod";
 import { initNotificationModel, Notification } from "./Notification";
 
 // Chat models
 import { initConversationModel, Conversation } from "./Conversation";
-import { initConversationParticipantModel, ConversationParticipant } from "./ConversationParticipant";
+import {
+  initConversationParticipantModel,
+  ConversationParticipant,
+} from "./ConversationParticipant";
 import { initMessageModel, Message } from "./Message";
 import { initOfferModel, Offer } from "./Offer";
-import { initTutorSessionsDetailModel, TutorSessionsDetail } from "./TutorSessionsDetail";
-import { initTutorTransactionModel, TutorTransaction } from "./TutorTransaction";
+import {
+  initTutorSessionsDetailModel,
+  TutorSessionsDetail,
+} from "./TutorSessionsDetail";
+import {
+  initTutorTransactionModel,
+  TutorTransaction,
+} from "./TutorTransaction";
 import { initFileModel, File } from "./File";
 import { initHelpRequestsModel, HelpRequests } from "./HelpRequests";
 import { initPaymentRequestsModel, PaymentRequests } from "./PaymentRequests";
@@ -84,7 +99,7 @@ export {
   TutorEducation,
   TutorExperience,
   TutorSettings,
-  // TutorReview,
+  TutorReview,
   User,
   Otp,
   TutorLocation,
@@ -103,5 +118,5 @@ export {
   Conversation,
   ConversationParticipant,
   Message,
-  Offer
+  Offer,
 };

@@ -21,6 +21,7 @@ import {
   NotificationType,
   TutorSessionStatus,
   PaymentRequests,
+  TutorReview,
 } from "@ustaad/shared";
 import { TutorPaymentStatus } from "@ustaad/shared";
 import { Op } from "sequelize";
@@ -313,16 +314,32 @@ export default class AdminService {
     });
     if (!parent) return null;
 
-    // Fetch associated data
-    const children = await Child.findAll({ where: { userId: parent.userId } });
-    const subscriptions = await ParentSubscription.findAll({
-      where: { parentId: parent.userId },
-    });
-    const transactions = await ParentTransaction.findAll({
-      where: { parentId: parent.userId },
-    });
+    // Fetch associated data and counts
+    const [
+      children,
+      childrenCount,
+      subscriptions,
+      subscriptionsCount,
+      transactions,
+      transactionsCount,
+    ] = await Promise.all([
+      Child.findAll({ where: { userId: parent.userId } }),
+      Child.count({ where: { userId: parent.userId } }),
+      ParentSubscription.findAll({ where: { parentId: parent.userId } }),
+      ParentSubscription.count({ where: { parentId: parent.userId } }),
+      ParentTransaction.findAll({ where: { parentId: parent.userId } }),
+      ParentTransaction.count({ where: { parentId: parent.userId } }),
+    ]);
 
-    return { parent, children, subscriptions, transactions };
+    return {
+      parent,
+      children,
+      childrenCount,
+      subscriptions,
+      subscriptionsCount,
+      transactions,
+      transactionsCount,
+    };
   }
 
   async getAllTutors(page = 1, limit = 20, search: string = "") {
@@ -412,15 +429,26 @@ export default class AdminService {
     });
     if (!tutor) return null;
 
-    const education = await TutorEducation.findAll({
-      where: { tutorId: tutor.userId },
-    });
-    const experience = await TutorExperience.findAll({
-      where: { tutorId: tutor.userId },
-    });
-    const transactions = await TutorTransaction.findOne({
-      where: { tutorId: tutor.userId },
-    });
+    // Fetch associated data and counts
+    const [
+      education,
+      educationCount,
+      experience,
+      experienceCount,
+      transactions,
+      transactionsCount,
+      sessionsCount,
+      reviewsCount,
+    ] = await Promise.all([
+      TutorEducation.findAll({ where: { tutorId: tutor.userId } }),
+      TutorEducation.count({ where: { tutorId: tutor.userId } }),
+      TutorExperience.findAll({ where: { tutorId: tutor.userId } }),
+      TutorExperience.count({ where: { tutorId: tutor.userId } }),
+      TutorTransaction.findAll({ where: { tutorId: tutor.userId } }),
+      TutorTransaction.count({ where: { tutorId: tutor.userId } }),
+      TutorSessions.count({ where: { tutorId: tutor.userId } }),
+      TutorReview.count({ where: { tutorId: tutor.userId } }),
+    ]);
 
     // How many times this tutor has been hired (ACTIVE + COMPLETED subscriptions)
     const timesHired = await ParentSubscription.count({
@@ -455,11 +483,16 @@ export default class AdminService {
     return {
       tutor,
       education,
+      educationCount,
       experience,
+      experienceCount,
       totalExperience,
       documents,
       transactions,
+      transactionsCount,
       timesHired,
+      sessionsCount,
+      reviewsCount,
     };
   }
 

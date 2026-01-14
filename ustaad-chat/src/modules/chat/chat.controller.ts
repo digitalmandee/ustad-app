@@ -247,4 +247,22 @@ export default class ChatController {
       socket.emit('error', 'Failed to fetch messages');
     }
   };
+
+  handleDeleteMessageS = async (socket: Socket, messageId: string) => {
+    const userId = socket.data.user.user.id;
+    try {
+      const deletedMessage = await this.chatService.deleteMessageS(messageId, userId);
+      socket.to(deletedMessage.conversationId).emit('messageDeleted', {
+        messageId: deletedMessage.id,
+        senderId: userId,
+      });
+      socket.emit('messageDeleted', {
+        messageId: deletedMessage.id,
+        senderId: userId,
+      });
+    } catch (err) {
+      console.error('Error deleting message via socket:', err);
+      socket.emit('error', 'Failed to delete message');
+    }
+  };
 }

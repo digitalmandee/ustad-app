@@ -386,6 +386,26 @@ export default class ChatService {
     });
   }
 
+  async deleteMessageS(messageId: string, userId: string): Promise<Message> {
+    const message = await Message.findOne({
+      where: {
+        id: messageId,
+        senderId: userId,
+      },
+    });
+
+    if (!message) {
+      throw new BadRequestError('Message not found or unauthorized');
+    }
+
+    await message.update({
+      status: MessageStatus.DELETED,
+      content: 'This message was deleted',
+    });
+
+    return message;
+  }
+
   async markAsRead(conversationId: string, userId: string, messageId: string): Promise<void> {
     await ConversationParticipant.update(
       { lastReadAt: new Date() },

@@ -30,6 +30,7 @@ function registerSocketHandlers(socket: Socket) {
 
   socket.on('sendMessage', (data) => chatController.handleSendMessage(socket, data));
   socket.on('markAsRead', (data) => chatController.markAsReadS(socket, data));
+  socket.on('deleteMessage', (data) => chatController.handleDeleteMessageS(socket, data));
 
   // socket.on('getMissedMessages', (payload) =>
   //   chatController.handleGetMissedMessages(socket, payload)
