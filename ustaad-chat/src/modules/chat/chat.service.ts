@@ -387,6 +387,9 @@ export default class ChatService {
   }
 
   async deleteMessageS(messageId: string, userId: string): Promise<Message> {
+    console.log('messageId', messageId);
+    console.log('userId', userId);
+
     const message = await Message.findOne({
       where: {
         id: messageId,
@@ -394,9 +397,13 @@ export default class ChatService {
       },
     });
 
+    console.log('message', message);
+
     if (!message) {
       throw new BadRequestError('Message not found or unauthorized');
     }
+
+    console.log('messagessssssss');
 
     await message.update({
       status: MessageStatus.DELETED,

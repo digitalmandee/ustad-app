@@ -250,6 +250,11 @@ export default class ChatController {
 
   handleDeleteMessageS = async (socket: Socket, messageId: string) => {
     const userId = socket.data.user.user.id;
+
+    console.log('messageId', messageId);
+    console.log('userId', userId);
+    console.log('socket', socket);
+
     try {
       const deletedMessage = await this.chatService.deleteMessageS(messageId, userId);
       socket.to(deletedMessage.conversationId).emit('messageDeleted', {
