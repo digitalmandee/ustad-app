@@ -32,7 +32,7 @@ function initTutorExperienceModel(sequelize) {
         },
         endDate: {
             type: sequelize_1.DataTypes.DATE,
-            allowNull: false,
+            allowNull: true,
         },
         description: {
             type: sequelize_1.DataTypes.TEXT,

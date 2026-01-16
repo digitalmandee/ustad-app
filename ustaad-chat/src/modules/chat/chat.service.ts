@@ -111,7 +111,7 @@ export default class ChatService {
             senderId,
             receiverId: offerData.receiverId,
             childName: offerData.childName.toLowerCase(),
-            status: { [Op.in]: [OfferStatus.PENDING, OfferStatus.ACCEPTED] },
+            status: { [Op.in]: [OfferStatus.ACCEPTED] },
           },
         });
 

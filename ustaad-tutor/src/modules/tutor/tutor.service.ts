@@ -67,7 +67,7 @@ interface UpdateProfileData {
 interface ExperienceData {
   company: string;
   startDate: Date;
-  endDate: Date;
+  endDate?: Date | null;
   description: string;
   designation: string;
 }
@@ -75,7 +75,7 @@ interface ExperienceData {
 interface EducationData {
   institute: string;
   startDate: Date;
-  endDate: Date;
+  endDate?: Date | null;
   description: string;
   degree?: string;
 }
@@ -296,7 +296,7 @@ export default class TutorService {
       let totalExperience = 0;
       experiences.forEach((exp) => {
         const startDate = new Date(exp.startDate);
-        const endDate = new Date(exp.endDate);
+        const endDate = exp.endDate ? new Date(exp.endDate) : new Date();
         const diffInYears =
           (endDate.getTime() - startDate.getTime()) /
           (1000 * 60 * 60 * 24 * 365);
@@ -920,6 +920,7 @@ export default class TutorService {
     offset = 0,
     category?: string,
     curriculum?: string
+    grade?: string
   ) {
     try {
       console.log("Finding tutors with params:", {
@@ -928,6 +929,7 @@ export default class TutorService {
         radiusKm,
         category,
         curriculum,
+        grade
       });
 
       // Build basic query conditions
@@ -947,6 +949,12 @@ export default class TutorService {
         console.log("Adding curriculum filter for:", curriculum);
         tutorWhereCondition.curriculum = {
           [Op.contains]: [curriculum.toLowerCase()],
+        };
+      }
+      if (grade) {
+        console.log("Adding grade filter for:", grade);
+        tutorWhereCondition.grades = {
+          [Op.contains]: [grade.toLowerCase()],
         };
       }
 
@@ -1332,7 +1340,7 @@ export default class TutorService {
     let totalExperience = 0;
     experiences.forEach((exp) => {
       const startDate = new Date(exp.startDate);
-      const endDate = new Date(exp.endDate);
+      const endDate = exp.endDate ? new Date(exp.endDate) : new Date();
       const diffInYears =
         (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
       totalExperience += diffInYears;

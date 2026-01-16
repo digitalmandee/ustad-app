@@ -5,7 +5,7 @@ export interface TutorExperienceAttributes {
     company: string;
     designation: string;
     startDate: Date;
-    endDate: Date;
+    endDate?: Date | null;
     description: string;
     createdAt?: Date;
     updatedAt?: Date;
@@ -16,7 +16,7 @@ export declare class TutorExperience extends Model<TutorExperienceAttributes> {
     company: string;
     designation: string;
     startDate: Date;
-    endDate: Date;
+    endDate?: Date | null;
     description: string;
     readonly createdAt: Date;
     readonly updatedAt: Date;

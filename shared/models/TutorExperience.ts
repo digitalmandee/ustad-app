@@ -8,7 +8,7 @@ export interface TutorExperienceAttributes {
   company: string;
   designation: string;
   startDate: Date;
-  endDate: Date;
+  endDate?: Date | null;
   description: string;
   createdAt?: Date;
   updatedAt?: Date;
@@ -20,7 +20,7 @@ export class TutorExperience extends Model<TutorExperienceAttributes> {
   public company!: string;
   public designation!: string;
   public startDate!: Date;
-  public endDate!: Date;
+  public endDate?: Date | null;
   public description!: string;
 
   public readonly createdAt!: Date;
@@ -55,7 +55,7 @@ export function initTutorExperienceModel(
       },
       endDate: {
         type: DataTypes.DATE,
-        allowNull: false,
+        allowNull: true,
       },
       description: {
         type: DataTypes.TEXT,

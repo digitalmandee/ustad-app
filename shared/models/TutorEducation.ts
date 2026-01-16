@@ -7,7 +7,7 @@ export interface TutorEducationAttributes {
   tutorId: string;
   institute: string;
   startDate: Date;
-  endDate: Date;
+  endDate?: Date | null;
   description: string;
   degree?: string;
   createdAt?: Date;
@@ -19,7 +19,7 @@ export class TutorEducation extends Model<TutorEducationAttributes> {
   public tutorId!: string;
   public institute!: string;
   public startDate!: Date;
-  public endDate!: Date;
+  public endDate?: Date | null;
   public description!: string;
   public degree?: string;
   public readonly createdAt!: Date;
@@ -54,7 +54,7 @@ export function initTutorEducationModel(
       },
       endDate: {
         type: DataTypes.DATE,
-        allowNull: false,
+        allowNull: true,
       },
       description: {
         type: DataTypes.TEXT,
