@@ -632,6 +632,8 @@ export default class TutorController {
         offset = 0,
         category,
         curriculum,
+        grade,
+        gender,
       } = req.query as unknown as FindTutorsByLocationDto;
       const results = await this.tutorService.findTutorsByLocation(
         latitude,
@@ -640,7 +642,9 @@ export default class TutorController {
         limit,
         offset,
         category,
-        curriculum
+        curriculum,
+        grade,
+        gender
       );
 
       return sendSuccessResponse(

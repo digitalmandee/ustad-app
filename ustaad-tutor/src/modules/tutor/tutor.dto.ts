@@ -44,4 +44,6 @@ export interface FindTutorsByLocationDto {
   offset?: number;
   category?: string; // Subject filter (e.g., "math", "science", etc.)
   curriculum?: string;
+  gender?: Gender;
+  grade?: string;
 }

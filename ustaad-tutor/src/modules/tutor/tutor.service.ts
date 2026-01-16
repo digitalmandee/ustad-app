@@ -919,8 +919,9 @@ export default class TutorService {
     limit = 20,
     offset = 0,
     category?: string,
-    curriculum?: string
-    grade?: string
+    curriculum?: string,
+    grade?: string,
+    gender?: string
   ) {
     try {
       console.log("Finding tutors with params:", {
@@ -929,7 +930,8 @@ export default class TutorService {
         radiusKm,
         category,
         curriculum,
-        grade
+        grade,
+        gender,
       });
 
       // Build basic query conditions
@@ -956,6 +958,10 @@ export default class TutorService {
         tutorWhereCondition.grades = {
           [Op.contains]: [grade.toLowerCase()],
         };
+      }
+      if (gender) {
+        console.log("Adding gender filter for:", gender);
+        tutorWhereCondition.gender = gender.toLowerCase();
       }
 
       console.log("tutorWhereCondition:", tutorWhereCondition);
