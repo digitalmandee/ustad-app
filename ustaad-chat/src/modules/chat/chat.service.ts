@@ -386,13 +386,13 @@ export default class ChatService {
     });
   }
 
-  async deleteMessageS(messageId: string, userId: string): Promise<Message> {
+  async deleteMessageS(messageId: any, userId: string): Promise<Message> {
     console.log('messageId', messageId);
     console.log('userId', userId);
 
     const message = await Message.findOne({
       where: {
-        id: messageId,
+        id: messageId.messageId,
         senderId: userId,
       },
     });
