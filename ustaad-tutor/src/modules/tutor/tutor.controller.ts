@@ -786,7 +786,7 @@ export default class TutorController {
       );
       return sendSuccessResponse(
         res,
-        "Tutor sessions retrieved successfully",
+        "Sessions retrieved successfully",
         200,
         sessions
       );
@@ -810,7 +810,7 @@ export default class TutorController {
       );
       return sendSuccessResponse(
         res,
-        "Tutor session retrieved successfully",
+        "Session retrieved successfully",
         200,
         session
       );
@@ -1272,4 +1272,29 @@ export default class TutorController {
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
+
+  async deleteProfilePic(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id: userId } = req.user;
+
+      const result = await this.tutorService.deleteProfilePic(userId);
+
+      return sendSuccessResponse(
+        res,
+        "Profile picture deleted successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Delete profile pic error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while deleting profile picture";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  }
 }

@@ -466,7 +466,14 @@ export default class AdminService {
     // Calculate total experience in years
     const totalExperience = experience.reduce((total, exp) => {
       const startDate = new Date(exp.startDate);
-      const endDate = exp.endDate ? new Date(exp.endDate) : new Date();
+      let endDate: Date;
+
+      if (exp.endDate === "Present" || !exp.endDate) {
+        endDate = new Date();
+      } else {
+        endDate = new Date(exp.endDate);
+      }
+
       const years =
         (endDate.getTime() - startDate.getTime()) /
         (1000 * 60 * 60 * 24 * 365.25);

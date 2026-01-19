@@ -1366,12 +1366,10 @@ export default class ParentService {
           });
 
           // Get total active sessions count
-          const totalSessions = await TutorSessions.count({
+          const totalSessions = await TutorSessionsDetail.count({
             where: {
-              offerId: contract.offerId,
               tutorId: contract.tutorId,
               parentId: contract.parentId,
-              status: "active",
             },
           });
 

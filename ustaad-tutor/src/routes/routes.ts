@@ -41,7 +41,7 @@ const routes = {
   GET_HELP_REQUESTS: "/tutor/help-requests",
 
   // Contracts
-  GET_CONTRACTS: "/tutor/contracts",
+  // GET_CONTRACTS: "/tutor/contracts",
   GET_ACTIVE_CONTRACTS: "/tutor/contracts",
   CANCEL_CONTRACT: "/tutor/contracts/:contractId/cancel",
   TERMINATE_CONTRACT: "/tutor/contracts/:contractId",
@@ -52,6 +52,7 @@ const routes = {
   NOTIFICATION_HISTORY: "/tutor/notification/history",
   NOTIFICATION_READ: "/tutor/notification/read/:notificationId",
   UPDATE_TUTOR_DOCUMENTS: "/tutor/update-documents",
+  TUTOR_Profile_IMAGE_DELETE: "/tutor/profile/image/delete",
 };
 
 export default routes;

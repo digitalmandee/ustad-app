@@ -195,10 +195,16 @@ export const experienceValidationRules = () => {
 
     body("endDate")
       .optional({ nullable: true, checkFalsy: true })
-      .isISO8601()
-      .withMessage("End date must be a valid date")
       .custom((endDate, { req }) => {
-        if (endDate && new Date(endDate) <= new Date(req.body.startDate)) {
+        if (endDate === "Present") {
+          return true;
+        }
+        if (!endDate) return true;
+        const date = new Date(endDate);
+        if (isNaN(date.getTime())) {
+          throw new Error("End date must be a valid date or 'Present'");
+        }
+        if (date <= new Date(req.body.startDate)) {
           throw new Error("End date must be after start date");
         }
         return true;
@@ -241,10 +247,16 @@ export const educationValidationRules = () => {
 
     body("endDate")
       .optional({ nullable: true, checkFalsy: true })
-      .isISO8601()
-      .withMessage("End date must be a valid date")
       .custom((endDate, { req }) => {
-        if (endDate && new Date(endDate) <= new Date(req.body.startDate)) {
+        if (endDate === "Present") {
+          return true;
+        }
+        if (!endDate) return true;
+        const date = new Date(endDate);
+        if (isNaN(date.getTime())) {
+          throw new Error("End date must be a valid date or 'Present'");
+        }
+        if (date <= new Date(req.body.startDate)) {
           throw new Error("End date must be after start date");
         }
         return true;

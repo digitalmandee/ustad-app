@@ -31,7 +31,7 @@ function initTutorEducationModel(sequelize) {
             allowNull: false,
         },
         endDate: {
-            type: sequelize_1.DataTypes.DATE,
+            type: sequelize_1.DataTypes.STRING,
             allowNull: true,
         },
         description: {

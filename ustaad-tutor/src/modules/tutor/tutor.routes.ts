@@ -60,6 +60,13 @@ router.get(
   tutorController.getProfile
 );
 
+router.delete(
+  routes.TUTOR_Profile_IMAGE_DELETE,
+  authenticateJwt,
+  authorizeRoles("TUTOR", "PARENT"),
+  tutorController.deleteProfilePic
+);
+
 router.put(
   routes.UPDATE_BANK_DETAILS,
   authenticateJwt,

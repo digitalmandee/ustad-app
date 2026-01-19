@@ -67,7 +67,7 @@ interface UpdateProfileData {
 interface ExperienceData {
   company: string;
   startDate: Date;
-  endDate?: Date | null;
+  endDate?: Date | string | null;
   description: string;
   designation: string;
 }
@@ -75,7 +75,7 @@ interface ExperienceData {
 interface EducationData {
   institute: string;
   startDate: Date;
-  endDate?: Date | null;
+  endDate?: Date | string | null;
   description: string;
   degree?: string;
 }
@@ -176,6 +176,26 @@ export default class TutorService {
       return tutor;
     } catch (error) {
       console.error("Error in createTutorProfile:", error);
+      throw error;
+    }
+  }
+
+  async deleteProfilePic(userId: string) {
+    try {
+      const user = await User.findByPk(userId);
+      if (!user) {
+        throw new UnProcessableEntityError("User not found");
+      }
+
+      await user.update({ image: null });
+
+      const updatedUser = await User.findByPk(userId, {
+        attributes: { exclude: ["password"] },
+      });
+
+      return updatedUser;
+    } catch (error) {
+      console.error("Error in deleteProfilePic:", error);
       throw error;
     }
   }
@@ -296,7 +316,14 @@ export default class TutorService {
       let totalExperience = 0;
       experiences.forEach((exp) => {
         const startDate = new Date(exp.startDate);
-        const endDate = exp.endDate ? new Date(exp.endDate) : new Date();
+        let endDate: Date;
+
+        if (exp.endDate === "Present" || !exp.endDate) {
+          endDate = new Date();
+        } else {
+          endDate = new Date(exp.endDate);
+        }
+
         const diffInYears =
           (endDate.getTime() - startDate.getTime()) /
           (1000 * 60 * 60 * 24 * 365);
@@ -2669,12 +2696,10 @@ export default class TutorService {
           console.log("we herer !");
 
           // Get total active sessions count
-          const totalSessions = await TutorSessions.count({
+          const totalSessions = await TutorSessionsDetail.count({
             where: {
-              offerId: contract.offerId,
               tutorId: contract.tutorId,
               parentId: contract.parentId,
-              status: "active",
             },
           });
 
