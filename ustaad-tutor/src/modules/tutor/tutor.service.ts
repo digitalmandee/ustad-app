@@ -2679,12 +2679,13 @@ export default class TutorService {
           console.log("we herer !");
 
           // Get total active sessions count
-          const totalSessions = await TutorSessionsDetail.count({
+          const offer = await Offer.findOne({
             where: {
-              tutorId: contract.tutorId,
-              parentId: contract.parentId,
+              id: contract.offerId,
             },
           });
+
+          const totalSessions = offer?.sessions;
 
           // Get all contract reviews (both parent and tutor reviews)
           const contractReviews = await ContractReview.findAll({
