@@ -52,6 +52,13 @@ router.get(
   tutorController.getProfile
 );
 
+router.delete(
+  routes.PARENT_Profile_IMAGE_DELETE,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.deleteProfilePic
+);
+
 router.get(
   routes.PARENT_PAYMENT_METHODS,
   authenticateJwt,

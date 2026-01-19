@@ -141,6 +141,26 @@ export default class ParentService {
     }
   }
 
+  async deleteProfilePic(userId: string) {
+    try {
+      const user = await User.findByPk(userId);
+      if (!user) {
+        throw new UnProcessableEntityError("User not found");
+      }
+
+      await user.update({ image: null });
+
+      const updatedUser = await User.findByPk(userId, {
+        attributes: { exclude: ["password"] },
+      });
+
+      return updatedUser;
+    } catch (error) {
+      console.error("Error in deleteProfilePic:", error);
+      throw error;
+    }
+  }
+
   async updateProfile(userId: string, data: UpdateProfileData) {
     try {
       const user = await User.findByPk(userId);

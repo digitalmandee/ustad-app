@@ -63,6 +63,7 @@ const routes = {
   // Bypass routes
   PAYMENT_INTENT_BYPASS: "/parent/payment/intent-bypass",
   UPDATE_PARENT_DOCUMENTS: "/parent/update-documents",
+  PARENT_Profile_IMAGE_DELETE: "/parent/profile/image/delete",
 };
 
 export default routes;

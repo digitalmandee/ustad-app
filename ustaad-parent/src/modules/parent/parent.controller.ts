@@ -96,6 +96,31 @@ export default class ParentController {
     }
   };
 
+  deleteProfilePic = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+
+      const result = await this.parentService.deleteProfilePic(userId);
+
+      return sendSuccessResponse(
+        res,
+        "Profile picture deleted successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Delete profile pic error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while deleting profile picture";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
   getProfile = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
