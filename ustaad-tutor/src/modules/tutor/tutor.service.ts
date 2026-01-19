@@ -1506,56 +1506,53 @@ export default class TutorService {
       let runningSessionsQuery = "";
 
       if (role === "TUTOR") {
-        // Tutor → get parent info from tutorSessions
         sessionsQuery = `
-        SELECT 
-          ts.*, 
-          u.id AS "parentId",
-          u."firstName" || ' ' || u."lastName" AS "parentName"
-        FROM "tutorSessions" ts
-        JOIN "users" u ON u.id = ts."parentId"
-        WHERE ts."tutorId" = :userId;
-      `;
+      SELECT 
+        ts.*, 
+        u.id AS "parentId",
+        u."firstName" || ' ' || u."lastName" AS "parentName",
+        (SELECT COUNT(*)::int FROM "tutorSessionsDetail" tsd WHERE tsd."sessionId" = ts.id) AS "totalSessions"
+      FROM "tutorSessions" ts
+      JOIN "users" u ON u.id = ts."parentId"
+      WHERE ts."tutorId" = :userId;
+    `;
 
-        // Running sessions from tutorSessionsDetail (with parent info)
         runningSessionsQuery = `
-        SELECT 
-          tsd.*, 
-          u.id AS "parentId",
-          u."firstName" || ' ' || u."lastName" AS "parentName"
-        FROM "tutorSessionsDetail" tsd
-        JOIN "users" u ON u.id = tsd."parentId"
-        WHERE tsd."tutorId" = :userId
-          AND tsd."status" = 'CREATED';
-      `;
+      SELECT 
+        tsd.*, 
+        u.id AS "parentId",
+        u."firstName" || ' ' || u."lastName" AS "parentName"
+      FROM "tutorSessionsDetail" tsd
+      JOIN "users" u ON u.id = tsd."parentId"
+      WHERE tsd."tutorId" = :userId
+        AND tsd."status" = 'CREATED';
+    `;
       } else if (role === "PARENT") {
-        // Parent → get tutor info from tutorSessions
         sessionsQuery = `
-        SELECT 
-          ts.*, 
-          u.id AS "tutorId",
-          u."firstName" || ' ' || u."lastName" AS "tutorName"
-        FROM "tutorSessions" ts
-        JOIN "users" u ON u.id = ts."tutorId"
-        WHERE ts."parentId" = :userId;
-      `;
+      SELECT 
+        ts.*, 
+        u.id AS "tutorId",
+        u."firstName" || ' ' || u."lastName" AS "tutorName",
+        (SELECT COUNT(*)::int FROM "tutorSessionsDetail" tsd WHERE tsd."sessionId" = ts.id) AS "totalSessions"
+      FROM "tutorSessions" ts
+      JOIN "users" u ON u.id = ts."tutorId"
+      WHERE ts."parentId" = :userId;
+    `;
 
-        // Running sessions from tutorSessionsDetail (with tutor info)
         runningSessionsQuery = `
-        SELECT 
-          tsd.*, 
-          u.id AS "tutorId",
-          u."firstName" || ' ' || u."lastName" AS "tutorName"
-        FROM "tutorSessionsDetail" tsd
-        JOIN "users" u ON u.id = tsd."tutorId"
-        WHERE tsd."parentId" = :userId
-          AND tsd."status" = 'CREATED';
-      `;
+      SELECT 
+        tsd.*, 
+        u.id AS "tutorId",
+        u."firstName" || ' ' || u."lastName" AS "tutorName"
+      FROM "tutorSessionsDetail" tsd
+      JOIN "users" u ON u.id = tsd."tutorId"
+      WHERE tsd."parentId" = :userId
+        AND tsd."status" = 'CREATED';
+    `;
       } else {
         throw new UnProcessableEntityError("Invalid user role");
       }
 
-      // Execute queries
       const sessions = await sequelize.query(sessionsQuery, {
         replacements: { userId },
         type: QueryTypes.SELECT,
@@ -1578,38 +1575,27 @@ export default class TutorService {
       let query = "";
 
       if (role === UserRole.TUTOR) {
-        // Tutor → fetch parent info
         query = `
-          SELECT 
-            tsd.*, 
-            u.id AS "parentId",
-            u."firstName" || ' ' || u."lastName" AS "parentName"
-          FROM "tutorSessionsDetail" tsd
-          JOIN "users" u ON u.id = tsd."parentId"
-          WHERE tsd."tutorId" = :userId AND tsd."sessionId" = :sessionId
-          LIMIT 1;
-        `;
+        SELECT 
+          tsd.*, 
+          u.id AS "parentId",
+          u."firstName" || ' ' || u."lastName" AS "parentName"
+        FROM "tutorSessionsDetail" tsd
+        JOIN "users" u ON u.id = tsd."parentId"
+        WHERE tsd."tutorId" = :userId AND tsd."sessionId" = :sessionId;
+      `;
       } else if (role === UserRole.PARENT) {
-        // Parent → fetch tutor info
         query = `
-          SELECT 
-            tsd.*, 
-            u.id AS "tutorId",
-            u."firstName" || ' ' || u."lastName" AS "tutorName"
-          FROM "tutorSessionsDetail" tsd
-          JOIN "users" u ON u.id = tsd."tutorId"
-          WHERE tsd."parentId" = :userId AND tsd."sessionId" = :sessionId
-          LIMIT 1;
-        `;
+        SELECT 
+          tsd.*, 
+          u.id AS "tutorId",
+          u."firstName" || ' ' || u."lastName" AS "tutorName"
+        FROM "tutorSessionsDetail" tsd
+        JOIN "users" u ON u.id = tsd."tutorId"
+        WHERE tsd."parentId" = :userId AND tsd."sessionId" = :sessionId;
+      `;
       } else {
         throw new UnProcessableEntityError("Invalid user role");
-      }
-
-      if (!sequelize || typeof sequelize.query !== "function") {
-        throw new Error("Database connection is not available");
-      }
-      if (typeof QueryTypes === "undefined") {
-        throw new Error("QueryTypes is not defined");
       }
 
       const result = await sequelize.query(query, {
@@ -1617,8 +1603,7 @@ export default class TutorService {
         type: QueryTypes.SELECT,
       });
 
-      const session = Array.isArray(result) ? result[0] : null;
-      return session || null;
+      return result || [];
     } catch (error) {
       console.error("Error in getTutorSession:", error);
       throw error;
