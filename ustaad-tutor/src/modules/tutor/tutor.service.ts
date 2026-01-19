@@ -2648,6 +2648,7 @@ export default class TutorService {
               "endTime",
               "daysOfWeek",
               "description",
+              "sessions",
             ],
           },
         ],
