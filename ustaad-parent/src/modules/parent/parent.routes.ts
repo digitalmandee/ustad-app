@@ -55,7 +55,7 @@ router.get(
 router.delete(
   routes.PARENT_Profile_IMAGE_DELETE,
   authenticateJwt,
-  authorizeRoles("PARENT"),
+  authorizeRoles("PARENT", "TUTOR"),
   parentController.deleteProfilePic
 );
 
