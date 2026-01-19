@@ -1507,48 +1507,46 @@ export default class TutorService {
 
       if (role === "TUTOR") {
         sessionsQuery = `
-      SELECT 
-        ts.*, 
-        u.id AS "parentId",
-        u."firstName" || ' ' || u."lastName" AS "parentName",
-        (SELECT COUNT(*)::int FROM "tutorSessionsDetail" tsd WHERE tsd."sessionId" = ts.id) AS "totalSessions"
-      FROM "tutorSessions" ts
-      JOIN "users" u ON u.id = ts."parentId"
-      WHERE ts."tutorId" = :userId;
-    `;
+        SELECT 
+          ts.*, 
+          u.id AS "parentId",
+          u."firstName" || ' ' || u."lastName" AS "parentName"
+        FROM "tutorSessions" ts
+        JOIN "users" u ON u.id = ts."parentId"
+        WHERE ts."tutorId" = :userId;
+      `;
 
         runningSessionsQuery = `
-      SELECT 
-        tsd.*, 
-        u.id AS "parentId",
-        u."firstName" || ' ' || u."lastName" AS "parentName"
-      FROM "tutorSessionsDetail" tsd
-      JOIN "users" u ON u.id = tsd."parentId"
-      WHERE tsd."tutorId" = :userId
-        AND tsd."status" = 'CREATED';
-    `;
+       SELECT 
+          tsd.*, 
+          u.id AS "parentId",
+          u."firstName" || ' ' || u."lastName" AS "parentName"
+        FROM "tutorSessionsDetail" tsd
+        JOIN "users" u ON u.id = tsd."parentId"
+        WHERE tsd."tutorId" = :userId
+          AND tsd."status" = 'CREATED';
+      `;
       } else if (role === "PARENT") {
         sessionsQuery = `
-      SELECT 
-        ts.*, 
-        u.id AS "tutorId",
-        u."firstName" || ' ' || u."lastName" AS "tutorName",
-        (SELECT COUNT(*)::int FROM "tutorSessionsDetail" tsd WHERE tsd."sessionId" = ts.id) AS "totalSessions"
-      FROM "tutorSessions" ts
-      JOIN "users" u ON u.id = ts."tutorId"
-      WHERE ts."parentId" = :userId;
-    `;
+        SELECT 
+          ts.*, 
+          u.id AS "tutorId",
+          u."firstName" || ' ' || u."lastName" AS "tutorName"
+        FROM "tutorSessions" ts
+        JOIN "users" u ON u.id = ts."tutorId"
+        WHERE ts."parentId" = :userId;
+      `;
 
         runningSessionsQuery = `
-      SELECT 
-        tsd.*, 
-        u.id AS "tutorId",
-        u."firstName" || ' ' || u."lastName" AS "tutorName"
-      FROM "tutorSessionsDetail" tsd
-      JOIN "users" u ON u.id = tsd."tutorId"
-      WHERE tsd."parentId" = :userId
-        AND tsd."status" = 'CREATED';
-    `;
+       SELECT 
+          tsd.*, 
+          u.id AS "tutorId",
+          u."firstName" || ' ' || u."lastName" AS "tutorName"
+        FROM "tutorSessionsDetail" tsd
+        JOIN "users" u ON u.id = tsd."tutorId"
+        WHERE tsd."parentId" = :userId
+          AND tsd."status" = 'CREATED';
+      `;
       } else {
         throw new UnProcessableEntityError("Invalid user role");
       }
