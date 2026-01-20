@@ -1373,10 +1373,18 @@ export default class TutorService {
     let totalExperience = 0;
     experiences.forEach((exp) => {
       const startDate = new Date(exp.startDate);
-      const endDate = exp.endDate ? new Date(exp.endDate) : new Date();
-      const diffInYears =
-        (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
-      totalExperience += diffInYears;
+
+      // Check if endDate is missing OR explicitly the string "Present"
+      const isPresent = !exp.endDate || exp.endDate.toLowerCase() === "present";
+      const endDate = isPresent ? new Date() : new Date(exp.endDate);
+
+      // Ensure we have valid dates before calculating
+      if (!isNaN(startDate.getTime()) && !isNaN(endDate.getTime())) {
+        const diffInYears =
+          (endDate.getTime() - startDate.getTime()) /
+          (1000 * 60 * 60 * 24 * 365);
+        totalExperience += diffInYears;
+      }
     });
 
     return Math.round(totalExperience * 10) / 10; // Round to 1 decimal place

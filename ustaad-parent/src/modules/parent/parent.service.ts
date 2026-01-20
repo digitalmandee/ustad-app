@@ -482,7 +482,7 @@ export default class ParentService {
       // Extract user data and ensure TutorExperience is included
       const userData = user.toJSON() as any;
       // TutorExperience might be directly on User or nested under Tutor
-      const experience =
+      const experienceArray =
         userData.TutorExperiences ||
         userData.TutorExperience ||
         (userData.Tutor &&
@@ -490,10 +490,35 @@ export default class ParentService {
             userData.Tutor.TutorExperience)) ||
         [];
 
+      // Normalize experience entries and calculate total experience in months
+      const normalizedExperience = experienceArray.map((exp: any) => {
+        const start = new Date(exp.startDate);
+        const end =
+          exp.endDate && exp.endDate !== "Present"
+            ? new Date(exp.endDate)
+            : new Date(); // Treat null or "Present" as current date
+        // Ensure end is not before start
+        const effectiveEnd = end > start ? end : start;
+        const months =
+          (effectiveEnd.getFullYear() - start.getFullYear()) * 12 +
+          (effectiveEnd.getMonth() - start.getMonth());
+        return {
+          ...exp,
+          endDate: exp.endDate || "Present",
+          totalMonths: months,
+        };
+      });
+
+      const totalExperienceMonths = normalizedExperience.reduce(
+        (sum: number, exp: any) => sum + (exp.totalMonths || 0),
+        0
+      );
+
       // Return user data with reviews and experience
       return {
         ...userData,
-        experience: experience,
+        experience: normalizedExperience,
+        totalExperienceMonths,
         reviews: formattedReviews,
         reviewStats: {
           totalReviews,
