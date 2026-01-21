@@ -158,8 +158,8 @@ export class ChildController {
   async getChildNotesByChildId(req: AuthenticatedRequest, res: Response) {
     try {
       const { childName } = req.params;
-      // const notes = await this.childService.getChildNotesByChildId(childName);
-      const notes = await ChildNotes.findAll({ where: { childName } });
+      const notes = await this.childService.getChildNotesByChildId(childName);
+      // const notes = await ChildNotes.findAll({ where: { childName } });
 
       return sendSuccessResponse(
         res,

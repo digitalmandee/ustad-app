@@ -178,6 +178,42 @@ export default class ChatService {
           },
           { transaction }
         );
+      } else if (messageData.type == MessageType.AUDIO) {
+        // Assuming audio file info is stored similarly in File model with duration in metadata
+        const audioFile = await File.findOne({
+          where: {
+            id: messageData.fileId,
+            conversationId: messageData.conversationId,
+          },
+          transaction,
+        });
+        if (!audioFile) {
+          throw new BadRequestError('Audio file not found or not accessible');
+        }
+        // Extract duration from audioFile.metadata if present
+        const duration = audioFile.metadata?.duration || null;
+        // Update message metadata with audio details and duration
+        await message.update(
+          {
+            metadata: {
+              ...(message.metadata || {}),
+              id: audioFile.id,
+              url: audioFile.url,
+              filename: audioFile.filename,
+              fileOriginalName: audioFile.originalName,
+              mimetype: audioFile.mimetype,
+              size: audioFile.size,
+              thumbnailUrl: audioFile.thumbnailUrl,
+              duration,
+            },
+          },
+          { transaction }
+        );
+        // Also store duration in File metadata for future reference
+        await audioFile.update(
+          { metadata: { ...(audioFile.metadata || {}), duration } },
+          { transaction }
+        );
       }
 
       await transaction.commit();

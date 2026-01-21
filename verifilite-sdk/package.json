@@ -1,0 +1,21 @@
+{
+  "name": "verifilite-sdk",
+  "version": "0.1.0",
+  "description": "A lightweight axios‑based SDK that handles login with apiKey/secret and stores combo token for subsequent calls.",
+  "main": "src/sdk.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"No tests defined\""
+  },
+  "keywords": [
+    "sdk",
+    "axios",
+    "api",
+    "auth"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.2"
+  }
+}

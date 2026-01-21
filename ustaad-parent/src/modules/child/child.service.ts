@@ -7,7 +7,7 @@ import {
 import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
 // import { ChildNotes } from '../../models/ChildNotes';
 // import { ChildReview } from '../../models/ChildReview';
-import { Child, ChildNotes, ChildReview } from "@ustaad/shared";
+import { Child, ChildNotes, ChildReview, User } from "@ustaad/shared";
 
 export class ChildService {
   async createChild(
@@ -101,6 +101,14 @@ export class ChildService {
 
   async getChildNotesByChildId(childName: string) {
     // return "Child Notes";
-    return await ChildNotes.findAll({ where: { childName } });
+    return await ChildNotes.findAll({
+      where: { childName },
+      include: [
+        {
+          model: User,
+          attributes: ["firstName", "lastName", "image"],
+        },
+      ],
+    });
   }
 }
