@@ -1082,6 +1082,23 @@ export default class AdminService {
       Parent.findOne({ where: { userId: user.id } }),
     ]);
 
+    // If user is a tutor, fetch education and experience data
+    let tutorEducation = null;
+    let tutorExperience = null;
+
+    if (tutor) {
+      [tutorEducation, tutorExperience] = await Promise.all([
+        TutorEducation.findAll({
+          where: { tutorId: user.id },
+          order: [["createdAt", "DESC"]],
+        }),
+        TutorExperience.findAll({
+          where: { tutorId: user.id },
+          order: [["createdAt", "DESC"]],
+        }),
+      ]);
+    }
+
     // Remove sensitive data
     const { password, ...userData } = user.toJSON();
 
@@ -1089,6 +1106,12 @@ export default class AdminService {
       user: userData,
       tutor: tutor ? tutor.toJSON() : null,
       parent: parent ? parent.toJSON() : null,
+      tutorEducation: tutorEducation
+        ? tutorEducation.map((e) => e.toJSON())
+        : null,
+      tutorExperience: tutorExperience
+        ? tutorExperience.map((e) => e.toJSON())
+        : null,
     };
   }
 }
