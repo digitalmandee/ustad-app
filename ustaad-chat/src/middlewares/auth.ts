@@ -1,16 +1,39 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt , { JsonWebTokenError, TokenExpiredError }  from 'jsonwebtoken';
+import jwt, { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import { User, Session } from '@ustaad/shared';
 import { Op } from 'sequelize';
 import { NotAuthorizedError } from '../errors/not-authorized-error';
 import { CustomError } from '../errors/custom-error';
 
+import { ParamsDictionary } from 'express-serve-static-core';
+
+export interface AuthenticatedRequest extends Request {
+  // 1. Fix Params: Force all params to be strings
+  params: ParamsDictionary & {
+    [key: string]: string;
+  };
+
+  // 2. Fix Query: Force query items to be treated as strings
+  query: {
+    [key: string]: string | string[] | undefined | any;
+  };
+
+  // 3. Your existing User definition
+  user?: {
+    id: string;
+    email?: string;
+    phone?: string;
+    parentId?: string;
+    role?: string;
+    [key: string]: any;
+  };
+}
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 async function validateSession(token: string): Promise<any> {
   try {
     const session = await Session.findOne({
-      where: { 
+      where: {
         token,
         expiresAt: {
           [Op.gt]: new Date(), // Not expired
@@ -25,12 +48,12 @@ async function validateSession(token: string): Promise<any> {
     });
 
     if (!session) {
-      throw new NotAuthorizedError("Invalid or expired session");
+      throw new NotAuthorizedError('Invalid or expired session');
     }
 
     const user = (session as any).User;
     if (!user || !user.isActive) {
-      throw new NotAuthorizedError("User does not exist or is not active");
+      throw new NotAuthorizedError('User does not exist or is not active');
     }
 
     return {
@@ -43,18 +66,8 @@ async function validateSession(token: string): Promise<any> {
     if (err instanceof NotAuthorizedError) {
       throw err;
     }
-    throw new NotAuthorizedError("Session validation failed");
+    throw new NotAuthorizedError('Session validation failed');
   }
-}
-
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email?: string;
-    phone?: string;
-    role?: string;
-    [key: string]: any;
-  };
 }
 
 export async function authenticateJwt(
@@ -99,14 +112,14 @@ export async function authenticateJwt(
 
     next();
   } catch (err) {
-  console.error(err);
+    console.error(err);
 
-  // If it's already a NotAuthorizedError, rethrow it
-  if (err instanceof CustomError) {
-    throw err;
-  }
+    // If it's already a NotAuthorizedError, rethrow it
+    if (err instanceof CustomError) {
+      throw err;
+    }
 
-  // Otherwise, wrap and throw a generic error
-  throw new NotAuthorizedError('Authentication failed');
+    // Otherwise, wrap and throw a generic error
+    throw new NotAuthorizedError('Authentication failed');
   }
 }

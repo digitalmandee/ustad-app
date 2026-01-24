@@ -6,12 +6,36 @@ import { Op } from "sequelize";
 import { NotAuthorizedError } from "../errors/not-authorized-error";
 import { CustomError } from "../errors/custom-error";
 
+import { ParamsDictionary } from "express-serve-static-core";
+
+export interface AuthenticatedRequest extends Request {
+  // 1. Fix Params: Force all params to be strings
+  params: ParamsDictionary & {
+    [key: string]: string;
+  };
+
+  // 2. Fix Query: Force query items to be treated as strings
+  query: {
+    [key: string]: string | string[] | undefined | any;
+  };
+
+  // 3. Your existing User definition
+  user?: {
+    id: string;
+    email?: string;
+    phone?: string;
+    parentId?: string;
+    role?: string;
+    [key: string]: any;
+  };
+}
+
 const JWT_SECRET = process.env.JWT_SECRET!;
 
 async function validateSession(token: string): Promise<any> {
   try {
     const session = await Session.findOne({
-      where: { 
+      where: {
         token,
         expiresAt: {
           [Op.gt]: new Date(), // Not expired
@@ -20,7 +44,7 @@ async function validateSession(token: string): Promise<any> {
       include: [
         {
           model: User,
-          attributes: ['id', 'email', 'phone', 'role', 'isActive'],
+          attributes: ["id", "email", "phone", "role", "isActive"],
         },
       ],
     });
@@ -46,16 +70,6 @@ async function validateSession(token: string): Promise<any> {
     }
     throw new NotAuthorizedError("Session validation failed");
   }
-}
-
-export interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email?: string;
-    phone?: string;
-    role?: string;
-    [key: string]: any;
-  };
 }
 
 export async function authenticateJwt(
