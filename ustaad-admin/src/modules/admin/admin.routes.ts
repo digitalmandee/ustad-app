@@ -4,7 +4,7 @@ import { validateRequest } from "../../middlewares";
 import multer from "multer";
 import routes from "../../routes/routes";
 import { authenticateJwt } from "../../middlewares/auth";
-import { Router } from 'express';
+import { Router } from "express";
 import { authorizeRoles } from "../../middlewares/role-auth";
 
 const adminController = new AdminController();
@@ -103,7 +103,7 @@ router.delete(
 router.get(
   routes.PENDING_ONBOARD_USERS,
   authenticateJwt,
-  authorizeRoles("SUPER_ADMIN", "ADMIN" ),
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
   adminController.getPendingOnboardUsers
 );
 
@@ -128,6 +128,14 @@ router.put(
   authenticateJwt,
   authorizeRoles("SUPER_ADMIN", "ADMIN"),
   adminController.resolveDispute
+);
+
+// Get user data by ID (User, Tutor, and Parent)
+router.get(
+  routes.USER_DATA_BY_ID,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
+  adminController.getUserDataById
 );
 
 export { router as adminRouter };

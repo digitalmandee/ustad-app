@@ -29,10 +29,11 @@ import bcrypt from "bcrypt";
 
 export default class AdminService {
   async getStats(days?: number) {
+    // 1. Determine if we are looking at a specific range or "All Time"
     const isRange = !!days && [7, 30, 90].includes(days);
-
     const now = new Date();
 
+    // Define date boundaries for current and previous periods
     const currentStart = isRange
       ? new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
       : null;
@@ -40,13 +41,18 @@ export default class AdminService {
       ? new Date(now.getTime() - 2 * days * 24 * 60 * 60 * 1000)
       : null;
 
-    const buildDateFilter = (start: Date, end: Date) => ({
-      createdAt: {
-        [Op.gte]: start,
-        [Op.lt]: end,
-      },
-    });
+    // Helper to build Sequelize date filters
+    const buildDateFilter = (start: Date | null, end: Date | null) => {
+      if (!start || !end) return {}; // Empty filter for "All Time"
+      return {
+        createdAt: {
+          [Op.gte]: start,
+          [Op.lt]: end,
+        },
+      };
+    };
 
+    // 2. Internal function to fetch all metrics based on a date filter
     const fetchStats = async (dateFilter: any) => {
       const [
         totalUsers,
@@ -55,28 +61,24 @@ export default class AdminService {
         totalSubscriptions,
         activeSubscriptions,
         completedSubscriptions,
+        cancelledSubscriptions,
         totalTransactions,
         revenueRaw,
         pendingUserCount,
+        terminatedUsers, // isDeleted: true
       ] = await Promise.all([
-        // Exclude admin/super-admin from "totalUsers"
         User.count({
           where: {
             role: { [Op.notIn]: [UserRole.ADMIN, UserRole.SUPER_ADMIN] },
+            isDeleted: false,
             ...dateFilter,
           },
         }),
         User.count({
-          where: {
-            role: UserRole.PARENT,
-            ...dateFilter,
-          },
+          where: { role: UserRole.PARENT, isDeleted: false, ...dateFilter },
         }),
         User.count({
-          where: {
-            role: UserRole.TUTOR,
-            ...dateFilter,
-          },
+          where: { role: UserRole.TUTOR, isDeleted: false, ...dateFilter },
         }),
         ParentSubscription.count({ where: { ...dateFilter } }),
         ParentSubscription.count({
@@ -85,15 +87,16 @@ export default class AdminService {
         ParentSubscription.count({
           where: { status: ParentSubscriptionStatus.COMPLETED, ...dateFilter },
         }),
+        ParentSubscription.count({
+          where: { status: ParentSubscriptionStatus.CANCELLED, ...dateFilter },
+        }),
         ParentTransaction.count({ where: { ...dateFilter } }),
         ParentTransaction.sum("amount", {
-          where: {
-            status: "created", // keep existing behavior
-            ...dateFilter,
-          },
+          where: { status: "created", ...dateFilter },
         }),
         User.count({
           where: {
+            isDeleted: false,
             isOnBoard: {
               [Op.in]: [
                 IsOnBaord.PENDING,
@@ -110,9 +113,13 @@ export default class AdminService {
             ...dateFilter,
           },
         }),
+        User.count({
+          where: {
+            isDeleted: true,
+            ...dateFilter,
+          },
+        }),
       ]);
-
-      const totalRevenue = parseFloat(((revenueRaw as any) || 0).toString());
 
       return {
         totalUsers,
@@ -121,106 +128,172 @@ export default class AdminService {
         totalSubscriptions,
         activeSubscriptions,
         completedSubscriptions,
+        cancelledSubscriptions,
         totalTransactions,
-        totalRevenue,
+        totalRevenue: parseFloat(((revenueRaw as any) || 0).toString()),
         pendingUserCount,
+        terminatedUsers,
       };
     };
 
-    if (!isRange) {
-      const totals = await fetchStats({});
-      return {
-        ...totals,
-        period: days ? `${days} days` : "all time",
-      };
-    }
-
-    const currentFilter = buildDateFilter(currentStart!, now);
-    const previousFilter = buildDateFilter(previousStart!, currentStart!);
-
-    const [current, previous] = await Promise.all([
-      fetchStats(currentFilter),
-      fetchStats(previousFilter),
-    ]);
-
-    const pct = (curr: number, prev: number) => {
-      if (prev === 0) return curr === 0 ? 0 : 100;
+    // 3. Helper for calculating percentage changes
+    const calculatePct = (curr: number, prev: number) => {
+      if (!isRange || prev === 0) return 0; // Always 0 for All Time or if previous period had no data
       return Number((((curr - prev) / prev) * 100).toFixed(2));
     };
 
-    const delta = (curr: number, prev: number) => curr - prev;
+    const calculateDelta = (curr: number, prev: number) => {
+      if (!isRange) return 0; // No delta for All Time
+      return curr - prev;
+    };
+
+    // 4. Execution Logic
+    const currentStats = await fetchStats(
+      isRange ? buildDateFilter(currentStart!, now) : {}
+    );
+
+    // If All Time, we skip the previous period fetch and return 0s for comparison
+    if (!isRange) {
+      const metrics = Object.keys(currentStats);
+      const comparison: any = {};
+      metrics.forEach((key) => {
+        comparison[key] = { delta: 0, percent: 0 };
+      });
+
+      return {
+        ...currentStats,
+        period: "all time",
+        comparison,
+      };
+    }
+
+    // If Range, fetch the stats for the previous window of time
+    const previousStats = await fetchStats(
+      buildDateFilter(previousStart!, currentStart!)
+    );
 
     return {
-      ...current,
+      ...currentStats,
       period: `${days} days`,
       comparison: {
-        previousPeriod: {
-          ...previous,
-          period: `${days} days`,
+        totalUsers: {
+          delta: calculateDelta(
+            currentStats.totalUsers,
+            previousStats.totalUsers
+          ),
+          percent: calculatePct(
+            currentStats.totalUsers,
+            previousStats.totalUsers
+          ),
         },
-        change: {
-          totalUsers: {
-            delta: delta(current.totalUsers, previous.totalUsers),
-            percent: pct(current.totalUsers, previous.totalUsers),
-          },
-          totalParents: {
-            delta: delta(current.totalParents, previous.totalParents),
-            percent: pct(current.totalParents, previous.totalParents),
-          },
-          totalTutors: {
-            delta: delta(current.totalTutors, previous.totalTutors),
-            percent: pct(current.totalTutors, previous.totalTutors),
-          },
-          totalSubscriptions: {
-            delta: delta(
-              current.totalSubscriptions,
-              previous.totalSubscriptions
-            ),
-            percent: pct(
-              current.totalSubscriptions,
-              previous.totalSubscriptions
-            ),
-          },
-          activeSubscriptions: {
-            delta: delta(
-              current.activeSubscriptions,
-              previous.activeSubscriptions
-            ),
-            percent: pct(
-              current.activeSubscriptions,
-              previous.activeSubscriptions
-            ),
-          },
-          completedSubscriptions: {
-            delta: delta(
-              current.completedSubscriptions,
-              previous.completedSubscriptions
-            ),
-            percent: pct(
-              current.completedSubscriptions,
-              previous.completedSubscriptions
-            ),
-          },
-          totalTransactions: {
-            delta: delta(current.totalTransactions, previous.totalTransactions),
-            percent: pct(current.totalTransactions, previous.totalTransactions),
-          },
-          totalRevenue: {
-            delta: Number(
-              (current.totalRevenue - previous.totalRevenue).toFixed(2)
-            ),
-            percent: pct(current.totalRevenue, previous.totalRevenue),
-          },
+        totalParents: {
+          delta: calculateDelta(
+            currentStats.totalParents,
+            previousStats.totalParents
+          ),
+          percent: calculatePct(
+            currentStats.totalParents,
+            previousStats.totalParents
+          ),
         },
-        range: {
-          current: {
-            start: currentStart!.toISOString(),
-            end: now.toISOString(),
-          },
-          previous: {
-            start: previousStart!.toISOString(),
-            end: currentStart!.toISOString(),
-          },
+        totalTutors: {
+          delta: calculateDelta(
+            currentStats.totalTutors,
+            previousStats.totalTutors
+          ),
+          percent: calculatePct(
+            currentStats.totalTutors,
+            previousStats.totalTutors
+          ),
+        },
+        totalSubscriptions: {
+          delta: calculateDelta(
+            currentStats.totalSubscriptions,
+            previousStats.totalSubscriptions
+          ),
+          percent: calculatePct(
+            currentStats.totalSubscriptions,
+            previousStats.totalSubscriptions
+          ),
+        },
+        activeSubscriptions: {
+          delta: calculateDelta(
+            currentStats.activeSubscriptions,
+            previousStats.activeSubscriptions
+          ),
+          percent: calculatePct(
+            currentStats.activeSubscriptions,
+            previousStats.activeSubscriptions
+          ),
+        },
+        completedSubscriptions: {
+          delta: calculateDelta(
+            currentStats.completedSubscriptions,
+            previousStats.completedSubscriptions
+          ),
+          percent: calculatePct(
+            currentStats.completedSubscriptions,
+            previousStats.completedSubscriptions
+          ),
+        },
+        cancelledSubscriptions: {
+          delta: calculateDelta(
+            currentStats.cancelledSubscriptions,
+            previousStats.cancelledSubscriptions
+          ),
+          percent: calculatePct(
+            currentStats.cancelledSubscriptions,
+            previousStats.cancelledSubscriptions
+          ),
+        },
+        totalTransactions: {
+          delta: calculateDelta(
+            currentStats.totalTransactions,
+            previousStats.totalTransactions
+          ),
+          percent: calculatePct(
+            currentStats.totalTransactions,
+            previousStats.totalTransactions
+          ),
+        },
+        totalRevenue: {
+          delta: Number(
+            (currentStats.totalRevenue - previousStats.totalRevenue).toFixed(2)
+          ),
+          percent: calculatePct(
+            currentStats.totalRevenue,
+            previousStats.totalRevenue
+          ),
+        },
+        terminatedUsers: {
+          delta: calculateDelta(
+            currentStats.terminatedUsers,
+            previousStats.terminatedUsers
+          ),
+          percent: calculatePct(
+            currentStats.terminatedUsers,
+            previousStats.terminatedUsers
+          ),
+        },
+        pendingUserCount: {
+          delta: calculateDelta(
+            currentStats.pendingUserCount,
+            previousStats.pendingUserCount
+          ),
+          percent: calculatePct(
+            currentStats.pendingUserCount,
+            previousStats.pendingUserCount
+          ),
+        },
+      },
+      range: {
+        current: {
+          start: currentStart!.toISOString(),
+          end: now.toISOString(),
+        },
+        previous: {
+          start: previousStart!.toISOString(),
+          end: currentStart!.toISOString(),
         },
       },
     };
@@ -933,5 +1006,48 @@ export default class AdminService {
     }
 
     return contract;
+  }
+
+  async getUserDataById(id: string) {
+    // First, try to find the user directly by ID
+    let user = await User.findByPk(id);
+
+    // If not found, try to find by tutor.userId or parent.userId
+    if (!user) {
+      const tutor = await Tutor.findOne({
+        where: { [Op.or]: [{ id }, { userId: id }] },
+      });
+
+      if (tutor) {
+        user = await User.findByPk(tutor.userId);
+      } else {
+        const parent = await Parent.findOne({
+          where: { [Op.or]: [{ id }, { userId: id }] },
+        });
+
+        if (parent) {
+          user = await User.findByPk(parent.userId);
+        }
+      }
+    }
+
+    if (!user) {
+      return null;
+    }
+
+    // Fetch tutor and parent data based on user.id
+    const [tutor, parent] = await Promise.all([
+      Tutor.findOne({ where: { userId: user.id } }),
+      Parent.findOne({ where: { userId: user.id } }),
+    ]);
+
+    // Remove sensitive data
+    const { password, ...userData } = user.toJSON();
+
+    return {
+      user: userData,
+      tutor: tutor ? tutor.toJSON() : null,
+      parent: parent ? parent.toJSON() : null,
+    };
   }
 }

@@ -327,4 +327,19 @@ export default class AdminController {
       throw new GenericError(e, ` Error from resolveDispute ${__filename}`);
     }
   };
+
+  getUserDataById = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const data = await this.adminService.getUserDataById(id);
+
+      if (!data) {
+        return sendSuccessResponse(res, "User not found", 404, null);
+      }
+
+      sendSuccessResponse(res, "User data fetched successfully", 200, data);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from getUserDataById ${__filename}`);
+    }
+  };
 }
