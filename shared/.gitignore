@@ -27,3 +27,4 @@ app/config/ustaad.json
 /dist
 dist
 dist/
+./dist
