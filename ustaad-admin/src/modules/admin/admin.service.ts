@@ -722,7 +722,6 @@ export default class AdminService {
         ],
       },
       isDeleted: false,
-      // Adjust this OR logic based on your business needs
       [Op.or]: [
         { isAdminVerified: false },
         { isEmailVerified: false },
@@ -730,6 +729,7 @@ export default class AdminService {
       ],
     };
 
+    // 1. Fetch the Users first
     const [usersResult, tutorCount, parentCount] = await Promise.all([
       User.findAndCountAll({
         where: whereClause,
@@ -742,34 +742,72 @@ export default class AdminService {
           "role",
           "image",
           "isOnBoard",
-          "isAdminVerified",
-          "isEmailVerified",
-          "isPhoneVerified",
           "createdAt",
-          "updatedAt",
         ],
         order: [["createdAt", "DESC"]],
         limit,
         offset,
       }),
-      User.count({
-        where: {
-          ...whereClause,
-          role: UserRole.TUTOR,
-        },
-      }),
-      User.count({
-        where: {
-          ...whereClause,
-          role: UserRole.PARENT,
-        },
-      }),
+      User.count({ where: { ...whereClause, role: UserRole.TUTOR } }),
+      User.count({ where: { ...whereClause, role: UserRole.PARENT } }),
     ]);
 
     const { rows, count } = usersResult;
 
+    // 2. Separate User IDs by role for bulk lookup
+    const tutorUserIds = rows
+      .filter((u) => u.role === UserRole.TUTOR)
+      .map((u) => u.id);
+    const parentUserIds = rows
+      .filter((u) => u.role === UserRole.PARENT)
+      .map((u) => u.id);
+
+    // 3. Perform bulk lookups in the specific tables
+    const [tutorProfiles, parentProfiles] = await Promise.all([
+      tutorUserIds.length > 0
+        ? Tutor.findAll({
+            where: { userId: tutorUserIds },
+            attributes: ["id", "userId"],
+            raw: true,
+          })
+        : [],
+      parentUserIds.length > 0
+        ? Parent.findAll({
+            where: { userId: parentUserIds },
+            attributes: ["id", "userId"],
+            raw: true,
+          })
+        : [],
+    ]);
+
+    // 4. Create lookup maps for O(1) access
+    const tutorMap = Object.fromEntries(
+      tutorProfiles.map((p) => [p.userId, p.id])
+    );
+    const parentMap = Object.fromEntries(
+      parentProfiles.map((p) => [p.userId, p.id])
+    );
+
+    // 5. Merge the profile IDs back into the items
+    const items = rows.map((user) => {
+      const userJson = user.get({ plain: true });
+
+      let profileId = null;
+      if (userJson.role === UserRole.TUTOR) {
+        profileId = tutorMap[userJson.id];
+      } else if (userJson.role === UserRole.PARENT) {
+        profileId = parentMap[userJson.id];
+      }
+
+      return {
+        ...userJson,
+        profileId: profileId || null,
+        name: `${userJson.firstName} ${userJson.lastName}`.trim(),
+      };
+    });
+
     return {
-      items: rows,
+      items,
       totalPending: count,
       tutorCount,
       parentCount,
