@@ -314,6 +314,7 @@ export default class AdminService {
       userWhere[Op.and] = [
         {
           [Op.or]: [
+            { id: { [Op.iLike]: `%${search.trim()}%` } },
             { firstName: { [Op.iLike]: `%${search.trim()}%` } },
             { lastName: { [Op.iLike]: `%${search.trim()}%` } },
             { email: { [Op.iLike]: `%${search.trim()}%` } },
@@ -430,6 +431,7 @@ export default class AdminService {
       tutorUserWhere[Op.and] = [
         {
           [Op.or]: [
+            { id: { [Op.iLike]: `%${search.trim()}%` } },
             { firstName: { [Op.iLike]: `%${search.trim()}%` } },
             { lastName: { [Op.iLike]: `%${search.trim()}%` } },
             { email: { [Op.iLike]: `%${search.trim()}%` } },
