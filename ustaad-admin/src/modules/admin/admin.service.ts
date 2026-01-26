@@ -314,21 +314,25 @@ export default class AdminService {
     };
 
     if (hasSearch) {
-      userWhere[Op.or] = [
-        // 1. Search ID - Using the column name directly without table alias
-        Sequelize.where(Sequelize.cast(Sequelize.col("id"), "TEXT"), {
-          [Op.iLike]: searchTerm,
-        }),
+      userWhere[Op.and] = [
+        {
+          [Op.or]: [
+            // Search ID (UUID)
+            Sequelize.where(Sequelize.cast(Sequelize.col("id"), "TEXT"), {
+              [Op.iLike]: searchTerm,
+            }),
 
-        // 2. Search Phone - Using the column name directly
-        // Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "TEXT"), {
-        //   [Op.iLike]: searchTerm,
-        // }),
+            // Search Phone (number)
+            // Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "TEXT"), {
+            //   [Op.iLike]: searchTerm,
+            // }),
 
-        // 3. Normal text columns
-        { firstName: { [Op.iLike]: searchTerm } },
-        { lastName: { [Op.iLike]: searchTerm } },
-        { email: { [Op.iLike]: searchTerm } },
+            // Normal text columns
+            { firstName: { [Op.iLike]: searchTerm } },
+            { lastName: { [Op.iLike]: searchTerm } },
+            { email: { [Op.iLike]: searchTerm } },
+          ],
+        },
       ];
     }
 
