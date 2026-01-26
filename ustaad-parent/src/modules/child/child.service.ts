@@ -100,7 +100,7 @@ export class ChildService {
   }
 
   async getChildNotesByChildId(childName: string) {
-    return await ChildNotes.findAll({
+    const notes = await ChildNotes.findAll({
       where: { childName },
       include: [
         {
@@ -108,6 +108,15 @@ export class ChildService {
           attributes: ["id", "firstName", "lastName", "image"],
         },
       ],
+    });
+
+    return notes.map((note: any) => {
+      const noteData = note.toJSON();
+      return {
+        ...noteData,
+        tutor: noteData.User,
+        User: undefined,
+      };
     });
   }
 }
