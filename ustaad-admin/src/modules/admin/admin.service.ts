@@ -302,6 +302,7 @@ export default class AdminService {
 
   async getAllParents(page = 1, limit = 20, search: string = "") {
     const offset = (page - 1) * limit;
+
     const hasSearch = !!search && search.trim().length > 0;
     const searchTerm = `%${search.trim()}%`;
 
@@ -313,25 +314,21 @@ export default class AdminService {
     };
 
     if (hasSearch) {
-      userWhere[Op.and] = [
-        {
-          [Op.or]: [
-            // 1. Cast UUID to TEXT using Postgres shorthand ::text
-            Sequelize.where(Sequelize.literal('("User"."id"::text)'), {
-              [Op.iLike]: searchTerm,
-            }),
+      userWhere[Op.or] = [
+        // 1. Search ID - Using the column name directly without table alias
+        Sequelize.where(Sequelize.cast(Sequelize.col("id"), "TEXT"), {
+          [Op.iLike]: searchTerm,
+        }),
 
-            // 2. Cast Phone (BigInt/Int) to TEXT
-            Sequelize.where(Sequelize.literal('("User"."phone"::text)'), {
-              [Op.iLike]: searchTerm,
-            }),
+        // 2. Search Phone - Using the column name directly
+        Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "TEXT"), {
+          [Op.iLike]: searchTerm,
+        }),
 
-            // 3. Normal text columns
-            { firstName: { [Op.iLike]: searchTerm } },
-            { lastName: { [Op.iLike]: searchTerm } },
-            { email: { [Op.iLike]: searchTerm } },
-          ],
-        },
+        // 3. Normal text columns
+        { firstName: { [Op.iLike]: searchTerm } },
+        { lastName: { [Op.iLike]: searchTerm } },
+        { email: { [Op.iLike]: searchTerm } },
       ];
     }
 
