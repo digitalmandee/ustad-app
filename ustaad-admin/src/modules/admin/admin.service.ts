@@ -22,6 +22,7 @@ import {
   TutorSessionStatus,
   PaymentRequests,
   TutorReview,
+  sequelize,
 } from "@ustaad/shared";
 import { TutorPaymentStatus } from "@ustaad/shared";
 import { Op } from "sequelize";
@@ -314,13 +315,12 @@ export default class AdminService {
     };
 
     if (hasSearch) {
+      const escapedTerm = sequelize.escape(searchTerm);
       userWhere[Op.and] = [
         {
           [Op.or]: [
             // Search ID (UUID)
-            Sequelize.where(Sequelize.cast(Sequelize.col("id"), "TEXT"), {
-              [Op.iLike]: searchTerm,
-            }),
+            Sequelize.literal(`CAST("id" AS TEXT) ILIKE ${escapedTerm}`),
 
             // Search Phone (number)
             // Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "TEXT"), {
