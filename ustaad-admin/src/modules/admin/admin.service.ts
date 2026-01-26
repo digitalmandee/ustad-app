@@ -321,9 +321,9 @@ export default class AdminService {
         }),
 
         // 2. Search Phone - Using the column name directly
-        Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "TEXT"), {
-          [Op.iLike]: searchTerm,
-        }),
+        // Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "TEXT"), {
+        //   [Op.iLike]: searchTerm,
+        // }),
 
         // 3. Normal text columns
         { firstName: { [Op.iLike]: searchTerm } },
