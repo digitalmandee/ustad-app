@@ -304,7 +304,7 @@ export default class AdminService {
   async getAllParents(page = 1, limit = 20, search: string = "") {
     const offset = (page - 1) * limit;
 
-    const hasSearch = !!search && search.trim().length > 0;
+    const hasSearch = typeof search === "string" && search.trim().length > 0;
     const searchTerm = `%${search.trim()}%`;
 
     const userWhere: any = {
@@ -315,24 +315,20 @@ export default class AdminService {
     };
 
     if (hasSearch) {
-      const escapedTerm = sequelize.escape(searchTerm);
-      userWhere[Op.and] = [
-        {
-          [Op.or]: [
-            // Search ID (UUID)
-            Sequelize.literal(`CAST("id" AS TEXT) ILIKE ${escapedTerm}`),
+      userWhere[Op.or] = [
+        // UUID search
+        Sequelize.where(Sequelize.cast(Sequelize.col("id"), "TEXT"), {
+          [Op.iLike]: searchTerm,
+        }),
 
-            // Search Phone (number)
-            // Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "TEXT"), {
-            //   [Op.iLike]: searchTerm,
-            // }),
+        // phone search
+        // Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "TEXT"), {
+        //   [Op.iLike]: searchTerm,
+        // }),
 
-            // Normal text columns
-            { firstName: { [Op.iLike]: searchTerm } },
-            { lastName: { [Op.iLike]: searchTerm } },
-            { email: { [Op.iLike]: searchTerm } },
-          ],
-        },
+        { firstName: { [Op.iLike]: searchTerm } },
+        { lastName: { [Op.iLike]: searchTerm } },
+        { email: { [Op.iLike]: searchTerm } },
       ];
     }
 
