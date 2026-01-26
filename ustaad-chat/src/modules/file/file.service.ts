@@ -31,7 +31,7 @@ interface MessageMetadata {
 
 @Service()
 export default class FileService {
-  async saveFile(userId: string, fileMetaData: any, conversationId: string) {
+  async saveFile(userId: string, fileMetaData: any, conversationId: string, duration: string) {
     const transaction = await sequelize.transaction(); // start transaction
 
     try {
@@ -66,7 +66,7 @@ export default class FileService {
           size: fileMetaData.size,
           url,
           status: 'active',
-          metadata: { absolutePath: fileMetaData.path },
+          metadata: { absolutePath: fileMetaData.path, duration },
         },
         { transaction } // ensure file save is part of transaction
       );
@@ -82,34 +82,33 @@ export default class FileService {
     }
   }
 
-async getFile(userId: string, fileId: string) {
-  try {
-    // 1. Find the file
-    const file = await File.findOne({ where: { id: fileId } });
-    if (!file) {
-      throw new Error("FILE_NOT_FOUND");
-    }
+  async getFile(userId: string, fileId: string) {
+    try {
+      // 1. Find the file
+      const file = await File.findOne({ where: { id: fileId } });
+      if (!file) {
+        throw new Error('FILE_NOT_FOUND');
+      }
 
-    // 2. Ensure user is participant of that file's conversation
-    const participant = await ConversationParticipant.findOne({
-      where: {
-        conversationId: file.conversationId,
-        userId,
-        isActive: true,
-      },
-    });
+      // 2. Ensure user is participant of that file's conversation
+      const participant = await ConversationParticipant.findOne({
+        where: {
+          conversationId: file.conversationId,
+          userId,
+          isActive: true,
+        },
+      });
 
-    if (!participant) {
-      throw new ForbiddenError("User not allowed to view this file. Not in conversation");
-    }
+      if (!participant) {
+        throw new ForbiddenError('User not allowed to view this file. Not in conversation');
+      }
 
-    return file;
-  } catch (err: any) {
-    if (err instanceof ForbiddenError || err instanceof BadRequestError) {
+      return file;
+    } catch (err: any) {
+      if (err instanceof ForbiddenError || err instanceof BadRequestError) {
         throw err;
       }
-    throw new GenericError(err, "Unable to fetch file");
+      throw new GenericError(err, 'Unable to fetch file');
+    }
   }
-}
-
 }
