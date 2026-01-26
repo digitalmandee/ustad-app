@@ -102,12 +102,12 @@ export class ChildService {
   async getChildNotesByChildId(childName: string) {
     return await ChildNotes.findAll({
       where: { childName },
-      // include: [
-      //   {
-      //     model: User,
-      //     attributes: ["firstName", "lastName", "image"],
-      //   },
-      // ],
+      include: [
+        {
+          model: User,
+          attributes: ["firstName", "lastName", "image"],
+        },
+      ],
     });
   }
 }
