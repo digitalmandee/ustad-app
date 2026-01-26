@@ -321,10 +321,12 @@ export default class AdminService {
             Sequelize.where(Sequelize.cast(Sequelize.col("id"), "varchar"), {
               [Op.iLike]: searchTerm,
             }),
+            Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "varchar"), {
+              [Op.iLike]: searchTerm,
+            }),
             { firstName: { [Op.iLike]: searchTerm } },
             { lastName: { [Op.iLike]: searchTerm } },
             { email: { [Op.iLike]: searchTerm } },
-            { phone: { [Op.iLike]: searchTerm } },
           ],
         },
       ];
@@ -443,10 +445,12 @@ export default class AdminService {
             Sequelize.where(Sequelize.cast(Sequelize.col("id"), "varchar"), {
               [Op.iLike]: searchTerm,
             }),
+            Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "varchar"), {
+              [Op.iLike]: searchTerm,
+            }),
             { firstName: { [Op.iLike]: searchTerm } },
             { lastName: { [Op.iLike]: searchTerm } },
             { email: { [Op.iLike]: searchTerm } },
-            { phone: { [Op.iLike]: searchTerm } },
           ],
         },
       ];
