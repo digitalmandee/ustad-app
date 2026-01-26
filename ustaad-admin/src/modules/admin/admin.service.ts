@@ -304,8 +304,8 @@ export default class AdminService {
   async getAllParents(page = 1, limit = 20, search: string = "") {
     const offset = (page - 1) * limit;
 
-    const hasSearch = typeof search === "string" && search.trim().length > 0;
-    const searchTerm = `%${search.trim()}%`;
+    // const hasSearch = typeof search === "string" && search.trim().length > 0;
+    // const searchTerm = `%${search.trim()}%`;
 
     const userWhere: any = {
       isAdminVerified: true,
@@ -314,21 +314,25 @@ export default class AdminService {
       isOnBoard: IsOnBaord.APPROVED,
     };
 
+    const hasSearch = !!search && search.trim().length > 0;
+    const searchTerm = `%${search.trim()}%`;
+
     if (hasSearch) {
       userWhere[Op.or] = [
-        // UUID search
-        Sequelize.where(Sequelize.cast(Sequelize.col("id"), "TEXT"), {
+        // 1. UUID Search (Casted)
+        Sequelize.where(Sequelize.literal('CAST("User"."id" AS TEXT)'), {
           [Op.iLike]: searchTerm,
         }),
 
-        // phone search
-        // Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "TEXT"), {
+        // 2. Phone Search (Casted)
+        // Sequelize.where(Sequelize.literal('CAST("User"."phone" AS TEXT)'), {
         //   [Op.iLike]: searchTerm,
         // }),
 
-        { firstName: { [Op.iLike]: searchTerm } },
-        { lastName: { [Op.iLike]: searchTerm } },
-        { email: { [Op.iLike]: searchTerm } },
+        // 3. Standard Text Columns
+        { "$User.firstName$": { [Op.iLike]: searchTerm } },
+        { "$User.lastName$": { [Op.iLike]: searchTerm } },
+        { "$User.email$": { [Op.iLike]: searchTerm } },
       ];
     }
 
