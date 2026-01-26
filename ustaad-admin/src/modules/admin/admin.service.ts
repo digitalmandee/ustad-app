@@ -319,17 +319,15 @@ export default class AdminService {
 
     if (hasSearch) {
       userWhere[Op.or] = [
-        // 1. UUID Search (Casted)
-        Sequelize.where(Sequelize.literal('CAST("User"."id" AS TEXT)'), {
-          [Op.iLike]: searchTerm,
-        }),
+        // 1. UUID Search - Raw SQL Fragment
+        Sequelize.literal(
+          `CAST("User"."id" AS TEXT) ILIKE ${sequelize.escape(searchTerm)}`
+        ),
 
-        // 2. Phone Search (Casted)
-        // Sequelize.where(Sequelize.literal('CAST("User"."phone" AS TEXT)'), {
-        //   [Op.iLike]: searchTerm,
-        // }),
+        // 2. Phone Search - Raw SQL Fragment
+        // Sequelize.literal(`CAST("User"."phone" AS TEXT) ILIKE ${Sequelize.escape(searchTerm)}`),
 
-        // 3. Standard Text Columns
+        // 3. Normal text columns (These work fine as standard objects)
         { "$User.firstName$": { [Op.iLike]: searchTerm } },
         { "$User.lastName$": { [Op.iLike]: searchTerm } },
         { "$User.email$": { [Op.iLike]: searchTerm } },
