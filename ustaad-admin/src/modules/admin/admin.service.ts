@@ -26,6 +26,7 @@ import {
 import { TutorPaymentStatus } from "@ustaad/shared";
 import { Op } from "sequelize";
 import bcrypt from "bcrypt";
+import { Sequelize } from "sequelize";
 
 export default class AdminService {
   async getStats(days?: number) {
@@ -311,14 +312,19 @@ export default class AdminService {
     };
 
     if (hasSearch) {
+      const searchTerm = `%${search.trim()}%`;
+
       userWhere[Op.and] = [
         {
           [Op.or]: [
-            { id: { [Op.iLike]: `%${search.trim()}%` } },
-            { firstName: { [Op.iLike]: `%${search.trim()}%` } },
-            { lastName: { [Op.iLike]: `%${search.trim()}%` } },
-            { email: { [Op.iLike]: `%${search.trim()}%` } },
-            { phone: { [Op.iLike]: `%${search.trim()}%` } },
+            // Fix: Cast the UUID 'id' column to TEXT so iLike works
+            Sequelize.where(Sequelize.cast(Sequelize.col("id"), "varchar"), {
+              [Op.iLike]: searchTerm,
+            }),
+            { firstName: { [Op.iLike]: searchTerm } },
+            { lastName: { [Op.iLike]: searchTerm } },
+            { email: { [Op.iLike]: searchTerm } },
+            { phone: { [Op.iLike]: searchTerm } },
           ],
         },
       ];
@@ -428,14 +434,19 @@ export default class AdminService {
     };
 
     if (hasSearch) {
+      const searchTerm = `%${search.trim()}%`;
+
       tutorUserWhere[Op.and] = [
         {
           [Op.or]: [
-            { id: { [Op.iLike]: `%${search.trim()}%` } },
-            { firstName: { [Op.iLike]: `%${search.trim()}%` } },
-            { lastName: { [Op.iLike]: `%${search.trim()}%` } },
-            { email: { [Op.iLike]: `%${search.trim()}%` } },
-            { phone: { [Op.iLike]: `%${search.trim()}%` } },
+            // Fix: Cast the UUID 'id' column to TEXT so iLike works
+            Sequelize.where(Sequelize.cast(Sequelize.col("id"), "varchar"), {
+              [Op.iLike]: searchTerm,
+            }),
+            { firstName: { [Op.iLike]: searchTerm } },
+            { lastName: { [Op.iLike]: searchTerm } },
+            { email: { [Op.iLike]: searchTerm } },
+            { phone: { [Op.iLike]: searchTerm } },
           ],
         },
       ];
