@@ -304,6 +304,8 @@ export default class AdminService {
     const offset = (page - 1) * limit;
 
     const hasSearch = !!search && search.trim().length > 0;
+    const searchTerm = `%${search.trim()}%`;
+
     const userWhere: any = {
       isAdminVerified: true,
       isEmailVerified: true,
@@ -312,18 +314,17 @@ export default class AdminService {
     };
 
     if (hasSearch) {
-      const searchTerm = `%${search.trim()}%`;
-
       userWhere[Op.and] = [
         {
           [Op.or]: [
-            // Fix: Cast the UUID 'id' column to TEXT so iLike works
+            // FIXED SYNTAX: These are standalone expressions in the array
             Sequelize.where(Sequelize.cast(Sequelize.col("id"), "varchar"), {
               [Op.iLike]: searchTerm,
             }),
             Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "varchar"), {
               [Op.iLike]: searchTerm,
             }),
+            // Standard objects work fine for text columns
             { firstName: { [Op.iLike]: searchTerm } },
             { lastName: { [Op.iLike]: searchTerm } },
             { email: { [Op.iLike]: searchTerm } },
