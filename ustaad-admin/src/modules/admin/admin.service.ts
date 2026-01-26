@@ -25,7 +25,7 @@ import {
   sequelize,
 } from "@ustaad/shared";
 import { TutorPaymentStatus } from "@ustaad/shared";
-import { Op } from "sequelize";
+import { Op, literal } from "sequelize";
 import bcrypt from "bcrypt";
 import { Sequelize } from "sequelize";
 
@@ -304,8 +304,8 @@ export default class AdminService {
   async getAllParents(page = 1, limit = 20, search: string = "") {
     const offset = (page - 1) * limit;
 
-    // const hasSearch = typeof search === "string" && search.trim().length > 0;
-    // const searchTerm = `%${search.trim()}%`;
+    const hasSearch = typeof search === "string" && search.trim().length > 0;
+    const searchTerm = `%${search.trim()}%`;
 
     const userWhere: any = {
       isAdminVerified: true,
@@ -314,23 +314,17 @@ export default class AdminService {
       isOnBoard: IsOnBaord.APPROVED,
     };
 
-    const hasSearch = !!search && search.trim().length > 0;
-    const searchTerm = `%${search.trim()}%`;
-
     if (hasSearch) {
       userWhere[Op.or] = [
-        // 1. UUID Search - Raw SQL Fragment
-        Sequelize.literal(
+        literal(
           `CAST("User"."id" AS TEXT) ILIKE ${sequelize.escape(searchTerm)}`
         ),
-
-        // 2. Phone Search - Raw SQL Fragment
-        // Sequelize.literal(`CAST("User"."phone" AS TEXT) ILIKE ${Sequelize.escape(searchTerm)}`),
-
-        // 3. Normal text columns (These work fine as standard objects)
-        { "$User.firstName$": { [Op.iLike]: searchTerm } },
-        { "$User.lastName$": { [Op.iLike]: searchTerm } },
-        { "$User.email$": { [Op.iLike]: searchTerm } },
+        literal(
+          `CAST("User"."phone" AS TEXT) ILIKE ${sequelize.escape(searchTerm)}`
+        ),
+        literal(`"User"."firstName" ILIKE ${sequelize.escape(searchTerm)}`),
+        literal(`"User"."lastName" ILIKE ${sequelize.escape(searchTerm)}`),
+        literal(`"User"."email" ILIKE ${sequelize.escape(searchTerm)}`),
       ];
     }
 
