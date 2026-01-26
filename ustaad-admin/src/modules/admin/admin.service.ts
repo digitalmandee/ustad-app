@@ -424,33 +424,29 @@ export default class AdminService {
   async getAllTutors(page = 1, limit = 20, search: string = "") {
     const offset = (page - 1) * limit;
 
-    const hasSearch = !!search && search.trim().length > 0;
-    const tutorUserWhere: any = {
+    const hasSearch = typeof search === "string" && search.trim().length > 0;
+    const searchTerm = `%${search.trim()}%`;
+
+    const userWhere: any = {
       isAdminVerified: true,
       isEmailVerified: true,
       isPhoneVerified: true,
       isOnBoard: IsOnBaord.APPROVED,
+      isDeleted: false,
     };
 
     if (hasSearch) {
-      const searchTerm = `%${search.trim()}%`;
-
-      tutorUserWhere[Op.and] = [
-        {
-          [Op.or]: [
-            // Fix: Cast the UUID 'id' column to TEXT so iLike works
-            Sequelize.where(Sequelize.cast(Sequelize.col("id"), "varchar"), {
-              [Op.iLike]: searchTerm,
-            }),
-            Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "varchar"), {
-              [Op.iLike]: searchTerm,
-            }),
-            { firstName: { [Op.iLike]: searchTerm } },
-            { lastName: { [Op.iLike]: searchTerm } },
-            { email: { [Op.iLike]: searchTerm } },
-          ],
-        },
-      ];
+      // UUID search (id)
+      if (isUUID(search)) {
+        userWhere.id = search;
+      } else {
+        userWhere[Op.or] = [
+          { phone: { [Op.iLike]: searchTerm } },
+          { firstName: { [Op.iLike]: searchTerm } },
+          { lastName: { [Op.iLike]: searchTerm } },
+          { email: { [Op.iLike]: searchTerm } },
+        ];
+      }
     }
 
     const { rows, count } = await Tutor.findAndCountAll({
@@ -470,7 +466,7 @@ export default class AdminService {
             "isPhoneVerified",
             "isEmailVerified",
           ],
-          where: tutorUserWhere,
+          where: userWhere,
           required: true,
         },
       ],
