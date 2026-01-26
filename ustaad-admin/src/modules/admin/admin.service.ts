@@ -317,14 +317,14 @@ export default class AdminService {
     if (hasSearch) {
       userWhere[Op.or] = [
         literal(
-          `CAST("User"."id" AS TEXT) ILIKE ${sequelize.escape(searchTerm)}`
+          `CAST("users"."id" AS TEXT) ILIKE ${sequelize.escape(searchTerm)}`
         ),
         literal(
-          `CAST("User"."phone" AS TEXT) ILIKE ${sequelize.escape(searchTerm)}`
+          `CAST("users"."phone" AS TEXT) ILIKE ${sequelize.escape(searchTerm)}`
         ),
-        literal(`"User"."firstName" ILIKE ${sequelize.escape(searchTerm)}`),
-        literal(`"User"."lastName" ILIKE ${sequelize.escape(searchTerm)}`),
-        literal(`"User"."email" ILIKE ${sequelize.escape(searchTerm)}`),
+        literal(`"users"."firstName" ILIKE ${sequelize.escape(searchTerm)}`),
+        literal(`"users"."lastName" ILIKE ${sequelize.escape(searchTerm)}`),
+        literal(`"users"."email" ILIKE ${sequelize.escape(searchTerm)}`),
       ];
     }
 
