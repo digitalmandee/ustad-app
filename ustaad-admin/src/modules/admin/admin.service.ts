@@ -302,7 +302,6 @@ export default class AdminService {
 
   async getAllParents(page = 1, limit = 20, search: string = "") {
     const offset = (page - 1) * limit;
-
     const hasSearch = !!search && search.trim().length > 0;
     const searchTerm = `%${search.trim()}%`;
 
@@ -317,14 +316,17 @@ export default class AdminService {
       userWhere[Op.and] = [
         {
           [Op.or]: [
-            // FIXED SYNTAX: These are standalone expressions in the array
-            Sequelize.where(Sequelize.cast(Sequelize.col("id"), "varchar"), {
+            // 1. Cast UUID to TEXT using Postgres shorthand ::text
+            Sequelize.where(Sequelize.literal('("User"."id"::text)'), {
               [Op.iLike]: searchTerm,
             }),
-            Sequelize.where(Sequelize.cast(Sequelize.col("phone"), "varchar"), {
+
+            // 2. Cast Phone (BigInt/Int) to TEXT
+            Sequelize.where(Sequelize.literal('("User"."phone"::text)'), {
               [Op.iLike]: searchTerm,
             }),
-            // Standard objects work fine for text columns
+
+            // 3. Normal text columns
             { firstName: { [Op.iLike]: searchTerm } },
             { lastName: { [Op.iLike]: searchTerm } },
             { email: { [Op.iLike]: searchTerm } },
