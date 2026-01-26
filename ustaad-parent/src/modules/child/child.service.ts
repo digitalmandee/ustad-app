@@ -105,7 +105,7 @@ export class ChildService {
       include: [
         {
           model: User,
-          attributes: ["firstName", "lastName", "image"],
+          attributes: ["id", "firstName", "lastName", "image"],
         },
       ],
     });
