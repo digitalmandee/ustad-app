@@ -103,12 +103,12 @@ export class ChildService {
     // return "Child Notes";
     return await ChildNotes.findAll({
       where: { childName },
-      include: [
-        {
-          model: User,
-          attributes: ["firstName", "lastName", "image"],
-        },
-      ],
+      // include: [
+      //   {
+      //     model: User,
+      //     attributes: ["firstName", "lastName", "image"],
+      //   },
+      // ],
     });
   }
 }
