@@ -25,9 +25,10 @@ import {
   sequelize,
 } from "@ustaad/shared";
 import { TutorPaymentStatus } from "@ustaad/shared";
-import { Op, literal } from "sequelize";
+import { Op } from "sequelize";
 import bcrypt from "bcrypt";
 import { Sequelize } from "sequelize";
+import { validate as isUUID } from "uuid";
 
 export default class AdminService {
   async getStats(days?: number) {
@@ -303,7 +304,6 @@ export default class AdminService {
 
   async getAllParents(page = 1, limit = 20, search: string = "") {
     const offset = (page - 1) * limit;
-
     const hasSearch = typeof search === "string" && search.trim().length > 0;
     const searchTerm = `%${search.trim()}%`;
 
@@ -312,20 +312,21 @@ export default class AdminService {
       isEmailVerified: true,
       isPhoneVerified: true,
       isOnBoard: IsOnBaord.APPROVED,
+      isDeleted: false,
     };
 
     if (hasSearch) {
-      userWhere[Op.or] = [
-        literal(
-          `CAST("users"."id" AS TEXT) ILIKE ${sequelize.escape(searchTerm)}`
-        ),
-        literal(
-          `CAST("users"."phone" AS TEXT) ILIKE ${sequelize.escape(searchTerm)}`
-        ),
-        literal(`"users"."firstName" ILIKE ${sequelize.escape(searchTerm)}`),
-        literal(`"users"."lastName" ILIKE ${sequelize.escape(searchTerm)}`),
-        literal(`"users"."email" ILIKE ${sequelize.escape(searchTerm)}`),
-      ];
+      // UUID search (id)
+      if (isUUID(search)) {
+        userWhere.id = search;
+      } else {
+        userWhere[Op.or] = [
+          { phone: { [Op.iLike]: searchTerm } },
+          { firstName: { [Op.iLike]: searchTerm } },
+          { lastName: { [Op.iLike]: searchTerm } },
+          { email: { [Op.iLike]: searchTerm } },
+        ];
+      }
     }
 
     const { rows, count } = await Parent.findAndCountAll({
