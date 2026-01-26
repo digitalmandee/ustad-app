@@ -155,7 +155,10 @@ export class ChildController {
     }
   };
 
-  async getChildNotesByChildId(req: AuthenticatedRequest, res: Response) {
+  getChildNotesByChildId = async (
+    req: AuthenticatedRequest,
+    res: Response
+  ): Promise<void> => {
     try {
       const { childName } = req.params;
       const notes = await this.childService.getChildNotesByChildId(childName);
@@ -178,5 +181,5 @@ export class ChildController {
         error?.message || "Something went wrong while retrieving child";
       return sendErrorResponse(res, errorMessage, 400);
     }
-  }
+  };
 }

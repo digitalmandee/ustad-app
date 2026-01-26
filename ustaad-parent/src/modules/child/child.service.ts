@@ -100,7 +100,6 @@ export class ChildService {
   }
 
   async getChildNotesByChildId(childName: string) {
-    // return "Child Notes";
     return await ChildNotes.findAll({
       where: { childName },
       // include: [
