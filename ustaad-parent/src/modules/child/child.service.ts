@@ -7,7 +7,18 @@ import {
 import { UnProcessableEntityError } from "../../errors/unprocessable-entity.error";
 // import { ChildNotes } from '../../models/ChildNotes';
 // import { ChildReview } from '../../models/ChildReview';
-import { Child, ChildNotes, ChildReview, User } from "@ustaad/shared";
+import {
+  Child,
+  ChildNotes,
+  ChildReview,
+  User,
+  Offer,
+  ParentSubscription,
+  TutorSessions,
+  OfferStatus,
+  ParentSubscriptionStatus,
+} from "@ustaad/shared";
+import { Op } from "sequelize";
 
 export class ChildService {
   async createChild(
@@ -73,7 +84,80 @@ export class ChildService {
       throw new UnProcessableEntityError("Child not found");
     }
 
+    await this.checkActiveAssociations(child, userId);
+
     await child.destroy();
+  }
+
+  async checkActiveAssociations(
+    child: Child,
+    userId: string
+  ): Promise<boolean> {
+    const childName = `${child.firstName} ${child.lastName}`;
+
+    // Check for active offers
+    const activeOffer = await Offer.findOne({
+      where: {
+        childName,
+        [Op.or]: [{ senderId: userId }, { receiverId: userId }],
+        status: {
+          [Op.in]: [OfferStatus.PENDING, OfferStatus.ACCEPTED],
+        },
+      },
+    });
+
+    if (activeOffer) {
+      throw new UnProcessableEntityError(
+        "Cannot delete child with active offers"
+      );
+    }
+
+    // Check for active subscriptions
+    const activeSubscription = await ParentSubscription.findOne({
+      where: {
+        parentId: userId,
+        status: {
+          [Op.in]: [
+            ParentSubscriptionStatus.ACTIVE,
+            ParentSubscriptionStatus.CREATED,
+            ParentSubscriptionStatus.DISPUTE,
+            ParentSubscriptionStatus.PENDING_COMPLETION,
+          ],
+        },
+      },
+      include: [
+        {
+          model: Offer,
+          where: { childName },
+          required: true,
+        },
+      ],
+    });
+
+    if (activeSubscription) {
+      throw new UnProcessableEntityError(
+        "Cannot delete child with active subscriptions"
+      );
+    }
+
+    // Check for active sessions
+    const activeSession = await TutorSessions.findOne({
+      where: {
+        parentId: userId,
+        childName,
+        status: {
+          [Op.in]: ["active", "paused"],
+        },
+      },
+    });
+
+    if (activeSession) {
+      throw new UnProcessableEntityError(
+        "Cannot delete child with active sessions"
+      );
+    }
+
+    return true;
   }
 
   async getChildren(userId: string): Promise<Child[]> {
