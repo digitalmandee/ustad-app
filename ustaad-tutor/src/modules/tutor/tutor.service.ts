@@ -1025,6 +1025,11 @@ export default class TutorService {
                 },
               ],
               required: true, // Make sure User is always included
+              where: {
+                isAdminVerified: true,
+                isEmailVerified: true,
+                isPhoneVerified: true,
+              },
             },
           ],
           limit: category ? 1000 : limit, // Get more results if filtering by category
@@ -1195,6 +1200,11 @@ export default class TutorService {
               },
             ],
             required: true, // Make sure User is always included
+            where: {
+              isAdminVerified: true,
+              isEmailVerified: true,
+              isPhoneVerified: true,
+            },
           },
         ],
         limit: category ? 1000 : limit, // Get more results if filtering by category
