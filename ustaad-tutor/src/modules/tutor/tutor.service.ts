@@ -1028,7 +1028,7 @@ export default class TutorService {
               where: {
                 isAdminVerified: true,
                 isEmailVerified: true,
-                isPhoneVerified: true,
+                // isPhoneVerified: true,
               },
             },
           ],
