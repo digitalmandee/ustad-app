@@ -1027,7 +1027,7 @@ export default class TutorService {
               required: true, // Make sure User is always included
               where: {
                 isAdminVerified: true,
-                isEmailVerified: true,
+                // isEmailVerified: true,
                 // isPhoneVerified: true,
               },
             },
