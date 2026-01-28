@@ -977,20 +977,20 @@ export default class ChatService {
       children,
       lastMessage: lastMessage
         ? await (async () => {
+            const msgJson = lastMessage.toJSON() as any;
             let fileData = undefined;
-            if (
-              [MessageType.FILE, MessageType.IMAGE, MessageType.AUDIO].includes(lastMessage.type)
-            ) {
-              const meta: any = lastMessage.metadata || {};
-              // In createMessage, file.id is stored as 'id' in metadata
+
+            if ([MessageType.FILE, MessageType.IMAGE, MessageType.AUDIO].includes(msgJson.type)) {
+              const meta: any = msgJson.metadata || {};
               const fileId = meta.id;
+
               if (fileId) {
                 const fileRecord = await File.findByPk(fileId);
                 if (fileRecord) {
                   fileData = {
                     id: fileRecord.id,
                     url: fileRecord.url,
-                    filename: fileRecord.originalName, // User wants the name they see
+                    filename: fileRecord.originalName,
                     mimetype: fileRecord.mimetype,
                     size: Number(fileRecord.size),
                     thumbnailUrl: fileRecord.thumbnailUrl,
@@ -1000,21 +1000,21 @@ export default class ChatService {
             }
 
             return {
-              id: lastMessage.id,
+              id: msgJson.id,
               content: (() => {
-                if (lastMessage.type === MessageType.TEXT) return lastMessage.content;
-                if (lastMessage.type === MessageType.IMAGE) return '📷 Image';
-                if (lastMessage.type === MessageType.AUDIO) return '🎤 Voice message';
-                if (lastMessage.type === MessageType.FILE) return '📄 File';
-                if (lastMessage.type === MessageType.OFFER) return '📄 Offer';
-                return lastMessage.content;
+                if (msgJson.type === MessageType.TEXT) return msgJson.content;
+                if (msgJson.type === MessageType.IMAGE) return '📷 Image';
+                if (msgJson.type === MessageType.AUDIO) return '🎤 Voice message';
+                if (msgJson.type === MessageType.FILE) return '📄 File';
+                if (msgJson.type === MessageType.OFFER) return '📄 Offer';
+                return msgJson.content;
               })(),
-              type: lastMessage.type,
-              metadata: lastMessage.metadata,
+              type: msgJson.type,
+              metadata: msgJson.metadata, // Ensure this is passed
               file: fileData,
-              senderId: lastMessage.senderId,
-              senderName: `${(lastMessage as any).sender?.firstName} ${(lastMessage as any).sender?.lastName}`,
-              createdAt: lastMessage.createdAt,
+              senderId: msgJson.senderId,
+              senderName: `${msgJson.sender?.firstName} ${msgJson.sender?.lastName}`,
+              createdAt: msgJson.createdAt,
             };
           })()
         : undefined,
