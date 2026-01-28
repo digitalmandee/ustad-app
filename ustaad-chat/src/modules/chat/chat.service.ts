@@ -666,7 +666,14 @@ export default class ChatService {
             },
           },
         ],
-        order: [['updatedAt', 'DESC']],
+        order: [
+          [
+            sequelize.literal(
+              '(SELECT MAX("createdAt") FROM "messages" WHERE "messages"."conversationId" = "conversation"."id")'
+            ),
+            'DESC',
+          ],
+        ],
         limit,
         offset,
       });
