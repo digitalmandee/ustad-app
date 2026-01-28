@@ -3,6 +3,7 @@ import { GenericError } from "../../errors/generic-error";
 import { sendSuccessResponse, sendErrorResponse } from "../../helper/response";
 import AdminService from "./admin.service";
 import { AuthenticatedRequest } from "../../middlewares/auth";
+import { ParentSubscriptionStatus } from "@ustaad/shared";
 
 export default class AdminController {
   private adminService: AdminService;
@@ -296,7 +297,11 @@ export default class AdminController {
 
       if (
         !finalStatus ||
-        !["cancelled", "active", "completed"].includes(finalStatus)
+        ![
+          ParentSubscriptionStatus.CANCELLED,
+          ParentSubscriptionStatus.ACTIVE,
+          ParentSubscriptionStatus.COMPLETED,
+        ].includes(finalStatus)
       ) {
         return sendErrorResponse(
           res,
