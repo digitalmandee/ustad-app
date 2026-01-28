@@ -2361,6 +2361,14 @@ export default class TutorService {
         ],
       });
 
+      const mainSessions = await TutorSessions.findOne({
+        where: {
+          parentId: contract.parentId,
+          tutorId: contract.tutorId,
+          offerId: contract.offerId,
+        },
+      });
+
       if (!contract) {
         throw new NotFoundError("Contract not found");
       }
@@ -2415,11 +2423,17 @@ export default class TutorService {
           disputedAt: new Date(),
           endDate: new Date(), // Set end date to now
         } as any);
+        await mainSessions.update({
+          status: "paused",
+        });
       } else if (status === ParentSubscriptionStatus.PENDING_COMPLETION) {
         await contract.update({
           status: ParentSubscriptionStatus.PENDING_COMPLETION,
           endDate: new Date(), // Set end date to now
         } as any);
+        await mainSessions.update({
+          status: "paused",
+        });
       }
 
       // 6. Send notification to parent
