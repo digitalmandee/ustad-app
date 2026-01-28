@@ -31,33 +31,6 @@ import { Sequelize } from "sequelize";
 import { validate as isUUID } from "uuid";
 
 export default class AdminService {
-  constructor() {
-    this.initializeAssociations();
-  }
-
-  private initializeAssociations() {
-    // Runtime association definitions to avoid modifying model files
-    // Check if association already exists to prevent duplicates if instantiated multiple times
-    if (!ParentSubscription.associations["parent"]) {
-      ParentSubscription.belongsTo(User, {
-        foreignKey: "parentId",
-        as: "parent",
-      });
-    }
-    if (!ParentSubscription.associations["tutor"]) {
-      ParentSubscription.belongsTo(User, {
-        foreignKey: "tutorId",
-        as: "tutor",
-      });
-    }
-    if (!ParentSubscription.associations["disputedUser"]) {
-      ParentSubscription.belongsTo(User, {
-        foreignKey: "disputedBy",
-        as: "disputedUser",
-      });
-    }
-  }
-
   async getStats(days?: number) {
     // 1. Determine if we are looking at a specific range or "All Time"
     const isRange = !!days && [7, 30, 90].includes(days);
@@ -902,22 +875,6 @@ export default class AdminService {
       },
       include: [
         {
-          model: User,
-          as: "parent",
-          attributes: ["id", "firstName", "lastName", "email", "phone"],
-        },
-        {
-          model: User,
-          as: "tutor",
-          attributes: ["id", "firstName", "lastName", "email", "phone"],
-        },
-        {
-          model: User,
-          as: "disputedUser",
-          attributes: ["id", "firstName", "lastName", "email", "role"],
-          required: false,
-        },
-        {
           model: Offer,
           attributes: ["id", "childName", "subject", "amountMonthly"],
         },
@@ -925,36 +882,88 @@ export default class AdminService {
       order: [["disputedAt", "DESC"]],
       limit,
       offset,
-      distinct: true, // Important when using multiple includes with pagination
+      distinct: true,
     });
 
-    // Calculate completed sessions for each contract
-    // We still do this in a map because it's an aggregate count from another table
+    // Collect all related User IDs
+    const userIds = new Set<string>();
+    rows.forEach((contract) => {
+      if (contract.parentId) userIds.add(contract.parentId);
+      if (contract.tutorId) userIds.add(contract.tutorId);
+      if (contract.disputedBy) userIds.add(contract.disputedBy);
+    });
+
+    // Fetch users in bulk
+    const users = await User.findAll({
+      where: {
+        id: Array.from(userIds),
+      },
+      attributes: ["id", "firstName", "lastName", "email", "phone", "role"],
+    });
+
+    // Create a map for quick lookup
+    const userMap = new Map<string, any>();
+    users.forEach((user) => {
+      userMap.set(user.id, user.toJSON());
+    });
+
+    // Calculate completed sessions for each contract and map users
     const contractsWithDetails = await Promise.all(
-      rows.map(async (contract) => {
-        // Cast to 'any' to bypass the 'disputedUser' property check
-        const contractData = contract.get({ plain: true }) as any;
+      rows.map(async (row) => {
+        const contract = row.toJSON() as any;
 
         const completedSessions = await TutorSessionsDetail.count({
           where: {
-            tutorId: contractData.tutorId,
-            parentId: contractData.parentId,
+            tutorId: contract.tutorId,
+            parentId: contract.parentId,
             status: TutorSessionStatus.COMPLETED,
           },
           include: [
             {
               model: TutorSessions,
-              where: { offerId: contractData.offerId },
+              where: { offerId: contract.offerId },
               required: true,
             },
           ],
         });
 
+        // Map users manually
+        const parent = userMap.get(contract.parentId) || null;
+        const tutor = userMap.get(contract.tutorId) || null;
+        const disputedByUser = contract.disputedBy
+          ? userMap.get(contract.disputedBy)
+          : null;
+
         return {
-          ...contractData,
+          ...contract,
           completedSessions,
-          // TypeScript will now allow this because contractData is 'any'
-          disputedByUser: contractData.disputedUser || null,
+          parent: parent
+            ? {
+                id: parent.id,
+                firstName: parent.firstName,
+                lastName: parent.lastName,
+                email: parent.email,
+                phone: parent.phone,
+              }
+            : null,
+          tutor: tutor
+            ? {
+                id: tutor.id,
+                firstName: tutor.firstName,
+                lastName: tutor.lastName,
+                email: tutor.email,
+                phone: tutor.phone,
+              }
+            : null,
+          disputedByUser: disputedByUser
+            ? {
+                id: disputedByUser.id,
+                firstName: disputedByUser.firstName,
+                lastName: disputedByUser.lastName,
+                email: disputedByUser.email,
+                role: disputedByUser.role,
+              }
+            : null,
         };
       })
     );
@@ -977,18 +986,8 @@ export default class AdminService {
     finalStatus: "cancelled" | "active" | "completed",
     adminNotes?: string
   ) {
-    const contract = await ParentSubscription.findByPk(contractId, {
+    const contractModel = await ParentSubscription.findByPk(contractId, {
       include: [
-        {
-          model: User,
-          as: "parent",
-          attributes: ["id", "firstName", "lastName", "email"],
-        },
-        {
-          model: User,
-          as: "tutor",
-          attributes: ["id", "firstName", "lastName", "email"],
-        },
         {
           model: Offer,
           attributes: ["id", "childName", "subject"],
@@ -996,18 +995,33 @@ export default class AdminService {
       ],
     });
 
-    if (!contract) {
+    if (!contractModel) {
       throw new Error("Contract not found");
     }
 
-    if (contract.status !== "dispute") {
+    const contract: any = contractModel.toJSON();
+
+    // Manually fetch related users
+    const [parent, tutor] = await Promise.all([
+      User.findByPk(contract.parentId, {
+        attributes: ["id", "firstName", "lastName", "email"],
+      }),
+      User.findByPk(contract.tutorId, {
+        attributes: ["id", "firstName", "lastName", "email"],
+      }),
+    ]);
+
+    contract.parent = parent ? parent.toJSON() : null;
+    contract.tutor = tutor ? tutor.toJSON() : null;
+
+    if (contractModel.status !== "dispute") {
       throw new Error("Contract is not in dispute status");
     }
 
     // Update contract
-    await contract.update({
+    await contractModel.update({
       status: finalStatus,
-      endDate: finalStatus === "cancelled" ? new Date() : contract.endDate,
+      endDate: finalStatus === "cancelled" ? new Date() : contractModel.endDate,
     });
 
     // If cancelled, ensure tutor gets paid for completed days
