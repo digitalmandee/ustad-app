@@ -2361,6 +2361,16 @@ export default class TutorService {
         ],
       });
 
+      if (!contract) {
+        throw new NotFoundError("Contract not found");
+      }
+      if (contract.status === ParentSubscriptionStatus.DISPUTE) {
+        throw new NotFoundError("Contract is already in dispute");
+      }
+      if (contract.status === ParentSubscriptionStatus.PENDING_COMPLETION) {
+        throw new NotFoundError("Contract is already in pending completion");
+      }
+
       const mainSessions = await TutorSessions.findOne({
         where: {
           parentId: contract.parentId,
