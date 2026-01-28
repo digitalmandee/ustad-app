@@ -976,21 +976,47 @@ export default class ChatService {
       participantRegistrationTime,
       children,
       lastMessage: lastMessage
-        ? {
-            id: lastMessage.id,
-            content: (() => {
-              if (lastMessage.type === MessageType.TEXT) return lastMessage.content;
-              if (lastMessage.type === MessageType.IMAGE) return '📷 Image';
-              if (lastMessage.type === MessageType.AUDIO) return '🎤 Voice message';
-              if (lastMessage.type === MessageType.FILE) return '📄 File';
-              if (lastMessage.type === MessageType.OFFER) return '📄 Offer';
-              return lastMessage.content;
-            })(),
-            type: lastMessage.type,
-            senderId: lastMessage.senderId,
-            senderName: `${(lastMessage as any).sender?.firstName} ${(lastMessage as any).sender?.lastName}`,
-            createdAt: lastMessage.createdAt,
-          }
+        ? await (async () => {
+            let fileData = undefined;
+            if (
+              [MessageType.FILE, MessageType.IMAGE, MessageType.AUDIO].includes(lastMessage.type)
+            ) {
+              const meta: any = lastMessage.metadata || {};
+              // In createMessage, file.id is stored as 'id' in metadata
+              const fileId = meta.id;
+              if (fileId) {
+                const fileRecord = await File.findByPk(fileId);
+                if (fileRecord) {
+                  fileData = {
+                    id: fileRecord.id,
+                    url: fileRecord.url,
+                    filename: fileRecord.originalName, // User wants the name they see
+                    mimetype: fileRecord.mimetype,
+                    size: Number(fileRecord.size),
+                    thumbnailUrl: fileRecord.thumbnailUrl,
+                  };
+                }
+              }
+            }
+
+            return {
+              id: lastMessage.id,
+              content: (() => {
+                if (lastMessage.type === MessageType.TEXT) return lastMessage.content;
+                if (lastMessage.type === MessageType.IMAGE) return '📷 Image';
+                if (lastMessage.type === MessageType.AUDIO) return '🎤 Voice message';
+                if (lastMessage.type === MessageType.FILE) return '📄 File';
+                if (lastMessage.type === MessageType.OFFER) return '📄 Offer';
+                return lastMessage.content;
+              })(),
+              type: lastMessage.type,
+              metadata: lastMessage.metadata,
+              file: fileData,
+              senderId: lastMessage.senderId,
+              senderName: `${(lastMessage as any).sender?.firstName} ${(lastMessage as any).sender?.lastName}`,
+              createdAt: lastMessage.createdAt,
+            };
+          })()
         : undefined,
       createdAt: conversation.createdAt,
       updatedAt: conversation.updatedAt,

@@ -90,6 +90,16 @@ export interface ConversationResponseDto {
     content: string;
     senderName: string;
     createdAt: Date;
+    type?: string;
+    metadata?: object;
+    file?: {
+      id: string;
+      url: string;
+      filename: string;
+      mimetype: string;
+      size: number;
+      thumbnailUrl?: string;
+    };
   };
   createdAt: Date;
   updatedAt: Date;
