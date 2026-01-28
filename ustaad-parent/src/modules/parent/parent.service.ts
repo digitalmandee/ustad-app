@@ -1130,7 +1130,7 @@ export default class ParentService {
       // 5. Update contract based on status
       if (status === ParentSubscriptionStatus.DISPUTE) {
         await contract.update({
-          status: "dispute",
+          status: ParentSubscriptionStatus.DISPUTE,
           disputeReason: reason,
           disputedBy: parentId,
           disputedAt: new Date(),
