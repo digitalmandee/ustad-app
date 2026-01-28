@@ -15,7 +15,7 @@ export interface TutorSessionsAttributes {
   daysOfWeek: string[]; // Array of days like ["mon", "tue", "fri"] or ["mon-fri"]
   price: number; // Price per session in cents (e.g., 2500 for $25.00)
   meta?: object;
-  status: "active" | "cancelled" | "paused";
+  status: "active" | "cancelled" | "paused" | "completed";
   createdAt?: Date;
   updatedAt?: Date;
   month: string; // yyyy-mm-dd format
@@ -111,7 +111,7 @@ export function initTutorSessionsModel(
         allowNull: true,
       },
       status: {
-        type: DataTypes.ENUM("active", "cancelled", "paused"),
+        type: DataTypes.ENUM("active", "cancelled", "paused", "completed"),
         allowNull: false,
         defaultValue: "active",
       },

@@ -2368,6 +2368,9 @@ export default class TutorService {
           offerId: contract.offerId,
         },
       });
+      if (mainSessions.status === "paused") {
+        console.log("Main session is already paused");
+      }
 
       if (!contract) {
         throw new NotFoundError("Contract not found");
@@ -2423,17 +2426,21 @@ export default class TutorService {
           disputedAt: new Date(),
           endDate: new Date(), // Set end date to now
         } as any);
-        await mainSessions.update({
-          status: "paused",
-        });
+        if (mainSessions) {
+          await mainSessions.update({
+            status: "paused",
+          });
+        }
       } else if (status === ParentSubscriptionStatus.PENDING_COMPLETION) {
         await contract.update({
           status: ParentSubscriptionStatus.PENDING_COMPLETION,
           endDate: new Date(), // Set end date to now
         } as any);
-        await mainSessions.update({
-          status: "paused",
-        });
+        if (mainSessions) {
+          await mainSessions.update({
+            status: "paused",
+          });
+        }
       }
 
       // 6. Send notification to parent

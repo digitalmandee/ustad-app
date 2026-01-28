@@ -1030,6 +1030,32 @@ export default class AdminService {
           : contractModel.endDate,
     });
 
+    // Update TutorSessions status based on finalStatus
+    let sessionStatus: "active" | "cancelled" | "completed" | null = null;
+    if (finalStatus === ParentSubscriptionStatus.ACTIVE) {
+      sessionStatus = "active";
+    } else if (finalStatus === ParentSubscriptionStatus.CANCELLED) {
+      sessionStatus = "cancelled";
+    } else if (finalStatus === ParentSubscriptionStatus.COMPLETED) {
+      sessionStatus = "completed";
+    }
+
+    if (sessionStatus) {
+      const tutorSession = await TutorSessions.findOne({
+        where: {
+          parentId: contractModel.parentId,
+          tutorId: contractModel.tutorId,
+          offerId: contractModel.offerId,
+        },
+      });
+
+      if (tutorSession) {
+        await tutorSession.update({
+          status: sessionStatus,
+        });
+      }
+    }
+
     // If cancelled, ensure tutor gets paid for completed days
     if (finalStatus === ParentSubscriptionStatus.CANCELLED) {
       // Calculate completed sessions

@@ -66,7 +66,7 @@ function initTutorSessionsModel(sequelize) {
             allowNull: true,
         },
         status: {
-            type: sequelize_1.DataTypes.ENUM("active", "cancelled", "paused"),
+            type: sequelize_1.DataTypes.ENUM("active", "cancelled", "paused", "completed"),
             allowNull: false,
             defaultValue: "active",
         },

@@ -1075,6 +1075,17 @@ export default class ParentService {
         ],
       });
 
+      const mainSessions = await TutorSessions.findOne({
+        where: {
+          parentId: contract.parentId,
+          tutorId: contract.tutorId,
+          offerId: contract.offerId,
+        },
+      });
+      if (mainSessions.status === "paused") {
+        console.log("Main session is already paused");
+      }
+
       if (!contract) {
         throw new NotFoundError("Contract not found");
       }
@@ -1126,16 +1137,21 @@ export default class ParentService {
           endDate: new Date(), // Set end date to now
         } as any);
 
-        // Pause associated sessions
-        await TutorSessions.update(
-          { status: "paused" },
-          { where: { offerId: contract.offerId } }
-        );
+        if (mainSessions) {
+          await mainSessions.update({
+            status: "paused",
+          });
+        }
       } else if (status === ParentSubscriptionStatus.PENDING_COMPLETION) {
         await contract.update({
           status: ParentSubscriptionStatus.PENDING_COMPLETION,
           endDate: new Date(), // Set end date to now
         } as any);
+        if (mainSessions) {
+          await mainSessions.update({
+            status: "paused",
+          });
+        }
       }
 
       // 6. Send notification to tutor

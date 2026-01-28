@@ -10,7 +10,7 @@ export interface TutorSessionsAttributes {
     daysOfWeek: string[];
     price: number;
     meta?: object;
-    status: "active" | "cancelled" | "paused";
+    status: "active" | "cancelled" | "paused" | "completed";
     createdAt?: Date;
     updatedAt?: Date;
     month: string;
