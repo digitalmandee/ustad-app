@@ -876,17 +876,17 @@ export default class AdminService {
       include: [
         {
           model: User,
-          as: "parent", // Must match the association alias exactly
+          as: "user", // Must match the association alias exactly
           attributes: ["id", "firstName", "lastName", "email", "phone"],
         },
         {
           model: User,
-          as: "tutor", // Must match the association alias exactly
+          as: "user", // Must match the association alias exactly
           attributes: ["id", "firstName", "lastName", "email", "phone"],
         },
         {
           model: User,
-          as: "disputedUser", // Match the association added above
+          as: "user", // Match the association added above
           attributes: ["id", "firstName", "lastName", "email", "role"],
           required: false,
         },
