@@ -905,7 +905,8 @@ export default class AdminService {
     // We still do this in a map because it's an aggregate count from another table
     const contractsWithDetails = await Promise.all(
       rows.map(async (contract) => {
-        const contractData = contract.get({ plain: true });
+        // Cast to 'any' to bypass the 'disputedUser' property check
+        const contractData = contract.get({ plain: true }) as any;
 
         const completedSessions = await TutorSessionsDetail.count({
           where: {
@@ -925,7 +926,7 @@ export default class AdminService {
         return {
           ...contractData,
           completedSessions,
-          // Since we included it above, we just map the alias to the expected key
+          // TypeScript will now allow this because contractData is 'any'
           disputedByUser: contractData.disputedUser || null,
         };
       })
