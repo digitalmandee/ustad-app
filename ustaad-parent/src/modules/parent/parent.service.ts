@@ -1075,6 +1075,10 @@ export default class ParentService {
         ],
       });
 
+      if (!contract) {
+        throw new NotFoundError("Contract not found");
+      }
+
       const mainSessions = await TutorSessions.findOne({
         where: {
           parentId: contract.parentId,
