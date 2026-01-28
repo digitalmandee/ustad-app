@@ -871,7 +871,7 @@ export default class AdminService {
 
     const { rows, count } = await ParentSubscription.findAndCountAll({
       where: {
-        status: "dispute",
+        status: ParentSubscriptionStatus.DISPUTE,
       },
       include: [
         {
@@ -1014,7 +1014,7 @@ export default class AdminService {
     contract.parent = parent ? parent.toJSON() : null;
     contract.tutor = tutor ? tutor.toJSON() : null;
 
-    if (contractModel.status !== "dispute") {
+    if (contractModel.status !== ParentSubscriptionStatus.DISPUTE) {
       throw new Error("Contract is not in dispute status");
     }
 
