@@ -1061,6 +1061,8 @@ export default class ParentService {
     reason?: string
   ) {
     try {
+      console.log("terminateContract", contractId, parentId);
+
       // 1. Verify contract exists and belongs to parent
       const contract = await ParentSubscription.findOne({
         where: {
