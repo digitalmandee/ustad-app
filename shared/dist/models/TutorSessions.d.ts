@@ -31,7 +31,7 @@ export declare class TutorSessions extends Model<TutorSessionsAttributes, TutorS
     meta?: object;
     readonly createdAt: Date;
     readonly updatedAt: Date;
-    status: "active" | "cancelled" | "paused";
+    status: "active" | "cancelled" | "paused" | "completed";
     month: string;
     totalSessions: number;
     sessionsCompleted: number;

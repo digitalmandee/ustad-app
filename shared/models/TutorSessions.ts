@@ -44,7 +44,7 @@ export class TutorSessions
   public meta?: object;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
-  public status!: "active" | "cancelled" | "paused";
+  public status!: "active" | "cancelled" | "paused" | "completed";
   public month!: string; // yyyy-mm-dd format
   public totalSessions!: number;
   public sessionsCompleted!: number;
