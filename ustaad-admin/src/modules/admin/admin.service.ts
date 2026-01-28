@@ -31,6 +31,33 @@ import { Sequelize } from "sequelize";
 import { validate as isUUID } from "uuid";
 
 export default class AdminService {
+  constructor() {
+    this.initializeAssociations();
+  }
+
+  private initializeAssociations() {
+    // Runtime association definitions to avoid modifying model files
+    // Check if association already exists to prevent duplicates if instantiated multiple times
+    if (!ParentSubscription.associations["parent"]) {
+      ParentSubscription.belongsTo(User, {
+        foreignKey: "parentId",
+        as: "parent",
+      });
+    }
+    if (!ParentSubscription.associations["tutor"]) {
+      ParentSubscription.belongsTo(User, {
+        foreignKey: "tutorId",
+        as: "tutor",
+      });
+    }
+    if (!ParentSubscription.associations["disputedUser"]) {
+      ParentSubscription.belongsTo(User, {
+        foreignKey: "disputedBy",
+        as: "disputedUser",
+      });
+    }
+  }
+
   async getStats(days?: number) {
     // 1. Determine if we are looking at a specific range or "All Time"
     const isRange = !!days && [7, 30, 90].includes(days);
@@ -876,17 +903,17 @@ export default class AdminService {
       include: [
         {
           model: User,
-          as: "user", // Must match the association alias exactly
+          as: "parent",
           attributes: ["id", "firstName", "lastName", "email", "phone"],
         },
         {
           model: User,
-          as: "user", // Must match the association alias exactly
+          as: "tutor",
           attributes: ["id", "firstName", "lastName", "email", "phone"],
         },
         {
           model: User,
-          as: "user", // Match the association added above
+          as: "disputedUser",
           attributes: ["id", "firstName", "lastName", "email", "role"],
           required: false,
         },
