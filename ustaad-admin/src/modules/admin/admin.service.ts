@@ -876,13 +876,19 @@ export default class AdminService {
       include: [
         {
           model: User,
-          as: "parent",
+          as: "parent", // Must match the association alias exactly
           attributes: ["id", "firstName", "lastName", "email", "phone"],
         },
         {
           model: User,
-          as: "tutor",
+          as: "tutor", // Must match the association alias exactly
           attributes: ["id", "firstName", "lastName", "email", "phone"],
+        },
+        {
+          model: User,
+          as: "disputedUser", // Match the association added above
+          attributes: ["id", "firstName", "lastName", "email", "role"],
+          required: false,
         },
         {
           model: Offer,
@@ -892,38 +898,35 @@ export default class AdminService {
       order: [["disputedAt", "DESC"]],
       limit,
       offset,
+      distinct: true, // Important when using multiple includes with pagination
     });
 
     // Calculate completed sessions for each contract
+    // We still do this in a map because it's an aggregate count from another table
     const contractsWithDetails = await Promise.all(
       rows.map(async (contract) => {
+        const contractData = contract.get({ plain: true });
+
         const completedSessions = await TutorSessionsDetail.count({
           where: {
-            tutorId: contract.tutorId,
-            parentId: contract.parentId,
+            tutorId: contractData.tutorId,
+            parentId: contractData.parentId,
             status: TutorSessionStatus.COMPLETED,
           },
           include: [
             {
               model: TutorSessions,
-              where: { offerId: contract.offerId },
+              where: { offerId: contractData.offerId },
               required: true,
             },
           ],
         });
 
-        // Get disputed by user info
-        let disputedByUser = null;
-        if (contract.disputedBy) {
-          disputedByUser = await User.findByPk(contract.disputedBy, {
-            attributes: ["id", "firstName", "lastName", "email", "role"],
-          });
-        }
-
         return {
-          ...contract.toJSON(),
+          ...contractData,
           completedSessions,
-          disputedByUser,
+          // Since we included it above, we just map the alias to the expected key
+          disputedByUser: contractData.disputedUser || null,
         };
       })
     );
