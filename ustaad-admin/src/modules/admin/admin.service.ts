@@ -983,7 +983,10 @@ export default class AdminService {
 
   async resolveDispute(
     contractId: string,
-    finalStatus: "cancelled" | "active" | "completed",
+    finalStatus:
+      | ParentSubscriptionStatus.CANCELLED
+      | ParentSubscriptionStatus.ACTIVE
+      | ParentSubscriptionStatus.COMPLETED,
     adminNotes?: string
   ) {
     const contractModel = await ParentSubscription.findByPk(contractId, {
@@ -1021,11 +1024,14 @@ export default class AdminService {
     // Update contract
     await contractModel.update({
       status: finalStatus,
-      endDate: finalStatus === "cancelled" ? new Date() : contractModel.endDate,
+      endDate:
+        finalStatus === ParentSubscriptionStatus.CANCELLED
+          ? new Date()
+          : contractModel.endDate,
     });
 
     // If cancelled, ensure tutor gets paid for completed days
-    if (finalStatus === "cancelled") {
+    if (finalStatus === ParentSubscriptionStatus.CANCELLED) {
       // Calculate completed sessions
       const completedSessions = await TutorSessionsDetail.findAll({
         where: {
