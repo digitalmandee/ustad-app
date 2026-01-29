@@ -809,6 +809,7 @@ export default class AdminService {
   async getAllPaymentRequests(search: string = "") {
     const where: any = {};
     const userWhere: any = {};
+    let isSearchText = false;
 
     if (search) {
       const isUuid =
@@ -819,6 +820,7 @@ export default class AdminService {
       if (isUuid) {
         where[Op.or] = [{ id: search }, { tutorId: search }];
       } else {
+        isSearchText = true;
         const searchTerm = `%${search.toLowerCase()}%`;
         userWhere[Op.or] = [
           { firstName: { [Op.iLike]: searchTerm } },
@@ -835,8 +837,8 @@ export default class AdminService {
         {
           model: User,
           attributes: ["firstName", "lastName", "email", "phone"],
-          where: Object.keys(userWhere).length > 0 ? userWhere : undefined,
-          required: Object.keys(userWhere).length > 0,
+          where: isSearchText ? userWhere : undefined,
+          required: isSearchText,
         },
       ],
     });
