@@ -406,9 +406,48 @@ export default class AdminService {
       Child.count({ where: { userId: parent.userId } }),
       ParentSubscription.findAll({ where: { parentId: parent.userId } }),
       ParentSubscription.count({ where: { parentId: parent.userId } }),
-      ParentTransaction.findAll({ where: { parentId: parent.userId } }),
+      ParentTransaction.findAll({
+        where: { parentId: parent.userId },
+        include: [
+          {
+            model: ParentSubscription,
+            attributes: ["tutorId"],
+          },
+        ],
+      }),
       ParentTransaction.count({ where: { parentId: parent.userId } }),
     ]);
+
+    // Enrich transactions with tutor details
+    const tutorIds = new Set<string>();
+    const transactionsWithTutor: any[] = transactions.map((t) => {
+      const json = t.toJSON() as any;
+      if (json.ParentSubscription?.tutorId) {
+        tutorIds.add(json.ParentSubscription.tutorId);
+      }
+      return json;
+    });
+
+    if (tutorIds.size > 0) {
+      const tutors = await User.findAll({
+        where: { id: Array.from(tutorIds) },
+        attributes: ["id", "firstName", "lastName"],
+      });
+
+      const tutorMap = new Map(tutors.map((t) => [t.id, t]));
+
+      transactionsWithTutor.forEach((t) => {
+        if (t.ParentSubscription?.tutorId) {
+          const tutor = tutorMap.get(t.ParentSubscription.tutorId);
+          if (tutor) {
+            t.tutor = {
+              id: tutor.id,
+              name: `${tutor.firstName} ${tutor.lastName}`,
+            };
+          }
+        }
+      });
+    }
 
     return {
       parent,
@@ -416,7 +455,7 @@ export default class AdminService {
       childrenCount,
       subscriptions,
       subscriptionsCount,
-      transactions,
+      transactions: transactionsWithTutor,
       transactionsCount,
     };
   }
