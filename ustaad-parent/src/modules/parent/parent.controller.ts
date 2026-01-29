@@ -8,7 +8,11 @@ import { AuthenticatedRequest } from "../../middlewares/auth";
 import { IsOnBaord, OfferStatus } from "@ustaad/shared";
 import Stripe from "stripe";
 
-import { User, ParentSubscriptionStatus } from "@ustaad/shared";
+import {
+  User,
+  ParentSubscriptionStatus,
+  getUnreadNotificationCount,
+} from "@ustaad/shared";
 
 export default class ParentController {
   private parentService: ParentService;
@@ -125,13 +129,12 @@ export default class ParentController {
     try {
       const { id: userId } = req.user;
       const result = await this.parentService.getProfile(userId);
+      const unreadNotificationCount = await getUnreadNotificationCount(userId);
 
-      return sendSuccessResponse(
-        res,
-        "Profile retrieved successfully",
-        200,
-        result
-      );
+      return sendSuccessResponse(res, "Profile retrieved successfully", 200, {
+        ...result,
+        unreadNotificationCount,
+      });
     } catch (error: any) {
       console.error("Get profile error:", error);
 

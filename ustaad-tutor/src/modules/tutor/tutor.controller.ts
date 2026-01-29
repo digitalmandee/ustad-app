@@ -5,7 +5,11 @@ import InfoMessages from "../../constant/messages";
 import TutorService from "./tutor.service";
 import { AuthenticatedRequest } from "../../middlewares/auth";
 // import { User } from "../../models/User";
-import { IsOnBaord, ParentSubscriptionStatus } from "@ustaad/shared";
+import {
+  IsOnBaord,
+  ParentSubscriptionStatus,
+  getUnreadNotificationCount,
+} from "@ustaad/shared";
 import { User } from "@ustaad/shared";
 import { FindTutorsByLocationDto } from "./tutor.dto";
 
@@ -135,13 +139,12 @@ export default class TutorController {
     try {
       const { id: userId } = req.user;
       const result = await this.tutorService.getProfile(userId);
+      const unreadNotificationCount = await getUnreadNotificationCount(userId);
 
-      return sendSuccessResponse(
-        res,
-        "Profile retrieved successfully",
-        200,
-        result
-      );
+      return sendSuccessResponse(res, "Profile retrieved successfully", 200, {
+        ...result,
+        unreadNotificationCount,
+      });
     } catch (error: any) {
       console.error("Get profile error:", error);
 
