@@ -736,7 +736,14 @@ export default class AdminService {
   }
 
   async getAllPaymentRequests() {
-    const paymentRequests = await PaymentRequests.findAll();
+    const paymentRequests = await PaymentRequests.findAll({
+      include: [
+        {
+          model: User,
+          attributes: ["firstName", "lastName", "email", "phone"],
+        },
+      ],
+    });
     return paymentRequests;
   }
 
