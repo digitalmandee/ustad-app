@@ -1,27 +1,28 @@
 import {
   Gender,
   IsOnBaord,
+  OfferStatus,
   ParentSubscriptionStatus,
   UserRole,
 } from "@ustaad/shared";
 import {
-  User,
+  Child,
+  ChildNotes,
+  NotificationType,
+  Offer,
   Parent,
+  ParentSubscription,
+  ParentTransaction,
+  PaymentRequests,
   Tutor,
   TutorEducation,
   TutorExperience,
-  Child,
-  ParentTransaction,
-  ParentSubscription,
-  TutorTransaction,
-  Offer,
-  TutorSessionsDetail,
-  TutorSessions,
-  NotificationType,
-  TutorSessionStatus,
-  PaymentRequests,
-  ChildNotes,
   TutorReview,
+  TutorSessions,
+  TutorSessionsDetail,
+  TutorSessionStatus,
+  TutorTransaction,
+  User,
   sequelize,
 } from "@ustaad/shared";
 import { sendNotificationToUser } from "../../services/notification.service";
@@ -676,21 +677,45 @@ export default class AdminService {
       TutorEducation.count({ where: { tutorId: tutor.userId } }),
       TutorExperience.findAll({ where: { tutorId: tutor.userId } }),
       TutorExperience.count({ where: { tutorId: tutor.userId } }),
-      TutorTransaction.findAll({ where: { tutorId: tutor.userId } }),
+      TutorTransaction.findAll({
+        where: { tutorId: tutor.userId },
+        include: [
+          {
+            model: ParentSubscription,
+            attributes: ["id"],
+            include: [
+              {
+                model: User,
+                attributes: ["id", "firstName", "lastName"],
+              },
+            ],
+          },
+        ],
+      }),
       TutorTransaction.count({ where: { tutorId: tutor.userId } }),
       TutorSessions.count({ where: { tutorId: tutor.userId } }),
       TutorReview.count({ where: { tutorId: tutor.userId } }),
     ]);
 
-    // How many times this tutor has been hired (ACTIVE + COMPLETED subscriptions)
-    const timesHired = await ParentSubscription.count({
+    // Flatten parent details into transaction object
+    const transactionsWithParent = transactions.map((t) => {
+      const json = t.toJSON() as any;
+      if (json.ParentSubscription?.User) {
+        json.parent = {
+          id: json.ParentSubscription.User.id,
+          name: `${json.ParentSubscription.User.firstName} ${json.ParentSubscription.User.lastName}`,
+        };
+        delete json.ParentSubscription;
+      }
+      return json;
+    });
+
+    // How many times this tutor has been hired (Offers not PENDING or REJECTED)
+    const timesHired = await Offer.count({
       where: {
-        tutorId: tutor.userId,
+        [Op.or]: [{ senderId: tutor.userId }, { receiverId: tutor.userId }],
         status: {
-          [Op.in]: [
-            ParentSubscriptionStatus.ACTIVE,
-            ParentSubscriptionStatus.COMPLETED,
-          ],
+          [Op.notIn]: [OfferStatus.PENDING, OfferStatus.REJECTED],
         },
       },
     });
@@ -727,7 +752,7 @@ export default class AdminService {
       experienceCount,
       totalExperience,
       documents,
-      transactions,
+      transactions: transactionsWithParent,
       transactionsCount,
       timesHired,
       sessionsCount,
