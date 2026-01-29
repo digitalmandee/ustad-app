@@ -401,10 +401,15 @@ export default class AdminService {
       subscriptionsCount,
       transactions,
       transactionsCount,
+      sessionCounts,
+      detailCounts,
     ] = await Promise.all([
       Child.findAll({ where: { userId: parent.userId } }),
       Child.count({ where: { userId: parent.userId } }),
-      ParentSubscription.findAll({ where: { parentId: parent.userId } }),
+      ParentSubscription.findAll({
+        where: { parentId: parent.userId },
+        include: [{ model: Offer }],
+      }),
       ParentSubscription.count({ where: { parentId: parent.userId } }),
       ParentTransaction.findAll({
         where: { parentId: parent.userId },
@@ -416,6 +421,14 @@ export default class AdminService {
         ],
       }),
       ParentTransaction.count({ where: { parentId: parent.userId } }),
+      TutorSessions.findAll({
+        where: { parentId: parent.userId },
+        attributes: ["id", "offerId"],
+      }),
+      TutorSessionsDetail.count({
+        where: { parentId: parent.userId },
+        group: ["sessionId"],
+      }),
     ]);
 
     // Enrich transactions with tutor details
@@ -449,11 +462,63 @@ export default class AdminService {
       });
     }
 
+    // Process session counts
+    // sessionCounts is `TutorSessions[]` (ids and offerIds)
+    // detailCounts is `{ sessionId: string; count: number }[]` (grouped by sessionId)
+    // NOTE: count with group returns array of objects with count
+    const sessionList = sessionCounts as unknown as TutorSessions[];
+    const detailList = detailCounts as unknown as {
+      sessionId: string;
+      count: number;
+    }[];
+
+    // Create maps
+    // OfferId -> TutorSession count
+    const offerSessionCountMap = new Map<string, number>();
+    // SessionId -> OfferId
+    const sessionOfferMap = new Map<string, string>();
+
+    sessionList.forEach((s) => {
+      if (s.offerId) {
+        offerSessionCountMap.set(
+          s.offerId,
+          (offerSessionCountMap.get(s.offerId) || 0) + 1
+        );
+        sessionOfferMap.set(s.id, s.offerId);
+      }
+    });
+
+    // OfferId -> Detail Count
+    const offerDetailCountMap = new Map<string, number>();
+
+    detailList.forEach((d: any) => {
+      // d might be { sessionId: '...', count: '5' }
+      const sId = d.sessionId;
+      const count = Number(d.count);
+      const offerId = sessionOfferMap.get(sId);
+      if (offerId) {
+        offerDetailCountMap.set(
+          offerId,
+          (offerDetailCountMap.get(offerId) || 0) + count
+        );
+      }
+    });
+
+    // Attach to subscriptions
+    const subscriptionsWithCounts = subscriptions.map((sub) => {
+      const s = sub.toJSON() as any;
+      if (s.offerId) {
+        s.tutorSessionsCount = offerSessionCountMap.get(s.offerId) || 0;
+        s.tutorSessionsDetailCount = offerDetailCountMap.get(s.offerId) || 0;
+      }
+      return s;
+    });
+
     return {
       parent,
       children,
       childrenCount,
-      subscriptions,
+      subscriptions: subscriptionsWithCounts,
       subscriptionsCount,
       transactions: transactionsWithTutor,
       transactionsCount,
