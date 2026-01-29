@@ -903,8 +903,8 @@ export default class AdminService {
       },
       isDeleted: false,
       [Op.or]: [
-        // { isAdminVerified: false },
-        { isEmailVerified: false },
+        { isAdminVerified: false },
+        // { isEmailVerified: false },
         // { isPhoneVerified: false },
       ],
     };
