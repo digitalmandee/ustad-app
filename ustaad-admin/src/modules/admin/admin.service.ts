@@ -682,14 +682,7 @@ export default class AdminService {
         include: [
           {
             model: ParentSubscription,
-            attributes: ["id"],
-            include: [
-              {
-                model: User,
-                as: "parent",
-                attributes: ["id", "firstName", "lastName"],
-              },
-            ],
+            attributes: ["id", "parentId"],
           },
         ],
       }),
@@ -698,14 +691,35 @@ export default class AdminService {
       TutorReview.count({ where: { tutorId: tutor.userId } }),
     ]);
 
+    // Fetch parent details separately to avoid alias issues
+    const parentIds = new Set<string>();
+    transactions.forEach((t) => {
+      const json = t.toJSON() as any;
+      if (json.ParentSubscription?.parentId) {
+        parentIds.add(json.ParentSubscription.parentId);
+      }
+    });
+
+    let parentMap = new Map<string, any>();
+    if (parentIds.size > 0) {
+      const parents = await User.findAll({
+        where: { id: Array.from(parentIds) },
+        attributes: ["id", "firstName", "lastName"],
+      });
+      parentMap = new Map(parents.map((p) => [p.id, p]));
+    }
+
     // Flatten parent details into transaction object
     const transactionsWithParent = transactions.map((t) => {
       const json = t.toJSON() as any;
-      if (json.ParentSubscription?.parent) {
-        json.parent = {
-          id: json.ParentSubscription.parent.id,
-          name: `${json.ParentSubscription.parent.firstName} ${json.ParentSubscription.parent.lastName}`,
-        };
+      if (json.ParentSubscription?.parentId) {
+        const parent = parentMap.get(json.ParentSubscription.parentId);
+        if (parent) {
+          json.parent = {
+            id: parent.id,
+            name: `${parent.firstName} ${parent.lastName}`,
+          };
+        }
         delete json.ParentSubscription;
       }
       return json;
