@@ -625,10 +625,7 @@ export default class AdminService {
   async updatePaymentRequestStatus(id: string, status: string) {
     const paymentRequest = await PaymentRequests.findByPk(id);
 
-    console.log(paymentRequest, status, "paymentRequest, status");
-
     paymentRequest.status = status as TutorPaymentStatus;
-    console.log(paymentRequest, "paymentRequest");
     await paymentRequest.save();
 
     // Send notification to tutor about payment status update
