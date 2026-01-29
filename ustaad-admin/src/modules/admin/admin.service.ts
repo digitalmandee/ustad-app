@@ -17,13 +17,13 @@ import {
   Offer,
   TutorSessionsDetail,
   TutorSessions,
-  sendNotificationToUser,
   NotificationType,
   TutorSessionStatus,
   PaymentRequests,
   TutorReview,
   sequelize,
 } from "@ustaad/shared";
+import { sendNotificationToUser } from "../../services/notification.service";
 import { TutorPaymentStatus } from "@ustaad/shared";
 import { Op } from "sequelize";
 import bcrypt from "bcrypt";
@@ -641,18 +641,26 @@ export default class AdminService {
         body = `Your payment request for $${paymentRequest.amount} has been rejected. Please contact support for more details.`;
       }
 
-      await sendNotificationToUser({
-        userId: paymentRequest.tutorId,
-        type: NotificationType.PAYMENT_STATUS_UPDATE,
+      const user = await this.getUseragsintid(paymentRequest.tutorId);
+
+      if (!user) {
+        console.log("User not found for notification");
+      }
+
+      await sendNotificationToUser(
+        user.id,
+        user.deviceId,
         title,
         body,
-        relatedEntityId: paymentRequest.id,
-        relatedEntityType: "payment_request",
-        metadata: {
-          status,
-          amount: paymentRequest.amount,
+        {
+          loginTime: new Date().toISOString(),
+          deviceId: user.deviceId,
+          role: user.role,
+          userId: user.id,
         },
-      });
+        "http://15.235.204.49:5000/logo.png", // imageUrl
+        "/profile" // clickAction
+      );
     } catch (error) {
       console.error(
         `❌ Error sending payment status notification to tutor ${paymentRequest.tutorId}:`,
@@ -894,13 +902,26 @@ export default class AdminService {
     });
 
     try {
-      await sendNotificationToUser({
-        userId,
-        type: NotificationType.ONBOARDING_APPROVED,
-        title: "🎉 Onboarding Approved",
-        body: "Congratulations! Your account has been approved. You can now access all features.",
-        actionUrl: "/profile",
-      });
+      const user = await this.getUseragsintid(userId);
+
+      if (!user) {
+        console.log("User not found for notification");
+      }
+
+      await sendNotificationToUser(
+        user.id,
+        user.deviceId,
+        "Onboarding Approved",
+        "Congratulations! Your account has been approved. You can now access all features.",
+        {
+          loginTime: new Date().toISOString(),
+          deviceId: user.deviceId,
+          role: user.role,
+          userId: user.id,
+        },
+        "http://15.235.204.49:5000/logo.png", // imageUrl
+        "/profile" // clickAction
+      );
     } catch (error) {
       console.error(
         `❌ Error sending onboarding approval notification to user ${userId}:`,
@@ -1144,33 +1165,47 @@ export default class AdminService {
 
     // Notify both parties
     try {
-      await sendNotificationToUser({
-        userId: contract.parentId,
-        type: NotificationType.CONTRACT_DISPUTE_RESOLVED,
-        title: "📋 Dispute Resolved",
-        body: `Your contract dispute has been resolved. Final status: ${finalStatus}${adminNotes ? `. Notes: ${adminNotes.substring(0, 50)}` : ""}`,
-        relatedEntityId: contract.id,
-        relatedEntityType: "contract",
-        actionUrl: `/contracts/${contract.id}`,
-        metadata: {
-          finalStatus,
-          adminNotes: adminNotes || "",
-        },
-      });
+      const parent = await this.getUseragsintid(contract.parentId);
 
-      await sendNotificationToUser({
-        userId: contract.tutorId,
-        type: NotificationType.CONTRACT_DISPUTE_RESOLVED,
-        title: "📋 Dispute Resolved",
-        body: `Your contract dispute has been resolved. Final status: ${finalStatus}${adminNotes ? `. Notes: ${adminNotes.substring(0, 50)}` : ""}`,
-        relatedEntityId: contract.id,
-        relatedEntityType: "contract",
-        actionUrl: `/contracts/${contract.id}`,
-        metadata: {
-          finalStatus,
-          adminNotes: adminNotes || "",
+      if (!parent) {
+        console.log("User not found for notification");
+      }
+
+      await sendNotificationToUser(
+        parent.id,
+        parent.deviceId,
+        "Dispute Resolved",
+        `Your contract dispute has been resolved. Final status: ${finalStatus}${adminNotes ? `. Notes: ${adminNotes.substring(0, 50)}` : ""}`,
+        {
+          loginTime: new Date().toISOString(),
+          deviceId: parent.deviceId,
+          role: parent.role,
+          userId: parent.id,
         },
-      });
+        "http://15.235.204.49:5000/logo.png", // imageUrl
+        "/profile" // clickAction
+      );
+
+      const tutor = await this.getUseragsintid(contract.tutorId);
+
+      if (!tutor) {
+        console.log("User not found for notification");
+      }
+
+      await sendNotificationToUser(
+        tutor.id,
+        tutor.deviceId,
+        "Dispute Resolved",
+        `Your contract dispute has been resolved. Final status: ${finalStatus}${adminNotes ? `. Notes: ${adminNotes.substring(0, 50)}` : ""}`,
+        {
+          loginTime: new Date().toISOString(),
+          deviceId: tutor.deviceId,
+          role: tutor.role,
+          userId: tutor.id,
+        },
+        "http://15.235.204.49:5000/logo.png", // imageUrl
+        "/profile" // clickAction
+      );
     } catch (notificationError) {
       console.error(
         "❌ Error sending dispute resolution notifications:",
@@ -1246,4 +1281,9 @@ export default class AdminService {
         : null,
     };
   }
+
+  getUseragsintid = async (id: string) => {
+    const user = await User.findByPk(id);
+    return user;
+  };
 }
