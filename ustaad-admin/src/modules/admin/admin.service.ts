@@ -682,7 +682,7 @@ export default class AdminService {
         include: [
           {
             model: ParentSubscription,
-            attributes: ["id", "parentId", "basketId", "planType", "status"],
+            attributes: ["id", "parentId"],
           },
         ],
       }),
@@ -693,10 +693,14 @@ export default class AdminService {
 
     // Fetch parent details separately to avoid alias issues
     const parentIds = new Set<string>();
+    const subscriptionIds = new Set<string>();
     transactions.forEach((t) => {
       const json = t.toJSON() as any;
       if (json.ParentSubscription?.parentId) {
         parentIds.add(json.ParentSubscription.parentId);
+      }
+      if (json.subscriptionId) {
+        subscriptionIds.add(json.subscriptionId);
       }
     });
 
@@ -709,9 +713,29 @@ export default class AdminService {
       parentMap = new Map(parents.map((p) => [p.id, p]));
     }
 
+    // Fetch linked parent transactions
+    let parentTransactionMap = new Map<string, ParentTransaction[]>();
+    if (subscriptionIds.size > 0) {
+      const parentTransactions = await ParentTransaction.findAll({
+        where: {
+          subscriptionId: { [Op.in]: Array.from(subscriptionIds) },
+        },
+      });
+      // Group by subscriptionId
+      parentTransactions.forEach((pt) => {
+        const subId = pt.subscriptionId;
+        if (!parentTransactionMap.has(subId)) {
+          parentTransactionMap.set(subId, []);
+        }
+        parentTransactionMap.get(subId)?.push(pt);
+      });
+    }
+
     // Flatten parent details into transaction object
     const transactionsWithParent = transactions.map((t) => {
       const json = t.toJSON() as any;
+
+      // Attach parent details
       if (json.ParentSubscription?.parentId) {
         const parent = parentMap.get(json.ParentSubscription.parentId);
         if (parent) {
@@ -720,11 +744,15 @@ export default class AdminService {
             name: `${parent.firstName} ${parent.lastName}`,
           };
         }
-        json.invoiceId = json.ParentSubscription.basketId;
-        json.planType = json.ParentSubscription.planType;
-        json.subscriptionStatus = json.ParentSubscription.status;
         delete json.ParentSubscription;
       }
+
+      // Attach parent transactions
+      if (json.subscriptionId) {
+        json.parentTransactions =
+          parentTransactionMap.get(json.subscriptionId) || [];
+      }
+
       return json;
     });
 
