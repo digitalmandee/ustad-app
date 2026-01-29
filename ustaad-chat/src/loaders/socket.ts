@@ -14,7 +14,7 @@ const userSocketMap = new Map<string, string>();
 function registerSocketHandlers(socket: Socket) {
   // console.log('.data', socket.data);
 
-  console.log('🔌 New connection from user:', socket.data.user);
+  console.log('🔌 New connection from user:', socket.data);
 
   // Register user's socket connection
   const userId = (socket.data.user as any)?.id;
