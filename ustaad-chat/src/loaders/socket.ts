@@ -12,7 +12,7 @@ export let io: Server;
 const userSocketMap = new Map<string, string>();
 
 function registerSocketHandlers(socket: Socket) {
-  console.log('.data', socket.data);
+  // console.log('.data', socket.data);
 
   console.log('🔌 New connection from user:', socket.data.user);
 
@@ -20,7 +20,7 @@ function registerSocketHandlers(socket: Socket) {
   const userId = (socket.data.user as any)?.id;
   if (userId) {
     userSocketMap.set(userId, socket.id);
-    console.log(`🔌 Registered user ${userId} with socket ${socket.id}`);
+    // console.log(`🔌 Registered user ${userId} with socket ${socket.id}`);
 
     // Join user to their personal notification room
     socket.join(`user:${userId}`);
