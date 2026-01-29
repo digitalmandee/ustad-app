@@ -22,6 +22,7 @@ import {
   PaymentRequests,
   TutorReview,
   sequelize,
+  getUnreadNotificationCount,
 } from "@ustaad/shared";
 import { sendNotificationToUser } from "../../services/notification.service";
 import { TutorPaymentStatus } from "@ustaad/shared";
@@ -403,6 +404,7 @@ export default class AdminService {
       transactionsCount,
       sessionCounts,
       detailCounts,
+      unreadNotificationCount,
     ] = await Promise.all([
       Child.findAll({ where: { userId: parent.userId } }),
       Child.count({ where: { userId: parent.userId } }),
@@ -429,6 +431,7 @@ export default class AdminService {
         where: { parentId: parent.userId },
         group: ["sessionId"],
       }),
+      getUnreadNotificationCount(parent.userId),
     ]);
 
     // Enrich transactions with tutor details
@@ -547,6 +550,7 @@ export default class AdminService {
       subscriptionsCount,
       transactions: transactionsWithTutor,
       transactionsCount,
+      unreadNotificationCount,
     };
   }
 
