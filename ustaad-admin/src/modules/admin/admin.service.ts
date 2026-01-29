@@ -686,6 +686,7 @@ export default class AdminService {
             include: [
               {
                 model: User,
+                as: "parent",
                 attributes: ["id", "firstName", "lastName"],
               },
             ],
@@ -700,10 +701,10 @@ export default class AdminService {
     // Flatten parent details into transaction object
     const transactionsWithParent = transactions.map((t) => {
       const json = t.toJSON() as any;
-      if (json.ParentSubscription?.User) {
+      if (json.ParentSubscription?.parent) {
         json.parent = {
-          id: json.ParentSubscription.User.id,
-          name: `${json.ParentSubscription.User.firstName} ${json.ParentSubscription.User.lastName}`,
+          id: json.ParentSubscription.parent.id,
+          name: `${json.ParentSubscription.parent.firstName} ${json.ParentSubscription.parent.lastName}`,
         };
         delete json.ParentSubscription;
       }
