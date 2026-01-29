@@ -309,8 +309,8 @@ export default class AdminService {
 
     const userWhere: any = {
       isAdminVerified: true,
-      isEmailVerified: true,
-      isPhoneVerified: true,
+      // isEmailVerified: true,
+      // isPhoneVerified: true,
       isOnBoard: IsOnBaord.APPROVED,
       isDeleted: false,
     };
@@ -468,8 +468,8 @@ export default class AdminService {
 
     const userWhere: any = {
       isAdminVerified: true,
-      isEmailVerified: true,
-      isPhoneVerified: true,
+      // isEmailVerified: true,
+      // isPhoneVerified: true,
       isOnBoard: IsOnBaord.APPROVED,
       isDeleted: false,
     };
@@ -810,9 +810,9 @@ export default class AdminService {
       },
       isDeleted: false,
       [Op.or]: [
-        { isAdminVerified: false },
+        // { isAdminVerified: false },
         { isEmailVerified: false },
-        { isPhoneVerified: false },
+        // { isPhoneVerified: false },
       ],
     };
 
