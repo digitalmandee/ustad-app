@@ -682,7 +682,7 @@ export default class AdminService {
         include: [
           {
             model: ParentSubscription,
-            attributes: ["id", "parentId"],
+            attributes: ["id", "parentId", "basketId", "planType", "status"],
           },
         ],
       }),
@@ -720,6 +720,9 @@ export default class AdminService {
             name: `${parent.firstName} ${parent.lastName}`,
           };
         }
+        json.invoiceId = json.ParentSubscription.basketId;
+        json.planType = json.ParentSubscription.planType;
+        json.subscriptionStatus = json.ParentSubscription.status;
         delete json.ParentSubscription;
       }
       return json;
