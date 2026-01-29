@@ -208,7 +208,7 @@ export default class ChatController {
   handleSendMessage = async (socket: Socket, data: ICreateMessageDto) => {
     const senderId = socket.data.user.user.id;
     const role = socket.data.user.user.role;
-    console.log(senderId, 'sender id', data, 'data');
+    console.log(senderId, 'sender id', data, 'data', role, 'role  ');
 
     try {
       const savedMessage = await this.chatService.createMessage(senderId, data, role);
