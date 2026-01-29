@@ -514,9 +514,34 @@ export default class AdminService {
       return s;
     });
 
+    // Map subscriptions to children
+    const childrenWithData = children.map((child) => {
+      const c = child.toJSON() as any;
+
+      // Find subscriptions for this child (matching by first name)
+      // Note: effective matching depends on how childName is saved in Offer
+      const childSubscriptions = subscriptionsWithCounts.filter(
+        (sub: any) => sub.Offer?.childName === c.firstName // Assuming match on firstName
+      );
+
+      c.subscriptions = childSubscriptions;
+
+      // Aggregate session counts for the child
+      c.totalSessions = childSubscriptions.reduce(
+        (sum: number, sub: any) => sum + (sub.tutorSessionsCount || 0),
+        0
+      );
+      c.totalSessionsCompleted = childSubscriptions.reduce(
+        (sum: number, sub: any) => sum + (sub.tutorSessionsDetailCount || 0),
+        0
+      );
+
+      return c;
+    });
+
     return {
       parent,
-      children,
+      children: childrenWithData,
       childrenCount,
       subscriptions: subscriptionsWithCounts,
       subscriptionsCount,
