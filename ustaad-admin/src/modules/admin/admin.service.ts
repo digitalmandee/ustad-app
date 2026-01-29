@@ -22,7 +22,6 @@ import {
   PaymentRequests,
   TutorReview,
   sequelize,
-  getUnreadNotificationCount,
 } from "@ustaad/shared";
 import { sendNotificationToUser } from "../../services/notification.service";
 import { TutorPaymentStatus } from "@ustaad/shared";
@@ -404,7 +403,6 @@ export default class AdminService {
       transactionsCount,
       sessionCounts,
       detailCounts,
-      unreadNotificationCount,
     ] = await Promise.all([
       Child.findAll({ where: { userId: parent.userId } }),
       Child.count({ where: { userId: parent.userId } }),
@@ -431,7 +429,6 @@ export default class AdminService {
         where: { parentId: parent.userId },
         group: ["sessionId"],
       }),
-      getUnreadNotificationCount(parent.userId),
     ]);
 
     // Enrich transactions with tutor details
@@ -518,14 +515,17 @@ export default class AdminService {
     });
 
     // Map subscriptions to children
+    // Map subscriptions to children
     const childrenWithData = children.map((child) => {
       const c = child.toJSON() as any;
 
-      // Find subscriptions for this child (matching by first name)
-      // Note: effective matching depends on how childName is saved in Offer
-      const childSubscriptions = subscriptionsWithCounts.filter(
-        (sub: any) => sub.Offer?.childName === c.firstName // Assuming match on firstName
-      );
+      // Find subscriptions for this child (matching by first name case-insensitive)
+      const childSubscriptions = subscriptionsWithCounts.filter((sub: any) => {
+        if (!sub.Offer?.childName || !c.firstName) return false;
+        const offerChildName = sub.Offer.childName.toLowerCase().trim();
+        const childFirstName = c.firstName.toLowerCase().trim();
+        return offerChildName.includes(childFirstName);
+      });
 
       c.subscriptions = childSubscriptions;
 
@@ -550,7 +550,6 @@ export default class AdminService {
       subscriptionsCount,
       transactions: transactionsWithTutor,
       transactionsCount,
-      unreadNotificationCount,
     };
   }
 
