@@ -100,6 +100,8 @@ export default function socketLoader(httpServer?: HTTPServer) {
     io.use((socket, next) => {
       const token = socket.handshake.auth?.token;
 
+      console.log('token', token);
+
       if (!token) {
         return next(new Error('Authentication token missing'));
       }
