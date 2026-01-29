@@ -141,6 +141,8 @@ var NotificationType;
     NotificationType["CONTRACT_COMPLETED"] = "CONTRACT_COMPLETED";
     // System
     NotificationType["SYSTEM_NOTIFICATION"] = "SYSTEM_NOTIFICATION";
+    NotificationType["PAYMENT_STATUS_UPDATE"] = "PAYMENT_STATUS_UPDATE";
+    NotificationType["ONBOARDING_APPROVED"] = "ONBOARDING_APPROVED";
 })(NotificationType || (exports.NotificationType = NotificationType = {}));
 var ParentSubscriptionStatus;
 (function (ParentSubscriptionStatus) {

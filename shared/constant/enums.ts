@@ -143,6 +143,8 @@ export enum NotificationType {
 
   // System
   SYSTEM_NOTIFICATION = "SYSTEM_NOTIFICATION",
+  PAYMENT_STATUS_UPDATE = "PAYMENT_STATUS_UPDATE",
+  ONBOARDING_APPROVED = "ONBOARDING_APPROVED",
 }
 
 export enum ParentSubscriptionStatus {

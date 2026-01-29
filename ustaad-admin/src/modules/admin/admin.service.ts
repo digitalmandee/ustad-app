@@ -630,6 +630,39 @@ export default class AdminService {
     paymentRequest.status = status as TutorPaymentStatus;
     console.log(paymentRequest, "paymentRequest");
     await paymentRequest.save();
+
+    // Send notification to tutor about payment status update
+    try {
+      let title = "Payment Update";
+      let body = `Your payment request status has been updated to ${status}`;
+
+      if (status === TutorPaymentStatus.PAID) {
+        title = "💰 Payment Received";
+        body = `Your payment request for $${paymentRequest.amount} has been processed and paid.`;
+      } else if (status === TutorPaymentStatus.REJECTED) {
+        title = "❌ Payment Rejected";
+        body = `Your payment request for $${paymentRequest.amount} has been rejected. Please contact support for more details.`;
+      }
+
+      await sendNotificationToUser({
+        userId: paymentRequest.tutorId,
+        type: NotificationType.PAYMENT_STATUS_UPDATE,
+        title,
+        body,
+        relatedEntityId: paymentRequest.id,
+        relatedEntityType: "payment_request",
+        metadata: {
+          status,
+          amount: paymentRequest.amount,
+        },
+      });
+    } catch (error) {
+      console.error(
+        `❌ Error sending payment status notification to tutor ${paymentRequest.tutorId}:`,
+        error
+      );
+    }
+
     return paymentRequest;
   }
 
@@ -862,6 +895,21 @@ export default class AdminService {
         exclude: ["password"],
       },
     });
+
+    try {
+      await sendNotificationToUser({
+        userId,
+        type: NotificationType.ONBOARDING_APPROVED,
+        title: "🎉 Onboarding Approved",
+        body: "Congratulations! Your account has been approved. You can now access all features.",
+        actionUrl: "/profile",
+      });
+    } catch (error) {
+      console.error(
+        `❌ Error sending onboarding approval notification to user ${userId}:`,
+        error
+      );
+    }
 
     return updatedUser;
   }
