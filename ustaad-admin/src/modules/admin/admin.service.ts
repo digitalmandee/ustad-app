@@ -806,12 +806,37 @@ export default class AdminService {
     };
   }
 
-  async getAllPaymentRequests() {
+  async getAllPaymentRequests(search: string = "") {
+    const where: any = {};
+    const userWhere: any = {};
+
+    if (search) {
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          search
+        );
+
+      if (isUuid) {
+        where[Op.or] = [{ id: search }, { tutorId: search }];
+      } else {
+        const searchTerm = `%${search.toLowerCase()}%`;
+        userWhere[Op.or] = [
+          { firstName: { [Op.iLike]: searchTerm } },
+          { lastName: { [Op.iLike]: searchTerm } },
+          { email: { [Op.iLike]: searchTerm } },
+          { phone: { [Op.iLike]: searchTerm } },
+        ];
+      }
+    }
+
     const paymentRequests = await PaymentRequests.findAll({
+      where,
       include: [
         {
           model: User,
           attributes: ["firstName", "lastName", "email", "phone"],
+          where: Object.keys(userWhere).length > 0 ? userWhere : undefined,
+          required: Object.keys(userWhere).length > 0,
         },
       ],
     });

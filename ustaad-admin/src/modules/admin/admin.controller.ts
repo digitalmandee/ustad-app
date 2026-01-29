@@ -84,7 +84,8 @@ export default class AdminController {
 
   getAllPaymentRequests = async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const data = await this.adminService.getAllPaymentRequests();
+      const search = (req.query.search || "").toString().trim();
+      const data = await this.adminService.getAllPaymentRequests(search);
       sendSuccessResponse(
         res,
         "payment requests fetched successfully",
