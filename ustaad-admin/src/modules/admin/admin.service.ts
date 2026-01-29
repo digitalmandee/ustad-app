@@ -20,6 +20,7 @@ import {
   NotificationType,
   TutorSessionStatus,
   PaymentRequests,
+  ChildNotes,
   TutorReview,
   sequelize,
 } from "@ustaad/shared";
@@ -110,8 +111,8 @@ export default class AdminService {
             },
             [Op.or]: [
               { isAdminVerified: false },
-              { isEmailVerified: false },
-              { isPhoneVerified: false },
+              // { isEmailVerified: false },
+              // { isPhoneVerified: false },
             ],
             ...dateFilter,
           },
@@ -403,6 +404,7 @@ export default class AdminService {
       transactionsCount,
       sessionCounts,
       detailCounts,
+      childNotes,
     ] = await Promise.all([
       Child.findAll({ where: { userId: parent.userId } }),
       Child.count({ where: { userId: parent.userId } }),
@@ -428,6 +430,19 @@ export default class AdminService {
       TutorSessionsDetail.count({
         where: { parentId: parent.userId },
         group: ["sessionId"],
+      }),
+      ChildNotes.findAll({
+        include: [
+          {
+            model: TutorSessionsDetail,
+            where: { parentId: parent.userId },
+            attributes: [],
+          },
+          {
+            model: User,
+            attributes: ["id", "firstName", "lastName", "image"],
+          },
+        ],
       }),
     ]);
 
@@ -471,6 +486,7 @@ export default class AdminService {
       sessionId: string;
       count: number;
     }[];
+    const notesList = childNotes as unknown as ChildNotes[]; // Destructured from Promise.all
 
     // Create maps
     // OfferId -> TutorSession count
@@ -550,6 +566,7 @@ export default class AdminService {
       subscriptionsCount,
       transactions: transactionsWithTutor,
       transactionsCount,
+      childNotes: notesList,
     };
   }
 
