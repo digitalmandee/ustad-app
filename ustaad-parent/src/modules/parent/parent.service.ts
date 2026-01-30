@@ -1288,7 +1288,7 @@ export default class ParentService {
 
         await Offer.update(
           {
-            status: ParentSubscriptionStatus.COMPLETED,
+            status: OfferStatus.COMPLETED,
           },
           {
             where: {

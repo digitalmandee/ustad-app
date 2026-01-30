@@ -2574,7 +2574,7 @@ export default class TutorService {
 
         await Offer.update(
           {
-            status: ParentSubscriptionStatus.COMPLETED,
+            status: OfferStatus.COMPLETED,
           },
           {
             where: {
