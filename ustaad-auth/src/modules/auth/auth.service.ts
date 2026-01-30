@@ -16,7 +16,12 @@ import {
 import jwt from "jsonwebtoken";
 import { Op } from "sequelize";
 import { NotAuthorizedError } from "../../errors/not-authorized-error";
-import { OtpPurpose, OtpStatus, OtpType } from "@ustaad/shared";
+import {
+  OtpPurpose,
+  OtpStatus,
+  OtpType,
+  NotificationType,
+} from "@ustaad/shared";
 import { OtpServices } from "../otp/otp.service";
 import { BadRequestError } from "../../errors/bad-request-error";
 
