@@ -106,7 +106,8 @@ export default class TutorService {
       message,
       data,
       imageUrl,
-      clickAction
+      clickAction,
+      data?.type
     );
   }
 

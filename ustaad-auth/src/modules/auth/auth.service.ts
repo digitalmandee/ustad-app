@@ -162,7 +162,8 @@ export default class AuthService implements IAuthService {
               type: NotificationType.SYSTEM_NOTIFICATION,
             },
             "http://15.235.204.49:5000/logo.png", // imageUrl
-            "/profile" // clickAction
+            "/profile", // clickAction
+            NotificationType.SYSTEM_NOTIFICATION
           );
           console.log(
             "✅ Login notification sent successfully to user:",

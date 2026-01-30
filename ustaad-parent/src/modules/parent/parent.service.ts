@@ -88,7 +88,8 @@ export default class ParentService {
       message,
       data,
       imageUrl,
-      clickAction
+      clickAction,
+      data?.type
     );
   }
 

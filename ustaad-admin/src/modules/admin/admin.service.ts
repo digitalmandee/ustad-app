@@ -914,7 +914,8 @@ export default class AdminService {
           type: NotificationType.PAYMENT_STATUS_UPDATE,
         },
         "http://15.235.204.49:5000/logo.png", // imageUrl
-        "/payment" // clickAction
+        "/payment", // clickAction
+        NotificationType.PAYMENT_STATUS_UPDATE
       );
     } catch (error) {
       console.error(
@@ -1176,7 +1177,8 @@ export default class AdminService {
           type: NotificationType.ONBOARDING_APPROVED,
         },
         "http://15.235.204.49:5000/logo.png", // imageUrl
-        "/profile" // clickAction
+        "/profile", // clickAction
+        NotificationType.ONBOARDING_APPROVED
       );
     } catch (error) {
       console.error(
