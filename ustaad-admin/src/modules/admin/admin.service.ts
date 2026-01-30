@@ -889,13 +889,13 @@ export default class AdminService {
 
       if (status === TutorPaymentStatus.PAID) {
         title = "💰 Payment Received";
-        body = `Your payment request for $${paymentRequest.amount} has been processed and paid.`;
+        body = `Your payment request for ${paymentRequest.amount} has been processed and paid.`;
       } else if (status === TutorPaymentStatus.REJECTED) {
         title = "❌ Payment Rejected";
-        body = `Your payment request for $${paymentRequest.amount} has been rejected. Please contact support for more details.`;
+        body = `Your payment request for ${paymentRequest.amount} has been rejected. Please contact support for more details.`;
       }
 
-      const user = await this.getUseragsintid(paymentRequest.tutorId);
+      const user = await this.getUserById(paymentRequest.tutorId);
 
       if (!user) {
         console.log("User not found for notification");
@@ -1156,7 +1156,7 @@ export default class AdminService {
     });
 
     try {
-      const user = await this.getUseragsintid(userId);
+      const user = await this.getUserById(userId);
 
       if (!user) {
         console.log("User not found for notification");
@@ -1419,7 +1419,7 @@ export default class AdminService {
 
     // Notify both parties
     try {
-      const parent = await this.getUseragsintid(contract.parentId);
+      const parent = await this.getUserById(contract.parentId);
 
       if (!parent) {
         console.log("User not found for notification");
@@ -1440,7 +1440,7 @@ export default class AdminService {
         "/profile" // clickAction
       );
 
-      const tutor = await this.getUseragsintid(contract.tutorId);
+      const tutor = await this.getUserById(contract.tutorId);
 
       if (!tutor) {
         console.log("User not found for notification");
@@ -1536,7 +1536,7 @@ export default class AdminService {
     };
   }
 
-  getUseragsintid = async (id: string) => {
+  getUserById = async (id: string) => {
     const user = await User.findByPk(id);
     return user;
   };

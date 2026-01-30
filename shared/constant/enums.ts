@@ -53,6 +53,7 @@ export enum OfferStatus {
   ACCEPTED = "ACCEPTED",
   REJECTED = "REJECTED",
   CANCELLED = "CANCELLED",
+  COMPLETED = "COMPLETED",
 }
 export enum TutorPaymentStatus {
   PENDING = "PENDING",

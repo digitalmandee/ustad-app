@@ -57,6 +57,7 @@ var OfferStatus;
     OfferStatus["ACCEPTED"] = "ACCEPTED";
     OfferStatus["REJECTED"] = "REJECTED";
     OfferStatus["CANCELLED"] = "CANCELLED";
+    OfferStatus["COMPLETED"] = "COMPLETED";
 })(OfferStatus || (exports.OfferStatus = OfferStatus = {}));
 var TutorPaymentStatus;
 (function (TutorPaymentStatus) {

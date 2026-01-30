@@ -44,7 +44,8 @@ export declare enum OfferStatus {
     PENDING = "PENDING",
     ACCEPTED = "ACCEPTED",
     REJECTED = "REJECTED",
-    CANCELLED = "CANCELLED"
+    CANCELLED = "CANCELLED",
+    COMPLETED = "COMPLETED"
 }
 export declare enum TutorPaymentStatus {
     PENDING = "PENDING",

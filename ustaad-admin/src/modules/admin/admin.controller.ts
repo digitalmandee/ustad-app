@@ -26,7 +26,7 @@ export default class AdminController {
       }
 
       const stats = await this.adminService.getStats(days);
-      sendSuccessResponse(res, "stats fetched successfully", 200, stats);
+      sendSuccessResponse(res, "Stats fetched successfully", 200, stats);
     } catch (e: any) {
       throw new GenericError(e, ` Error from getStats ${__filename}`);
     }
@@ -38,7 +38,7 @@ export default class AdminController {
       const limit = Number(req.query.limit) || 20;
       const search = (req.query.search || req.query.q || "").toString().trim();
       const data = await this.adminService.getAllParents(page, limit, search);
-      sendSuccessResponse(res, "parents fetched successfully", 200, data);
+      sendSuccessResponse(res, "Parents fetched successfully", 200, data);
     } catch (e: any) {
       throw new GenericError(e, ` Error from getAllParents ${__filename}`);
     }
@@ -49,9 +49,9 @@ export default class AdminController {
       const { id } = req.params;
       const data = await this.adminService.getParentById(id);
       if (!data) {
-        return sendSuccessResponse(res, "parent not found", 404, null);
+        return sendSuccessResponse(res, "Parent not found", 404, null);
       }
-      sendSuccessResponse(res, "parent fetched successfully", 200, data);
+      sendSuccessResponse(res, "Parent fetched successfully", 200, data);
     } catch (e: any) {
       throw new GenericError(e, ` Error from getParentById ${__filename}`);
     }
@@ -63,7 +63,7 @@ export default class AdminController {
       const limit = Number(req.query.limit) || 20;
       const search = (req.query.search || req.query.q || "").toString().trim();
       const data = await this.adminService.getAllTutors(page, limit, search);
-      sendSuccessResponse(res, "tutors fetched successfully", 200, data);
+      sendSuccessResponse(res, "Tutors fetched successfully", 200, data);
     } catch (e: any) {
       throw new GenericError(e, ` Error from getAllTutors ${__filename}`);
     }
@@ -74,9 +74,9 @@ export default class AdminController {
       const { id } = req.params;
       const data = await this.adminService.getTutorById(id);
       if (!data) {
-        return sendSuccessResponse(res, "tutor not found", 404, null);
+        return sendSuccessResponse(res, "Tutor not found", 404, null);
       }
-      sendSuccessResponse(res, "tutor fetched successfully", 200, data);
+      sendSuccessResponse(res, "Tutor fetched successfully", 200, data);
     } catch (e: any) {
       throw new GenericError(e, ` Error from getTutorById ${__filename}`);
     }
@@ -88,7 +88,7 @@ export default class AdminController {
       const data = await this.adminService.getAllPaymentRequests(search);
       sendSuccessResponse(
         res,
-        "payment requests fetched successfully",
+        "Payment requests fetched successfully",
         200,
         data
       );
@@ -106,7 +106,7 @@ export default class AdminController {
       const data = await this.adminService.getPaymentRequestById(id);
       sendSuccessResponse(
         res,
-        "payment request fetched successfully",
+        "Payment request fetched successfully",
         200,
         data
       );
@@ -130,7 +130,7 @@ export default class AdminController {
       );
       sendSuccessResponse(
         res,
-        "payment request status updated successfully",
+        "Payment request status updated successfully",
         200,
         data
       );
