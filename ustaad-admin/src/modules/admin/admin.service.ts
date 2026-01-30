@@ -913,7 +913,7 @@ export default class AdminService {
           userId: user.id,
         },
         "http://15.235.204.49:5000/logo.png", // imageUrl
-        "/profile" // clickAction
+        "/payment" // clickAction
       );
     } catch (error) {
       console.error(
@@ -1437,7 +1437,7 @@ export default class AdminService {
           userId: parent.id,
         },
         "http://15.235.204.49:5000/logo.png", // imageUrl
-        "/profile" // clickAction
+        `/contracts` // clickAction
       );
 
       const tutor = await this.getUserById(contract.tutorId);
@@ -1458,7 +1458,7 @@ export default class AdminService {
           userId: tutor.id,
         },
         "http://15.235.204.49:5000/logo.png", // imageUrl
-        "/profile" // clickAction
+        `/contracts` // clickAction
       );
     } catch (notificationError) {
       console.error(

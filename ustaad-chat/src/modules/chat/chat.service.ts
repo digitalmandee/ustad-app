@@ -243,7 +243,7 @@ export default class ChatService {
             } else if (messageData.type === MessageType.AUDIO) {
               notificationBody = '🎤 Sent a voice message';
             } else if (messageData.type === MessageType.FILE) {
-              notificationBody = '� Sent a file';
+              notificationBody = '📁 Sent a file';
             } else if (messageData.type === MessageType.OFFER) {
               notificationBody = '📄 Sent an offer';
             }
@@ -272,7 +272,7 @@ export default class ChatService {
                 messageId: message.id,
               },
               sender?.image || undefined,
-              `/chat/${messageData.conversationId}`,
+              `/chat`,
               notificationType
             );
           }

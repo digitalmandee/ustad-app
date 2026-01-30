@@ -1718,7 +1718,7 @@ export default class TutorService {
               sessionId: data.sessionId,
             },
             undefined,
-            `/sessions/${data.sessionId}`
+            `/session`
           );
           console.log(
             `✅ Sent session status notification to parent ${data.parentId}`
@@ -1816,7 +1816,7 @@ export default class TutorService {
                 sessionId: data.sessionId,
               },
               undefined,
-              `/sessions/${data.sessionId}`
+              `/session`
             );
             console.log(
               `✅ Sent session update notification to parent ${data.parentId}`
@@ -2470,7 +2470,7 @@ export default class TutorService {
               reason: reason?.substring(0, 100) || "",
             },
             undefined,
-            `/contracts/${contract.id}`
+            `/contracts`
           );
           console.log(
             `✅ Sent dispute notification to parent ${contract.parentId}`
@@ -2486,7 +2486,7 @@ export default class TutorService {
               completedBy: tutorId,
             },
             undefined,
-            `/contracts/${contract.id}`
+            `/contracts`
           );
           console.log(
             `✅ Sent completion notification to parent ${contract.parentId}`
@@ -2611,7 +2611,7 @@ export default class TutorService {
               contractId: contract.id,
             },
             undefined,
-            `/contracts/${contract.id}`
+            `/rating`
           );
 
           await this.pushToUser(
@@ -2623,7 +2623,7 @@ export default class TutorService {
               contractId: contract.id,
             },
             undefined,
-            `/contracts/${contract.id}`
+            `/rating`
           );
         } catch (notificationError) {
           console.error(
@@ -2651,7 +2651,7 @@ export default class TutorService {
               rating: rating.toString(),
             },
             undefined,
-            `/contracts/${contract.id}`
+            `/rating`
           );
         } catch (notificationError) {
           console.error(

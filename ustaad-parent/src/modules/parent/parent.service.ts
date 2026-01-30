@@ -572,7 +572,7 @@ export default class ParentService {
               subject: offer.subject,
             },
             undefined,
-            `/offers/${offerId}`
+            `/chat`
           );
         } catch (notificationError) {
           console.error(
@@ -670,7 +670,7 @@ export default class ParentService {
             basketId: payfastResult.basketId,
           },
           undefined,
-          `/offers/${offerId}`
+          `/chat`
         );
       } catch (notificationError) {
         console.error(
@@ -806,7 +806,7 @@ export default class ParentService {
               subject: offer.subject,
             },
             undefined,
-            `/subscriptions/${subscriptionId}`
+            `/subscriptions`
           );
           console.log(
             `✅ Sent subscription cancelled notification to tutor ${subscription.tutorId}`
@@ -1183,7 +1183,7 @@ export default class ParentService {
               reason: reason?.substring(0, 100) || "",
             },
             undefined,
-            `/contracts/${contract.id}`
+            `/contracts`
           );
           console.log(
             `✅ Sent dispute notification to tutor ${contract.tutorId}`
@@ -1199,7 +1199,7 @@ export default class ParentService {
               completedBy: parentId,
             },
             undefined,
-            `/contracts/${contract.id}`
+            `/contracts`
           );
           console.log(
             `✅ Sent completion notification to tutor ${contract.tutorId}`
@@ -1325,7 +1325,7 @@ export default class ParentService {
               contractId: contract.id,
             },
             undefined,
-            `/contracts/${contract.id}`
+            `/rating`
           );
 
           await this.pushToUser(
@@ -1337,7 +1337,7 @@ export default class ParentService {
               contractId: contract.id,
             },
             undefined,
-            `/contracts/${contract.id}`
+            `/rating`
           );
         } catch (notificationError) {
           console.error(
@@ -1365,7 +1365,7 @@ export default class ParentService {
               rating: rating.toString(),
             },
             undefined,
-            `/contracts/${contract.id}`
+            `/rating`
           );
         } catch (notificationError) {
           console.error(
@@ -1852,7 +1852,7 @@ export default class ParentService {
                 transactionId: data.transactionId || "",
               },
               undefined,
-              `/subscriptions/${subscription.id}`
+              `/subscriptions`
             );
             await this.pushToUser(
               subscription.tutorId,
@@ -1865,7 +1865,7 @@ export default class ParentService {
                 transactionId: data.transactionId || "",
               },
               undefined,
-              `/subscriptions/${subscription.id}`
+              `/subscriptions`
             );
           } catch (e) {
             console.error(
@@ -1944,7 +1944,7 @@ export default class ParentService {
               errMsg: data.errMsg || "",
             },
             undefined,
-            `/subscriptions/${subscription.id}`
+            `/subscriptions`
           );
         } catch (e) {
           console.error("❌ Error sending payment failed notification:", e);
@@ -2026,7 +2026,7 @@ export default class ParentService {
               nextBillingDate: nextBillingDate.toISOString(),
             },
             undefined,
-            `/subscriptions/${subscription.id}`
+            `/subscriptions`
           );
         } catch (e) {
           console.error("❌ Error sending recurring success notification:", e);
@@ -2114,7 +2114,7 @@ export default class ParentService {
                 failureCount,
               },
               undefined,
-              `/subscriptions/${subscription.id}`
+              `/subscriptions`
             );
           } catch (e) {
             console.error("❌ Error sending suspension notification:", e);
@@ -2139,7 +2139,7 @@ export default class ParentService {
                 failureCount,
               },
               undefined,
-              `/subscriptions/${subscription.id}`
+              `/subscriptions`
             );
           } catch (e) {
             console.error(
