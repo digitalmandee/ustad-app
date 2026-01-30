@@ -264,7 +264,7 @@ export default class ChatService {
               `${sender?.firstName} ${sender?.lastName}`,
               notificationBody,
               {
-                type: 'NEW_MESSAGE',
+                type: notificationType,
                 conversationId: messageData.conversationId,
                 senderId,
                 senderName: `${sender?.firstName} ${sender?.lastName}`,

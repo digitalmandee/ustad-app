@@ -154,6 +154,7 @@ export default class AuthService implements IAuthService {
               deviceId: deviceId,
               role: user.role,
               userId: user.id,
+              type: NotificationType.SYSTEM_NOTIFICATION,
             },
             "http://15.235.204.49:5000/logo.png", // imageUrl
             "/profile" // clickAction

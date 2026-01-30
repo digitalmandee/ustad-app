@@ -911,6 +911,7 @@ export default class AdminService {
           deviceId: user.deviceId,
           role: user.role,
           userId: user.id,
+          type: NotificationType.PAYMENT_STATUS_UPDATE,
         },
         "http://15.235.204.49:5000/logo.png", // imageUrl
         "/payment" // clickAction
@@ -1172,6 +1173,7 @@ export default class AdminService {
           deviceId: user.deviceId,
           role: user.role,
           userId: user.id,
+          type: NotificationType.ONBOARDING_APPROVED,
         },
         "http://15.235.204.49:5000/logo.png", // imageUrl
         "/profile" // clickAction
@@ -1435,6 +1437,7 @@ export default class AdminService {
           deviceId: parent.deviceId,
           role: parent.role,
           userId: parent.id,
+          type: NotificationType.CONTRACT_DISPUTE_RESOLVED,
         },
         "http://15.235.204.49:5000/logo.png", // imageUrl
         `/contracts` // clickAction
@@ -1456,6 +1459,7 @@ export default class AdminService {
           deviceId: tutor.deviceId,
           role: tutor.role,
           userId: tutor.id,
+          type: NotificationType.CONTRACT_DISPUTE_RESOLVED,
         },
         "http://15.235.204.49:5000/logo.png", // imageUrl
         `/contracts` // clickAction
