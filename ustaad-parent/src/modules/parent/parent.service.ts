@@ -1286,6 +1286,17 @@ export default class ParentService {
           endDate: new Date(),
         });
 
+        await Offer.update(
+          {
+            status: ParentSubscriptionStatus.COMPLETED,
+          },
+          {
+            where: {
+              id: contract.offerId,
+            },
+          }
+        );
+
         await TutorSessions.update(
           {
             status: "cancelled",
