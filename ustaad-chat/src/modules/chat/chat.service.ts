@@ -270,6 +270,8 @@ export default class ChatService {
                 senderName: `${sender?.firstName} ${sender?.lastName}`,
                 messageType: messageData.type,
                 messageId: message.id,
+                recieverId: receiver.userId,
+                image: sender?.image || '',
               },
               sender?.image || undefined,
               `/chat`,
