@@ -5,7 +5,7 @@ export default () => {
   console.log("⏳ Initializing cron jobs...");
 
   // Run every 5 minutes
-  cron.schedule("*/5 * * * *", async () => {
+  cron.schedule("*/10 * * * * *", async () => {
     console.log("⏰ Triggering 5-minute cron jobs...");
     await runSessionCompletionCron();
   });

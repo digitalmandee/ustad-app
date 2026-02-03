@@ -23,13 +23,8 @@ export const runSessionCompletionCron = async () => {
           include: [
             {
               model: Offer,
-              as: "offer",
             },
           ],
-        },
-        {
-          model: User,
-          as: "tutor", // Assuming association is aliased as 'tutor' based on tutor.service.ts usage
         },
       ],
     });
@@ -40,24 +35,10 @@ export const runSessionCompletionCron = async () => {
 
     for (const sessionDetail of createdSessions) {
       try {
-        // Type assertion for included models since Sequelize types might not infer deep includes automatically
-        const session = (sessionDetail as any).TutorSession as TutorSessions; // Check the actual alias, usually model name if not specified
-        // Based on TutorSessionsDetail.ts: TutorSessionsDetail.belongsTo(TutorSessions, { foreignKey: "sessionId" });
-        // The alias is not explicitly set in the model definition I saw, so it defaults to TutorSession (singular or plural depends on config, usually singular)
-        // Wait, in TutorSessionsDetail.ts: TutorSessionsDetail.belongsTo(TutorSessions, { foreignKey: "sessionId" });
-        // Default alias is usually 'TutorSession'. Let's check sessionDetail structure carefully.
-        // Actually, I should use the property from the instance if typed, but let's be safe.
+        const tutorSession =
+          (sessionDetail as any).TutorSessions ||
+          (sessionDetail as any).TutorSession;
 
-        // Let's refetch or trust the include.
-        // To be safe with aliases, maybe I should check how it's used elsewhere or just inspect it.
-        // But wait, the plan said "Include TutorSessions (alias: session) and nested Offer (alias: offer)".
-        // I need to ensure I use the correct aliases if they exist.
-        // Looking at TutorSessionsDetail.ts again:
-        // TutorSessionsDetail.belongsTo(TutorSessions, { foreignKey: "sessionId" });
-        // No alias 'as' defined there. So it should be `TutorSession`.
-        // However, I'll access it safely.
-
-        const tutorSession = (sessionDetail as any).TutorSession;
         if (!tutorSession) {
           console.warn(
             `Session details found for id ${sessionDetail.id} but associated TutorSession is missing.`
@@ -114,18 +95,6 @@ export const runSessionCompletionCron = async () => {
           await sessionDetail.update({ status: TutorSessionStatus.COMPLETED });
 
           // Send Notification
-          const tutor = (sessionDetail as any).User; // The tutor
-          // Wait, in TutorSessionsDetail.ts:
-          // TutorSessionsDetail.belongsTo(User, { foreignKey: "tutorId" });
-          // No alias, so it's 'User'. But we also have parentId relation.
-          // Sequelize might alias them as 'User' and 'User' which is ambiguous.
-          // Actually, usually it's `tutor` and `parent` if defined.
-          // In TutorSessionsDetail.ts line 79: `TutorSessionsDetail.belongsTo(User, { foreignKey: "tutorId" });`
-          // In line 82: `TutorSessionsDetail.belongsTo(User, { foreignKey: "parentId" });`
-          // This is bad if no aliases.
-          // However, I can just fetch the tutor and parent again or use `await User.findByPk(sessionDetail.tutorId)`.
-          // Fetching is safer.
-
           const tutorUser = await User.findByPk(sessionDetail.tutorId);
           const parentId = sessionDetail.parentId;
 
