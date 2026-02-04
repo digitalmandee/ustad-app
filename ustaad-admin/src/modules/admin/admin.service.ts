@@ -1265,7 +1265,13 @@ export default class AdminService {
       include: [
         {
           model: Offer,
-          attributes: ["id", "childName", "subject", "amountMonthly"],
+          attributes: [
+            "id",
+            "childName",
+            "subject",
+            "amountMonthly",
+            "sessions",
+          ],
         },
       ],
       order: [["disputedAt", "DESC"]],
