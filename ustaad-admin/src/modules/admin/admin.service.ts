@@ -1196,7 +1196,9 @@ export default class AdminService {
     let where: any = {};
 
     // Filter by Type (Status)
-    if (type) {
+    if (type === "all") {
+      // Fetch all, no status filter
+    } else if (type) {
       where.status = type;
     } else {
       where.status = ParentSubscriptionStatus.DISPUTE;
