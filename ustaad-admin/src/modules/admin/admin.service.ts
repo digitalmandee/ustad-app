@@ -806,10 +806,25 @@ export default class AdminService {
     };
   }
 
-  async getAllPaymentRequests(search: string = "") {
-    const where: any = {};
+  async getAllPaymentRequests(
+    page = 1,
+    limit = 20,
+    search: string = "",
+    type: string = ""
+  ) {
+    const offset = (page - 1) * limit;
+
+    let where: any = {};
     const userWhere: any = {};
     let isSearchText = false;
+
+    // Filter by Type (Status)
+    if (type && type !== "all") {
+      // Validate if type is a valid TutorPaymentStatus
+      if (Object.values(TutorPaymentStatus).includes(type as any)) {
+        where.status = type;
+      }
+    }
 
     if (search) {
       const isUuid =
@@ -818,31 +833,47 @@ export default class AdminService {
         );
 
       if (isUuid) {
+        // If UUID, search by ID (payment request) or Tutor ID
         where[Op.or] = [{ id: search }, { tutorId: search }];
       } else {
         isSearchText = true;
         const searchTerm = `%${search.toLowerCase()}%`;
+        // Search user by email or phone
         userWhere[Op.or] = [
-          { firstName: { [Op.iLike]: searchTerm } },
-          { lastName: { [Op.iLike]: searchTerm } },
+          // { firstName: { [Op.iLike]: searchTerm } },
+          // { lastName: { [Op.iLike]: searchTerm } },
           { email: { [Op.iLike]: searchTerm } },
           { phone: { [Op.iLike]: searchTerm } },
         ];
       }
     }
 
-    const paymentRequests = await PaymentRequests.findAll({
+    const { rows, count } = await PaymentRequests.findAndCountAll({
       where,
       include: [
         {
           model: User,
           attributes: ["firstName", "lastName", "email", "phone"],
           where: isSearchText ? userWhere : undefined,
-          required: isSearchText,
+          required: isSearchText, // If searching text, we enforce User match
         },
       ],
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
     });
-    return paymentRequests;
+
+    return {
+      items: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+        hasNext: page * limit < count,
+        hasPrev: page > 1,
+      },
+    };
   }
 
   async getPaymentRequestById(id: string) {
