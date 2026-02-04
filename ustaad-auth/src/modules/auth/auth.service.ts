@@ -31,6 +31,7 @@ export interface IAuthService {
   logout: (token: string) => Promise<void>;
   validateSession: (token: string) => Promise<any>;
   cleanupExpiredSessions: () => Promise<number>;
+  forgotPassword: (email?: string, phone?: string) => Promise<any>;
 }
 
 export default class AuthService implements IAuthService {
@@ -217,9 +218,23 @@ export default class AuthService implements IAuthService {
     }
   }
 
-  public async forgotPassword(email: string): Promise<any> {
+  public async forgotPassword(email?: string, phone?: string): Promise<any> {
     try {
-      const user = await User.findOne({ where: { email } });
+      let where: any = {};
+      let otpType = OtpType.EMAIL;
+
+      if (email) {
+        where.email = email;
+        otpType = OtpType.EMAIL;
+      } else if (phone) {
+        where.phone = phone;
+        otpType = OtpType.PHONE;
+      } else {
+        throw new BadRequestError("Email or phone is required");
+      }
+
+      const user = await User.findOne({ where });
+
       if (!user) {
         throw new NotAuthorizedError("user not registered");
       }
@@ -227,12 +242,12 @@ export default class AuthService implements IAuthService {
       const otpService = new OtpServices();
       await otpService.sendOtp({
         userId: user.id,
-        type: OtpType.EMAIL,
+        type: otpType,
         purpose: OtpPurpose.PASSWORD_RESET,
       });
-      return { userId: user.id, email: user.email };
+      return { userId: user.id, email: user.email, phone: user.phone };
     } catch (err: any) {
-      if (err instanceof NotAuthorizedError) {
+      if (err instanceof NotAuthorizedError || err instanceof BadRequestError) {
         throw err;
       }
       throw new GenericError(err, "Unable to send password reset OTP");

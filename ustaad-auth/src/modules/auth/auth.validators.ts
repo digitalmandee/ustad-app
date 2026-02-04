@@ -291,12 +291,19 @@ export const passwordResetRules = () => {
 
 export const forgotPasswordRules = () => {
   return [
-    body("email")
-      .exists()
-      .withMessage(constant.VALIDATION.KEY_MISSING("email"))
-      .bail()
-      .isEmail()
-      .withMessage(constant.AUTH.INVALID_EMAIL),
+    body().custom((value, { req }) => {
+      if (!req.body.email && !req.body.phone) {
+        throw new Error("Email or phone is required");
+      }
+      return true;
+    }),
+    body("email").optional().isEmail().withMessage(constant.AUTH.INVALID_EMAIL),
+    body("phone")
+      .optional()
+      .isString()
+      .withMessage(constant.VALIDATION.VALUE_MUST_BE_STRING("phone"))
+      .matches(/^[0-9]{10,15}$/)
+      .withMessage(constant.AUTH.INVALID_PHONE),
   ];
 };
 
