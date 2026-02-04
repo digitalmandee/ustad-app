@@ -88,7 +88,7 @@ export default class AdminController {
       const limit = Number(req.query.limit) || 20;
 
       const search = (req.query.search || "").toString().trim();
-      const type = (req.query.type || "").toString().trim();
+      const type = (req.query.status || "").toString().trim();
 
       const data = await this.adminService.getAllPaymentRequests(
         page,

@@ -5,6 +5,7 @@ import {
   TutorSessionStatus,
   User,
   NotificationType,
+  Tutor,
 } from "@ustaad/shared";
 import { Op } from "sequelize";
 import { sendNotificationToUser } from "../notification.service";
@@ -93,6 +94,23 @@ export const runSessionCompletionCron = async () => {
           );
 
           await sessionDetail.update({ status: TutorSessionStatus.COMPLETED });
+
+          // Update Tutor Balance Logic (Same as in tutor.service.ts)
+          // We can use 'offer' directly since we fetched it already
+          if (offer && offer.sessions > 0) {
+            const perSessionAmount = offer.amountMonthly / offer.sessions;
+            const tutor = await Tutor.findOne({
+              where: { userId: sessionDetail.tutorId },
+            });
+            if (tutor) {
+              const currentBalance = Number(tutor.balance) || 0;
+              tutor.balance = currentBalance + perSessionAmount;
+              await tutor.save();
+              console.log(
+                `Updated balance for tutor ${tutor.userId}: +${perSessionAmount}`
+              );
+            }
+          }
 
           // Send Notification
           const tutorUser = await User.findByPk(sessionDetail.tutorId);

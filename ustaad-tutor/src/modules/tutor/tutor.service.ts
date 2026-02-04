@@ -1220,10 +1220,10 @@ export default class TutorService {
 
       const nearbyTutors = await TutorLocation.findAll(locationQueryOptions);
 
-      console.log(
-        "Raw nearby tutors result sample:",
-        JSON.stringify(nearbyTutors[0], null, 2)
-      );
+      // console.log(
+      //   "Raw nearby tutors result sample:",
+      //   JSON.stringify(nearbyTutors[0], null, 2)
+      // );
 
       console.log("Found nearby tutors:", nearbyTutors.length);
 
@@ -1457,15 +1457,6 @@ export default class TutorService {
         throw new UnProcessableEntityError("Tutor not found");
       }
 
-      console.log("11111");
-
-      // Check if tutor has sufficient balance
-      if (tutor.balance < data.amount) {
-        throw new BadRequestError(
-          `Insufficient balance. Available balance: ${tutor.balance}, Requested amount: ${data.amount}`
-        );
-      }
-
       // Create payment request
       const paymentRequest = await PaymentRequests.findOne({
         where: {
@@ -1477,8 +1468,6 @@ export default class TutorService {
         },
       });
 
-      console.log("22222");
-
       if (paymentRequest) {
         throw new UnProcessableEntityError("Payment request already exists");
       }
@@ -1488,9 +1477,6 @@ export default class TutorService {
         status: TutorPaymentStatus.REQUESTED,
         amount: data.amount,
       });
-
-      tutor.balance -= data.amount;
-      await tutor.save();
 
       return paymentRequest;
     } catch (error) {
@@ -1640,6 +1626,26 @@ export default class TutorService {
       throw new UnProcessableEntityError(
         `Tutor session is ${session.status} and cannot be updated`
       );
+    }
+
+    const offer = await Offer.findOne({
+      where: { id: session.offerId },
+    });
+
+    if (!offer) {
+      throw new UnProcessableEntityError("Offer not found");
+    }
+
+    const currentSessions = await TutorSessionsDetail.count({
+      where: {
+        tutorId: userId,
+        parentId: data.parentId,
+        sessionId: data.sessionId,
+      },
+    });
+
+    if (currentSessions >= offer.sessions) {
+      throw new UnProcessableEntityError("Tutor session already completed");
     }
 
     // Check if session detail already exists for the same day
@@ -1836,6 +1842,23 @@ export default class TutorService {
       await mainSession.update({
         sessionsCompleted: mainSession.sessionsCompleted + 1,
       });
+
+      // Update Tutor Balance
+      if (mainSession.offerId) {
+        const offer = await Offer.findByPk(mainSession.offerId);
+        if (offer && offer.sessions > 0) {
+          const perSessionAmount = offer.amountMonthly / offer.sessions;
+          const tutor = await Tutor.findOne({
+            where: { userId: data.tutorId },
+          });
+          if (tutor) {
+            // Ensure balance is treated as number
+            const currentBalance = Number(tutor.balance) || 0;
+            tutor.balance = currentBalance + perSessionAmount;
+            await tutor.save();
+          }
+        }
+      }
     }
 
     return await TutorSessionsDetail.update(
