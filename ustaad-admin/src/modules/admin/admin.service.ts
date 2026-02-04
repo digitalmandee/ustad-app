@@ -1190,13 +1190,78 @@ export default class AdminService {
     return updatedUser;
   }
 
-  async getDisputedContracts(page = 1, limit = 20) {
+  async getDisputedContracts(page = 1, limit = 20, search = "", type?: string) {
     const offset = (page - 1) * limit;
 
+    let where: any = {};
+
+    // Filter by Type (Status)
+    if (type) {
+      where.status = type;
+    } else {
+      where.status = ParentSubscriptionStatus.DISPUTE;
+    }
+
+    // Handle Search
+    if (search && search.trim().length > 0) {
+      const searchTerm = search.trim();
+      const isUuid =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          searchTerm
+        );
+
+      if (isUuid) {
+        // If search is UUID, check Contract ID, Parent ID, or Tutor ID
+        where = {
+          ...where,
+          [Op.or]: [
+            { id: searchTerm },
+            { parentId: searchTerm },
+            { tutorId: searchTerm },
+          ],
+        };
+      } else {
+        // If search is Text, find users by Email or Phone first
+        const users = await User.findAll({
+          where: {
+            [Op.or]: [
+              { email: { [Op.iLike]: `%${searchTerm}%` } },
+              { phone: { [Op.iLike]: `%${searchTerm}%` } },
+            ],
+          },
+          attributes: ["id"],
+        });
+
+        const foundUserIds = users.map((u) => u.id);
+
+        if (foundUserIds.length > 0) {
+          where = {
+            ...where,
+            [Op.or]: [
+              { parentId: { [Op.in]: foundUserIds } },
+              { tutorId: { [Op.in]: foundUserIds } },
+            ],
+          };
+        } else {
+          // If no users found with that text, result should be empty
+          // We can force an impossible condition or return empty immediately
+          return {
+            items: [],
+            pagination: {
+              page,
+              limit,
+              total: 0,
+              totalPages: 0,
+              hasNext: false,
+              hasPrev: false,
+            },
+          };
+        }
+      }
+    }
+
     const { rows, count } = await ParentSubscription.findAndCountAll({
-      where: {
-        status: ParentSubscriptionStatus.DISPUTE,
-      },
+      where,
       include: [
         {
           model: Offer,

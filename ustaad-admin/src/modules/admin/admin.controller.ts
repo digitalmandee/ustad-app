@@ -275,7 +275,15 @@ export default class AdminController {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 20;
 
-      const result = await this.adminService.getDisputedContracts(page, limit);
+      const search = (req.query.search as string) || "";
+      const type = req.query.type as string;
+
+      const result = await this.adminService.getDisputedContracts(
+        page,
+        limit,
+        search,
+        type
+      );
 
       return sendSuccessResponse(
         res,
