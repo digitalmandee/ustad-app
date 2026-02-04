@@ -1271,6 +1271,7 @@ export default class AdminService {
             "subject",
             "amountMonthly",
             "sessions",
+            "description",
           ],
         },
       ],
