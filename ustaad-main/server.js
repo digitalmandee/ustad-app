@@ -40,11 +40,22 @@ app.use(
     changeOrigin: true,
     pathRewrite: { "^/auth": "/api/v1/auth" },
     onError(err, req, res) {
-      console.error("Proxy error for /auth:", err.message);
-      res.status(502).json({
-        error: "Service temporarily unavailable",
-        message: "Auth service is not responding",
-      });
+      console.error("Proxy error:", err.message);
+
+      // 1. Check if response is already finished or headers sent
+      if (res.headersSent || res.writableEnded) {
+        return;
+      }
+
+      // 2. Wrap in a try-catch just to be extra safe
+      try {
+        res.status(502).json({
+          error: "Service temporarily unavailable",
+          message: "Target service is not responding",
+        });
+      } catch (expressErr) {
+        console.error("Failed to send error response:", expressErr.message);
+      }
     },
   })
 );
@@ -57,11 +68,22 @@ app.use(
     changeOrigin: true,
     pathRewrite: { "^/tutor": "/api/v1/tutor" },
     onError(err, req, res) {
-      console.error("Proxy error for /tutor:", err.message);
-      res.status(502).json({
-        error: "Service temporarily unavailable",
-        message: "Tutor service is not responding",
-      });
+      console.error("Proxy error:", err.message);
+
+      // 1. Check if response is already finished or headers sent
+      if (res.headersSent || res.writableEnded) {
+        return;
+      }
+
+      // 2. Wrap in a try-catch just to be extra safe
+      try {
+        res.status(502).json({
+          error: "Service temporarily unavailable",
+          message: "Target service is not responding",
+        });
+      } catch (expressErr) {
+        console.error("Failed to send error response:", expressErr.message);
+      }
     },
   })
 );
@@ -74,11 +96,22 @@ app.use(
     changeOrigin: true,
     pathRewrite: { "^/parent": "/api/v1/parent" },
     onError(err, req, res) {
-      console.error("Proxy error for /parent:", err.message);
-      res.status(502).json({
-        error: "Service temporarily unavailable",
-        message: "Parent service is not responding",
-      });
+      console.error("Proxy error:", err.message);
+
+      // 1. Check if response is already finished or headers sent
+      if (res.headersSent || res.writableEnded) {
+        return;
+      }
+
+      // 2. Wrap in a try-catch just to be extra safe
+      try {
+        res.status(502).json({
+          error: "Service temporarily unavailable",
+          message: "Target service is not responding",
+        });
+      } catch (expressErr) {
+        console.error("Failed to send error response:", expressErr.message);
+      }
     },
   })
 );
@@ -91,11 +124,22 @@ app.use(
     changeOrigin: true,
     pathRewrite: { "^/chat": "/api/v1/chat" },
     onError(err, req, res) {
-      console.error("Proxy error for /chat:", err.message);
-      res.status(502).json({
-        error: "Service temporarily unavailable",
-        message: "Chat service is not responding",
-      });
+      console.error("Proxy error:", err.message);
+
+      // 1. Check if response is already finished or headers sent
+      if (res.headersSent || res.writableEnded) {
+        return;
+      }
+
+      // 2. Wrap in a try-catch just to be extra safe
+      try {
+        res.status(502).json({
+          error: "Service temporarily unavailable",
+          message: "Target service is not responding",
+        });
+      } catch (expressErr) {
+        console.error("Failed to send error response:", expressErr.message);
+      }
     },
   })
 );
@@ -106,11 +150,22 @@ app.use(
     changeOrigin: true,
     pathRewrite: { "^/admin": "/api/v1/admin" },
     onError(err, req, res) {
-      console.error("Proxy error for /admin:", err.message);
-      res.status(502).json({
-        error: "Service temporarily unavailable",
-        message: "Admin service is not responding",
-      });
+      console.error("Proxy error:", err.message);
+
+      // 1. Check if response is already finished or headers sent
+      if (res.headersSent || res.writableEnded) {
+        return;
+      }
+
+      // 2. Wrap in a try-catch just to be extra safe
+      try {
+        res.status(502).json({
+          error: "Service temporarily unavailable",
+          message: "Target service is not responding",
+        });
+      } catch (expressErr) {
+        console.error("Failed to send error response:", expressErr.message);
+      }
     },
   })
 );
