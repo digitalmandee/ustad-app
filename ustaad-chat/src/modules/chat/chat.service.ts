@@ -311,7 +311,7 @@ export default class ChatService {
 
       const whereClause: any = {
         conversationId,
-        status: { [Op.ne]: MessageStatus.DELETED },
+        // status: { [Op.ne]: MessageStatus.DELETED }, // Include deleted messages
       };
 
       const offset = (page - 1) * limit;
@@ -835,16 +835,18 @@ export default class ChatService {
       };
       delete msgJson.file;
     }
+    const isDeleted = msgJson.status === MessageStatus.DELETED;
+
     return {
       id: msgJson.id,
       conversationId: msgJson.conversationId,
       senderId: msgJson.senderId,
-      content: msgJson.content,
-      type: msgJson.type,
+      content: isDeleted ? 'This message was deleted.' : msgJson.content,
+      type: isDeleted ? MessageType.TEXT : msgJson.type, // Treat deleted as text
       status: msgJson.status,
       replyToId: msgJson.replyToId,
       editedAt: msgJson.editedAt,
-      metadata: msgJson.metadata,
+      metadata: isDeleted ? {} : msgJson.metadata, // Clear metadata for deleted
       createdAt: msgJson.createdAt,
       updatedAt: msgJson.updatedAt,
     };
