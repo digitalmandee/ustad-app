@@ -936,7 +936,7 @@ export default class ChatService {
     const lastMessage = await Message.findOne({
       where: {
         conversationId: conversation.id,
-        status: { [Op.ne]: MessageStatus.DELETED },
+        // status: { [Op.ne]: MessageStatus.DELETED }, // Include deleted messages now
       },
       include: [{ model: User, as: 'sender', attributes: ['firstName', 'lastName'] }],
       order: [['createdAt', 'DESC']],
@@ -989,6 +989,21 @@ export default class ChatService {
       lastMessage: lastMessage
         ? await (async () => {
             const msgJson = lastMessage.toJSON() as any;
+            const isDeleted = msgJson.status === MessageStatus.DELETED;
+
+            if (isDeleted) {
+              return {
+                id: msgJson.id,
+                content: 'This message was deleted',
+                type: MessageType.TEXT, // Treat as text to avoid UI trying to render missing files
+                metadata: {},
+                file: undefined,
+                senderId: msgJson.senderId,
+                senderName: `${msgJson.sender?.firstName} ${msgJson.sender?.lastName}`,
+                createdAt: msgJson.createdAt,
+              };
+            }
+
             let fileData = undefined;
 
             if ([MessageType.FILE, MessageType.IMAGE, MessageType.AUDIO].includes(msgJson.type)) {
