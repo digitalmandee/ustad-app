@@ -77,6 +77,7 @@ export async function sendNotificationToUser(
       status: 'pending',
       isRead: false,
       sentAt: new Date(),
+      metadata: dataPayload,
     });
 
     const response = await firebaseApp.messaging().send(notificationMessage);
