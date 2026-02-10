@@ -49,7 +49,7 @@ export default class AuthController {
     let email = req.user.email;
     try {
       let user = await this.authService.passwordReset(email, req.body.password);
-      sendSuccessResponse(res, "Password changed sucessfully", 200, user);
+      sendSuccessResponse(res, "Password changed successfully", 200, user);
     } catch (e: any) {
       throw new GenericError(e, ` Error from OTP verification ${__filename}`);
     }

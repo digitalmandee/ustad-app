@@ -15,6 +15,7 @@ export interface GoogleUserData {
   city: string;
   country: string;
   state: string;
+  phone?: string;
 }
 
 export class GoogleAuthService {
@@ -34,6 +35,7 @@ export class GoogleAuthService {
         city,
         country,
         state,
+        phone,
       } = googleUserData;
 
       if (!email || !googleId) {
@@ -71,9 +73,9 @@ export class GoogleAuthService {
         password: null,
         image: image || null,
         deviceId: deviceId || null,
-        city,
         country,
         state,
+        phone: phone || null,
       });
 
       return user;

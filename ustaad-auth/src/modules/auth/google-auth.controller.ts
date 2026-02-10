@@ -25,6 +25,7 @@ export default class GoogleAuthController {
         city,
         country,
         state,
+        phone,
       } = req.body;
       const deviceId = req.headers.deviceid as string;
 
@@ -55,6 +56,7 @@ export default class GoogleAuthController {
         city,
         country,
         state,
+        phone,
       };
 
       // Process Google signup

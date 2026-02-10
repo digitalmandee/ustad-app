@@ -54,9 +54,7 @@ export default class AuthService implements IAuthService {
           );
         }
         if (existingUser.phone === userCreateDTO.phone) {
-          throw new ConflictError(
-            "This phone is already registered. Please login instead."
-          );
+          throw new ConflictError("This phone is already registered.");
         }
         if (existingUser.cnic === userCreateDTO.cnic) {
           throw new ConflictError(
@@ -99,9 +97,7 @@ export default class AuthService implements IAuthService {
       });
 
       if (!user) {
-        throw new UnProcessableEntityError(
-          "User not registered with provided email or phone."
-        );
+        throw new UnProcessableEntityError("Invalid email address or password");
       }
 
       if (user.isDeleted) {

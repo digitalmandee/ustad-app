@@ -103,9 +103,7 @@ export default class ParentService {
 
       const user = await User.findByPk(data.userId);
       if (!user) {
-        throw new UnProcessableEntityError(
-          "User not registered with provided email or phone."
-        );
+        throw new UnProcessableEntityError("Invalid email address or password");
       }
 
       // Check if tutor profile already exists
