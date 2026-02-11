@@ -29,7 +29,7 @@ export default class AuthController {
         req.body,
         req.headers.deviceid as string
       );
-      sendSuccessResponse(res, InfoMessages.AUTH.SIGNIN_SUCESS, 200, user);
+      sendSuccessResponse(res, InfoMessages.AUTH.SIGNIN_SUCCESS, 200, user);
     } catch (e: any) {
       throw new GenericError(e, ` Error from signIn ${__filename}`);
     }

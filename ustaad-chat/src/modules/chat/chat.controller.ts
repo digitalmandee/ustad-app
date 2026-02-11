@@ -36,7 +36,7 @@ export default class ChatController {
       const limit = Number(req.query.limit) || 20;
 
       const result = await this.chatService.getMessages(conversationId, userId, page, limit);
-      sendSuccessResponse(res, 'got message sucessfully', 200, result);
+      sendSuccessResponse(res, 'Messages retrieved successfully', 200, result);
     } catch (e: any) {
       throw new GenericError(e, ` Error from create message ${__filename}`);
     }
@@ -87,7 +87,7 @@ export default class ChatController {
     try {
       const userId = req.user?.id;
       const conversation = await this.chatService.createConversation(userId, req.body);
-      sendSuccessResponse(res, 'coversation created sucessfully', 200, conversation);
+      sendSuccessResponse(res, 'Conversation created successfully', 200, conversation);
     } catch (e: any) {
       throw new GenericError(e, ` Error from create message ${__filename}`);
     }
@@ -111,7 +111,7 @@ export default class ChatController {
       const role = req.user?.role;
       const { conversationId } = req.params;
       const conversation = await this.chatService.getConversationById(conversationId, userId, role);
-      sendSuccessResponse(res, 'user coversation got by id sucessfully', 200, conversation);
+      sendSuccessResponse(res, 'Conversation retrieved successfully', 200, conversation);
     } catch (e: any) {
       throw new GenericError(e, ` Error from create message ${__filename}`);
     }

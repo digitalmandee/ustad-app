@@ -16,7 +16,7 @@ const InfoMessages = {
   },
   AUTH: {
     PASSWORD_LENGTH_ERROR: "Password must be at least 8 characters long.",
-    SIGNIN_SUCESS: "SignedIn sucessfully",
+    SIGNIN_SUCCESS: "Signed in successfully",
   },
 };
 

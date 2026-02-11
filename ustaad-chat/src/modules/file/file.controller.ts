@@ -35,7 +35,7 @@ export default class FileController {
 
       const files = await this.fileService.getFile(userId, fileId as string);
 
-      sendSuccessResponse(res, 'got file sucessfully', 200, files);
+      sendSuccessResponse(res, 'File retrieved successfully', 200, files);
     } catch (e: any) {
       throw new GenericError(e, ` Error from fetching files ${__filename}`);
     }

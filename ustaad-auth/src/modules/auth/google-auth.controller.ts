@@ -172,7 +172,7 @@ export default class GoogleAuthController {
       delete sanitizedUser.password;
       delete sanitizedUser.isActive;
 
-      return sendSuccessResponse(res, InfoMessages.AUTH.SIGNIN_SUCESS, 200, {
+      return sendSuccessResponse(res, InfoMessages.AUTH.SIGNIN_SUCCESS, 200, {
         ...sanitizedUser,
         token,
       });

@@ -232,7 +232,7 @@ export default class ParentController {
       const { id: userId } = req.user;
       const { status, offerId } = req.params;
       if (!status || status === undefined) {
-        return sendErrorResponse(res, " offer status is required", 400);
+        return sendErrorResponse(res, "Offer status is required", 400);
       }
       if (!offerId || offerId === undefined) {
         return sendErrorResponse(res, "Offer ID is required", 400);
