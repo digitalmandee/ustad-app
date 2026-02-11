@@ -1026,8 +1026,8 @@ export default class TutorService {
               required: true, // Make sure User is always included
               where: {
                 isAdminVerified: true,
-                isEmailVerified: true,
-                isPhoneVerified: true,
+                // isEmailVerified: true,
+                // isPhoneVerified: true,
               },
             },
           ],
@@ -1201,8 +1201,8 @@ export default class TutorService {
             required: true, // Make sure User is always included
             where: {
               isAdminVerified: true,
-              isEmailVerified: true,
-              isPhoneVerified: true,
+              // isEmailVerified: true,
+              // isPhoneVerified: true,
             },
           },
         ],
