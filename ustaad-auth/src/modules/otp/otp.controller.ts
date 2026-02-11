@@ -26,7 +26,7 @@ export default class OtpController {
   verifyOtp = async (req: Request, res: Response) => {
     try {
       let resp = await this.otpService.verifyOtp(req.body);
-      sendSuccessResponse(res, "Otp verified sucessfully", 200, resp);
+      sendSuccessResponse(res, "OTP verified sucessfully", 200, resp);
     } catch (e: any) {
       throw new GenericError(e, ` Error verifying otp ${__filename}`);
     }
