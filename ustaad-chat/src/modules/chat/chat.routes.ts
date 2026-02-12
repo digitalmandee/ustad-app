@@ -36,7 +36,7 @@ router.post(
   routes.CREATE_MESSAGE,
   // '/messages',
   authenticateJwt,
-  createMessageValidator(),
+  // createMessageValidator(),
   validateRequest,
   chatController.createMessage
 );
