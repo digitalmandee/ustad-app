@@ -1421,6 +1421,17 @@ export default class AdminService {
           ],
         });
 
+        // Calculate one session cost
+        let oneSessionCost = 0;
+        if (
+          contract.Offer &&
+          contract.Offer.amountMonthly &&
+          contract.Offer.sessions
+        ) {
+          oneSessionCost =
+            contract.Offer.amountMonthly / contract.Offer.sessions;
+        }
+
         // Map users manually
         const parent = userMap.get(contract.parentId) || null;
         const tutor = userMap.get(contract.tutorId) || null;
@@ -1431,6 +1442,7 @@ export default class AdminService {
         return {
           ...contract,
           completedSessions,
+          oneSessionCost,
           parent: parent
             ? {
                 userId: parent.userId,
