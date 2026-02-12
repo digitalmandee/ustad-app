@@ -180,6 +180,35 @@ export default class ParentController {
     }
   };
 
+  updateBankDetails = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { accountNumber, bankName } = req.body;
+
+      const result = await this.parentService.updateBankDetails(userId, {
+        accountNumber,
+        bankName,
+      });
+
+      return sendSuccessResponse(
+        res,
+        "Bank details updated successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Update bank details error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while updating bank details";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
   getPaymentMethods = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;

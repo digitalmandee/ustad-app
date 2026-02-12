@@ -220,4 +220,13 @@ router.put(
   parentController.updateDocuments
 );
 
+router.patch(
+  routes.UPDATE_BANK_DETAILS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentOnboardingValidationRules(),
+  validateRequest,
+  parentController.updateBankDetails
+);
+
 export { router as tutorRouter };

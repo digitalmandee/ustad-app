@@ -364,6 +364,31 @@ export default class ParentService {
     }
   }
 
+  async updateBankDetails(
+    userId: string,
+    data: { accountNumber: string; bankName: string }
+  ) {
+    try {
+      const parent = await Parent.findOne({
+        where: { userId },
+      });
+
+      if (!parent) {
+        throw new UnProcessableEntityError("Parent profile not found");
+      }
+
+      await parent.update({
+        accountNumber: data.accountNumber,
+        bankName: data.bankName,
+      });
+
+      return parent;
+    } catch (error) {
+      console.error("Error in updateBankDetails:", error);
+      throw error;
+    }
+  }
+
   async getPaymentMethods(userId: string) {
     try {
       const parent = await Parent.findOne({
