@@ -2,6 +2,7 @@ import { User } from "@ustaad/shared";
 import jwt from "jsonwebtoken";
 import { UserRole, IsOnBaord, Gender } from "@ustaad/shared";
 import { UnProcessableEntityError } from "src/errors/unprocessable-entity.error";
+import { Op } from "sequelize";
 
 export interface GoogleUserData {
   email: string;
@@ -60,7 +61,10 @@ export class GoogleAuthService {
         throw new UnProcessableEntityError("Role is required");
       }
 
+      const userId = await this.generateCustomUserId(role);
+
       user = await User.create({
+        userId,
         googleId,
         email,
         firstName,
@@ -84,6 +88,31 @@ export class GoogleAuthService {
       throw error;
     }
   }
+
+  private async generateCustomUserId(role: UserRole): Promise<string> {
+    const prefix = role === UserRole.TUTOR ? "TU-" : "PA-";
+
+    const lastUser = await User.findOne({
+      where: {
+        userId: {
+          [Op.like]: `${prefix}%`,
+        },
+      },
+      order: [["userId", "DESC"]],
+    });
+
+    let nextNumber = 1;
+    if (lastUser && lastUser.userId && lastUser.userId.includes("-")) {
+      const lastNumericPart = lastUser.userId.split("-")[1];
+      const parsedNumber = parseInt(lastNumericPart, 10);
+      if (!isNaN(parsedNumber)) {
+        nextNumber = parsedNumber + 1;
+      }
+    }
+
+    return `${prefix}${nextNumber.toString().padStart(4, "0")}`;
+  }
+
   public generateJWT(user: any): string {
     return jwt.sign(
       {

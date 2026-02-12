@@ -67,6 +67,8 @@ export default class AdminService {
         activeSubscriptions,
         completedSubscriptions,
         cancelledSubscriptions,
+        disputeSubscriptions,
+        createdSubscriptions,
         totalTransactions,
         revenueRaw,
         pendingUserCount,
@@ -94,6 +96,12 @@ export default class AdminService {
         }),
         ParentSubscription.count({
           where: { status: ParentSubscriptionStatus.CANCELLED, ...dateFilter },
+        }),
+        ParentSubscription.count({
+          where: { status: ParentSubscriptionStatus.DISPUTE, ...dateFilter },
+        }),
+        ParentSubscription.count({
+          where: { status: ParentSubscriptionStatus.CREATED, ...dateFilter },
         }),
         ParentTransaction.count({ where: { ...dateFilter } }),
         ParentTransaction.sum("amount", {
@@ -134,6 +142,8 @@ export default class AdminService {
         activeSubscriptions,
         completedSubscriptions,
         cancelledSubscriptions,
+        disputeSubscriptions,
+        createdSubscriptions,
         totalTransactions,
         totalRevenue: parseFloat(((revenueRaw as any) || 0).toString()),
         pendingUserCount,
