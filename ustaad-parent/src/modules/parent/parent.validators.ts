@@ -171,3 +171,20 @@ export const deletePaymentMethodValidationRules = () => {
       .withMessage("Payment method ID cannot be empty"),
   ];
 };
+
+export const parentOnboardingValidationRules = () => {
+  return [
+    body("accountNumber")
+      .notEmpty()
+      .withMessage("Account number is required")
+      .isString()
+      .withMessage("Account number must be a string")
+      .trim(),
+    body("bankName")
+      .notEmpty()
+      .withMessage("Bank Name is required")
+      .isString()
+      .withMessage("Bank Name must be a string")
+      .trim(),
+  ];
+};

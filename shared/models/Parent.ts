@@ -1,7 +1,6 @@
 import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { User } from "./User";
 
-
 export interface TutorAttributes {
   id: string;
   userId: string;
@@ -10,6 +9,8 @@ export interface TutorAttributes {
   customerId?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  accountNumber?: string;
+  bankName?: string;
 }
 
 export type TutorCreationAttributes = Optional<TutorAttributes, "id">;
@@ -25,6 +26,8 @@ export class Parent
   public customerId?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+  public accountNumber!: string;
+  public bankName!: string;
 }
 
 export function initParentModel(sequelize: Sequelize): typeof Parent {
@@ -55,7 +58,15 @@ export function initParentModel(sequelize: Sequelize): typeof Parent {
       customerId: {
         type: DataTypes.STRING,
         allowNull: true,
-      }
+      },
+      accountNumber: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      bankName: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       sequelize,

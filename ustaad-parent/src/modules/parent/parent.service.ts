@@ -46,6 +46,8 @@ interface ParentProfileData {
   userId: string;
   idFront: Express.Multer.File;
   idBack: Express.Multer.File;
+  accountNumber: string;
+  bankName: string;
 }
 
 interface UpdateProfileData {
@@ -131,6 +133,8 @@ export default class ParentService {
         userId: data.userId,
         idFrontUrl,
         idBackUrl,
+        accountNumber: data.accountNumber,
+        bankName: data.bankName,
       });
 
       return parent;

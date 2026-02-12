@@ -9,6 +9,7 @@ import {
   createPaymentMethodValidationRules,
   updatePaymentMethodValidationRules,
   deletePaymentMethodValidationRules,
+  parentOnboardingValidationRules,
 } from "./parent.validators";
 import routes from "../../routes/routes";
 import { authenticateJwt } from "../../middlewares/auth";
@@ -29,6 +30,7 @@ const uploadFields = upload.fields([
 router.post(
   routes.PARENT_ONBOARDING,
   uploadFields,
+  parentOnboardingValidationRules(),
   validateRequest,
   authenticateJwt,
   authorizeRoles("PARENT"),

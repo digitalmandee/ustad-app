@@ -26,6 +26,7 @@ export default class ParentController {
   onboardParent = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id: userId } = req.user;
+      const { accountNumber, bankName } = req.body;
 
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
@@ -41,6 +42,8 @@ export default class ParentController {
         userId,
         idFront: files.idFront[0],
         idBack: files.idBack[0],
+        accountNumber,
+        bankName,
       });
 
       await User.update(

@@ -34,7 +34,15 @@ function initParentModel(sequelize) {
         customerId: {
             type: sequelize_1.DataTypes.STRING,
             allowNull: true,
-        }
+        },
+        accountNumber: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: true,
+        },
+        bankName: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: true,
+        },
     }, {
         sequelize,
         tableName: "parents",
