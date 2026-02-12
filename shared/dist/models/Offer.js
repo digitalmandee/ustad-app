@@ -83,7 +83,7 @@ function initOfferModel(sequelize) {
             allowNull: true,
         },
         status: {
-            type: sequelize_1.DataTypes.ENUM("PENDING", "ACCEPTED", "REJECTED", "CANCELLED"),
+            type: sequelize_1.DataTypes.ENUM("PENDING", "ACCEPTED", "REJECTED", "CANCELLED", "COMPLETED"),
             allowNull: false,
             defaultValue: "PENDING",
         },
