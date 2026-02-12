@@ -314,7 +314,12 @@ export default class AdminService {
     };
   }
 
-  async getAllParents(page = 1, limit = 20, search: string = "") {
+  async getAllParents(
+    page = 1,
+    limit = 20,
+    search: string = "",
+    date?: string
+  ) {
     const offset = (page - 1) * limit;
     const hasSearch = typeof search === "string" && search.trim().length > 0;
     const searchTerm = `%${search.trim()}%`;
@@ -326,6 +331,18 @@ export default class AdminService {
       isOnBoard: IsOnBaord.APPROVED,
       isDeleted: false,
     };
+
+    if (date) {
+      const startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+
+      userWhere.createdAt = {
+        [Op.between]: [startDate, endDate],
+      };
+    }
 
     if (hasSearch) {
       // UUID search (id)
@@ -581,7 +598,7 @@ export default class AdminService {
     };
   }
 
-  async getAllTutors(page = 1, limit = 20, search: string = "") {
+  async getAllTutors(page = 1, limit = 20, search: string = "", date?: string) {
     const offset = (page - 1) * limit;
 
     const hasSearch = typeof search === "string" && search.trim().length > 0;
@@ -594,6 +611,18 @@ export default class AdminService {
       isOnBoard: IsOnBaord.APPROVED,
       isDeleted: false,
     };
+
+    if (date) {
+      const startDate = new Date(date);
+      startDate.setHours(0, 0, 0, 0);
+
+      const endDate = new Date(date);
+      endDate.setHours(23, 59, 59, 999);
+
+      userWhere.createdAt = {
+        [Op.between]: [startDate, endDate],
+      };
+    }
 
     if (hasSearch) {
       // UUID search (id)
