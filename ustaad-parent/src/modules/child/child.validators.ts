@@ -31,10 +31,10 @@ export const addChildValidationRules = () => {
       .notEmpty()
       .withMessage("Grade is required")
       .isString()
-      .withMessage("Grade must be a string")
-      .trim()
-      .matches(/^[1-9]|1[0-2]$/)
-      .withMessage("Grade must be a number between 1 and 12"),
+      .withMessage("Grade must be a string"),
+    // .trim()
+    // .matches(/^[1-9]|1[0-2]$/)
+    // .withMessage("Grade must be a number between 1 and 12"),
 
     body("age")
       .notEmpty()

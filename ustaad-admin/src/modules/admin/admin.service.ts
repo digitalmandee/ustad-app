@@ -853,7 +853,7 @@ export default class AdminService {
       include: [
         {
           model: User,
-          attributes: ["firstName", "lastName", "email", "phone"],
+          attributes: ["firstName", "lastName", "email", "phone", "image"],
           where: isSearchText ? userWhere : undefined,
           required: isSearchText, // If searching text, we enforce User match
         },

@@ -6,6 +6,7 @@ import { IsOnBaord } from "../constant/enums";
 
 interface UserAttributes {
   id: string;
+  userId: string;
   role: UserRole;
   isActive: boolean;
   isAdminVerified: boolean;
@@ -42,6 +43,7 @@ interface UserCreationAttributes
   extends Optional<
     UserAttributes,
     | "id"
+    | "userId"
     | "role"
     | "isActive"
     | "isAdminVerified"
@@ -69,6 +71,7 @@ export class User
   implements UserAttributes
 {
   public id!: string;
+  public userId!: string;
   public role!: UserRole;
   public isActive!: boolean;
   public isAdminVerified!: boolean;
@@ -109,6 +112,12 @@ export function initUserModel(sequelize: Sequelize): typeof User {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
+      },
+      userId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: "id",
+        unique: true,
       },
       role: {
         type: DataTypes.ENUM(...Object.values(UserRole)),

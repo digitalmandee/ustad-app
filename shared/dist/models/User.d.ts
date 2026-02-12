@@ -3,6 +3,7 @@ import { UserRole, Gender } from "../constant/enums";
 import { IsOnBaord } from "../constant/enums";
 interface UserAttributes {
     id: string;
+    userId: string;
     role: UserRole;
     isActive: boolean;
     isAdminVerified: boolean;
@@ -27,10 +28,11 @@ interface UserAttributes {
     createdAt?: Date;
     updatedAt?: Date;
 }
-interface UserCreationAttributes extends Optional<UserAttributes, "id" | "role" | "isActive" | "isAdminVerified" | "isOnBoard" | "gender" | "password" | "cnic" | "address" | "city" | "state" | "country" | "image" | "isEmailVerified" | "phone" | "isPhoneVerified" | "googleId" | "deviceId" | "createdAt" | "updatedAt" | "isDeleted"> {
+interface UserCreationAttributes extends Optional<UserAttributes, "id" | "userId" | "role" | "isActive" | "isAdminVerified" | "isOnBoard" | "gender" | "password" | "cnic" | "address" | "city" | "state" | "country" | "image" | "isEmailVerified" | "phone" | "isPhoneVerified" | "googleId" | "deviceId" | "createdAt" | "updatedAt" | "isDeleted"> {
 }
 export declare class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
     id: string;
+    userId: string;
     role: UserRole;
     isActive: boolean;
     isAdminVerified: boolean;

@@ -24,6 +24,7 @@ import {
 } from "@ustaad/shared";
 import { OtpServices } from "../otp/otp.service";
 import { BadRequestError } from "../../errors/bad-request-error";
+import { UserRole } from "@ustaad/shared";
 
 export interface IAuthService {
   signUp: (userCreateDTO: ISignUpCreateDTO) => Promise<any>;
@@ -65,8 +66,11 @@ export default class AuthService implements IAuthService {
 
       const hashedPassword = await hashPassword(userCreateDTO.password);
 
+      const userId = await this.generateCustomUserId(userCreateDTO.role);
+
       const newUser = await User.create({
         ...userCreateDTO,
+        userId,
         password: hashedPassword,
         isActive: true,
       });
@@ -382,5 +386,29 @@ export default class AuthService implements IAuthService {
       console.error("Error cleaning up expired sessions:", err);
       throw new GenericError(err, "Failed to cleanup expired sessions");
     }
+  }
+
+  private async generateCustomUserId(role: UserRole): Promise<string> {
+    const prefix = role === UserRole.TUTOR ? "TU-" : "PA-";
+
+    const lastUser = await User.findOne({
+      where: {
+        userId: {
+          [Op.like]: `${prefix}%`,
+        },
+      },
+      order: [["userId", "DESC"]],
+    });
+
+    let nextNumber = 1;
+    if (lastUser && lastUser.userId && lastUser.userId.includes("-")) {
+      const lastNumericPart = lastUser.userId.split("-")[1];
+      const parsedNumber = parseInt(lastNumericPart, 10);
+      if (!isNaN(parsedNumber)) {
+        nextNumber = parsedNumber + 1;
+      }
+    }
+
+    return `${prefix}${nextNumber.toString().padStart(4, "0")}`;
   }
 }

@@ -16,6 +16,12 @@ function initUserModel(sequelize) {
             defaultValue: sequelize_1.DataTypes.UUIDV4,
             primaryKey: true,
         },
+        userId: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: false,
+            defaultValue: "id",
+            unique: true,
+        },
         role: {
             type: sequelize_1.DataTypes.ENUM(...Object.values(enums_1.UserRole)),
             allowNull: false,
