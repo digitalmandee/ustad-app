@@ -19,7 +19,6 @@ function initUserModel(sequelize) {
         userId: {
             type: sequelize_1.DataTypes.STRING,
             allowNull: false,
-            defaultValue: "id",
             unique: true,
         },
         role: {

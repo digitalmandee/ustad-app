@@ -116,7 +116,6 @@ export function initUserModel(sequelize: Sequelize): typeof User {
       userId: {
         type: DataTypes.STRING,
         allowNull: false,
-        defaultValue: "id",
         unique: true,
       },
       role: {
