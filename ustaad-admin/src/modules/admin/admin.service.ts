@@ -332,7 +332,7 @@ export default class AdminService {
       isDeleted: false,
     };
 
-    if (date !== "" || date !== undefined || date !== null) {
+    if (date) {
       const startDate = new Date(date);
       startDate.setHours(0, 0, 0, 0);
 
