@@ -31,6 +31,7 @@ import { Op } from "sequelize";
 import bcrypt from "bcrypt";
 import { Sequelize } from "sequelize";
 import { validate as isUUID } from "uuid";
+import { v4 as uuidv4 } from "uuid";
 
 export default class AdminService {
   async getStats(days?: number) {
@@ -350,6 +351,7 @@ export default class AdminService {
         userWhere.id = search;
       } else {
         userWhere[Op.or] = [
+          { userId: { [Op.iLike]: searchTerm } },
           { phone: { [Op.iLike]: searchTerm } },
           { firstName: { [Op.iLike]: searchTerm } },
           { lastName: { [Op.iLike]: searchTerm } },
@@ -363,6 +365,7 @@ export default class AdminService {
         {
           model: User,
           attributes: [
+            "userId",
             "id",
             "firstName",
             "lastName",
@@ -630,6 +633,7 @@ export default class AdminService {
         userWhere.id = search;
       } else {
         userWhere[Op.or] = [
+          { userId: { [Op.iLike]: searchTerm } },
           { phone: { [Op.iLike]: searchTerm } },
           { firstName: { [Op.iLike]: searchTerm } },
           { lastName: { [Op.iLike]: searchTerm } },
@@ -643,6 +647,7 @@ export default class AdminService {
         {
           model: User,
           attributes: [
+            "userId",
             "id",
             "firstName",
             "lastName",
@@ -883,6 +888,7 @@ export default class AdminService {
           // { lastName: { [Op.iLike]: searchTerm } },
           { email: { [Op.iLike]: searchTerm } },
           { phone: { [Op.iLike]: searchTerm } },
+          { userId: { [Op.iLike]: searchTerm } },
         ];
       }
     }
@@ -892,7 +898,14 @@ export default class AdminService {
       include: [
         {
           model: User,
-          attributes: ["firstName", "lastName", "email", "phone", "image"],
+          attributes: [
+            "firstName",
+            "lastName",
+            "email",
+            "phone",
+            "image",
+            "userId",
+          ],
           where: isSearchText ? userWhere : undefined,
           required: isSearchText, // If searching text, we enforce User match
         },
@@ -936,6 +949,7 @@ export default class AdminService {
     return {
       paymentRequest,
       tutor: {
+        userId: tutor.userId,
         id: tutor.userId,
         bankName: tutor.bankName,
         accountNumber: tutor.accountNumber,
@@ -1018,6 +1032,7 @@ export default class AdminService {
 
     // Create admin user
     const adminUser = await User.create({
+      userId: uuidv4(),
       firstName: userData.firstName,
       lastName: userData.lastName,
       email: userData.email,
@@ -1108,6 +1123,7 @@ export default class AdminService {
       User.findAndCountAll({
         where: whereClause,
         attributes: [
+          "userId",
           "id",
           "firstName",
           "lastName",
@@ -1299,6 +1315,7 @@ export default class AdminService {
             [Op.or]: [
               { email: { [Op.iLike]: `%${searchTerm}%` } },
               { phone: { [Op.iLike]: `%${searchTerm}%` } },
+              { userId: { [Op.iLike]: `%${searchTerm}%` } },
             ],
           },
           attributes: ["id"],
@@ -1312,6 +1329,7 @@ export default class AdminService {
             [Op.or]: [
               { parentId: { [Op.in]: foundUserIds } },
               { tutorId: { [Op.in]: foundUserIds } },
+              { userId: { [Op.in]: foundUserIds } },
             ],
           };
         } else {
@@ -1366,7 +1384,15 @@ export default class AdminService {
       where: {
         id: Array.from(userIds),
       },
-      attributes: ["id", "firstName", "lastName", "email", "phone", "role"],
+      attributes: [
+        "id",
+        "userId",
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "role",
+      ],
     });
 
     // Create a map for quick lookup
@@ -1407,6 +1433,7 @@ export default class AdminService {
           completedSessions,
           parent: parent
             ? {
+                userId: parent.userId,
                 id: parent.id,
                 firstName: parent.firstName,
                 lastName: parent.lastName,
@@ -1416,6 +1443,7 @@ export default class AdminService {
             : null,
           tutor: tutor
             ? {
+                userId: tutor.userId,
                 id: tutor.id,
                 firstName: tutor.firstName,
                 lastName: tutor.lastName,
@@ -1425,6 +1453,7 @@ export default class AdminService {
             : null,
           disputedByUser: disputedByUser
             ? {
+                userId: disputedByUser.userId,
                 id: disputedByUser.id,
                 firstName: disputedByUser.firstName,
                 lastName: disputedByUser.lastName,
@@ -1475,10 +1504,10 @@ export default class AdminService {
     // Manually fetch related users
     const [parent, tutor] = await Promise.all([
       User.findByPk(contract.parentId, {
-        attributes: ["id", "firstName", "lastName", "email"],
+        attributes: ["id", "userId", "firstName", "lastName", "email"],
       }),
       User.findByPk(contract.tutorId, {
-        attributes: ["id", "firstName", "lastName", "email"],
+        attributes: ["id", "userId", "firstName", "lastName", "email"],
       }),
     ]);
 
