@@ -363,7 +363,7 @@ export default class TutorController {
     try {
       const { id: userId } = req.user;
       const { educationId } = req.params;
-      const { institute, startDate, endDate, description } = req.body;
+      const { institute, startDate, endDate, description, degree } = req.body;
 
       const result = await this.tutorService.updateEducation(
         userId,
@@ -373,6 +373,7 @@ export default class TutorController {
           startDate,
           endDate,
           description,
+          degree,
         }
       );
 
