@@ -1779,11 +1779,6 @@ export default class AdminService {
 
       const offer = await Offer.findOne({
         where: { id: contract.offerId },
-        include: [
-          {
-            model: Offer,
-          },
-        ],
       });
 
       if (!offer) {
