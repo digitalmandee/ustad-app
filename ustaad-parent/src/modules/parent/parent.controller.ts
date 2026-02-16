@@ -1016,4 +1016,83 @@ export default class ParentController {
       return sendErrorResponse(res, errorMessage, 400);
     }
   };
+  addPaymentRequest = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const { amount } = req.body;
+
+      if (!amount) {
+        return sendErrorResponse(res, "Amount is required", 400);
+      }
+
+      const result = await this.parentService.addPaymentRequest(userId, amount);
+
+      return sendSuccessResponse(
+        res,
+        "Payment request added successfully",
+        201,
+        result
+      );
+    } catch (error: any) {
+      console.error("Add payment request error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while adding payment request";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+
+  getPaymentRequests = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+
+      const result = await this.parentService.getPaymentRequests(userId);
+
+      return sendSuccessResponse(
+        res,
+        "Payment requests retrieved successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Get payment requests error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message ||
+        "Something went wrong while retrieving payment requests";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
+  getTransactions = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+
+      const result = await this.parentService.getTransactions(userId);
+
+      return sendSuccessResponse(
+        res,
+        "Transactions retrieved successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Get transactions error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message || "Something went wrong while retrieving transactions";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
 }

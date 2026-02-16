@@ -229,4 +229,26 @@ router.patch(
   parentController.updateBankDetails
 );
 
+// Payment Request routes
+router.post(
+  routes.ADD_PAYMENT_REQUEST,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  parentController.addPaymentRequest
+);
+
+router.get(
+  routes.GET_PAYMENT_REQUESTS,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  parentController.getPaymentRequests
+);
+// Transaction Routes
+router.get(
+  routes.GET_TRANSACTIONS,
+  authenticateJwt,
+  authorizeRoles("PARENT"),
+  parentController.getTransactions
+);
+
 export { router as tutorRouter };

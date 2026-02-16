@@ -2759,4 +2759,59 @@ export default class ParentService {
       throw error;
     }
   }
+  async addPaymentRequest(userId: string, amount: number) {
+    try {
+      const tutor = await Tutor.findOne({
+        where: { userId },
+      });
+
+      if (!tutor) {
+        throw new UnProcessableEntityError("Tutor profile not found");
+      }
+
+      const paymentRequest = await PaymentRequests.create({
+        tutorId: userId,
+        amount: amount,
+        status: TutorPaymentStatus.PENDING,
+      });
+
+      return paymentRequest;
+    } catch (error) {
+      console.error("Error in addPaymentRequest:", error);
+      throw error;
+    }
+  }
+
+  async getPaymentRequests(userId: string) {
+    try {
+      const paymentRequests = await PaymentRequests.findAll({
+        where: { tutorId: userId },
+        order: [["createdAt", "DESC"]],
+      });
+
+      return paymentRequests;
+    } catch (error) {
+      console.error("Error in getPaymentRequests:", error);
+      throw error;
+    }
+  }
+  async getTransactions(userId: string) {
+    try {
+      const transactions = await ParentTransaction.findAll({
+        where: { parentId: userId },
+        order: [["createdAt", "DESC"]],
+        include: [
+          {
+            model: ParentSubscription,
+            attributes: ["id", "status", "planType"],
+          },
+        ],
+      });
+
+      return transactions;
+    } catch (error) {
+      console.error("Error in getTransactions:", error);
+      throw error;
+    }
+  }
 }

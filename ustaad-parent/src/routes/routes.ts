@@ -57,6 +57,7 @@ const routes = {
   PAYFAST_3DS_CALLBACK: "/parent/payfast/3dscallback",
 
   // Notifications
+  GET_TRANSACTIONS: "/parent/transactions",
   DELETE_NOTIFICATION: "/parent/notification/:id",
   BULK_DELETE_NOTIFICATIONS: "/parent/notifications/bulk-delete",
 
@@ -65,6 +66,10 @@ const routes = {
   UPDATE_PARENT_DOCUMENTS: "/parent/update-documents",
   PARENT_Profile_IMAGE_DELETE: "/parent/profile/image/delete",
   UPDATE_BANK_DETAILS: "/parent/bank-details",
+
+  // Tutor Payment Request routes
+  ADD_PAYMENT_REQUEST: "/tutor/payment-request",
+  GET_PAYMENT_REQUESTS: "/tutor/payment-request",
 };
 
 export default routes;
