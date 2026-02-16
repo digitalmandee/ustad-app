@@ -957,54 +957,88 @@ export default class AdminService {
   }
 
   async updatePaymentRequestStatus(id: string, status: string) {
-    const paymentRequest = await PaymentRequests.findByPk(id);
-
-    paymentRequest.status = status as TutorPaymentStatus;
-    await paymentRequest.save();
-
-    // Send notification to tutor about payment status update
+    const transaction = await sequelize.transaction();
     try {
-      let title = "Payment Update";
-      let body = `Your payment request status has been updated to ${status}`;
+      const paymentRequest = await PaymentRequests.findByPk(id, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
 
-      if (status === TutorPaymentStatus.PAID) {
-        title = "💰 Payment Received";
-        body = `Your payment request for ${paymentRequest.amount} has been processed and paid.`;
-      } else if (status === TutorPaymentStatus.REJECTED) {
-        title = "❌ Payment Rejected";
-        body = `Your payment request for ${paymentRequest.amount} has been rejected. Please contact support for more details.`;
+      if (!paymentRequest) {
+        throw new Error("Payment request not found");
       }
 
-      const user = await this.getUserById(paymentRequest.tutorId);
+      // If status is being changed to REJECTED and it wasn't already REJECTED
+      // Refund the amount to the tutor
+      if (
+        status === TutorPaymentStatus.REJECTED &&
+        paymentRequest.status !== TutorPaymentStatus.REJECTED
+      ) {
+        const tutor = await Tutor.findOne({
+          where: { userId: paymentRequest.tutorId },
+          transaction,
+          lock: transaction.LOCK.UPDATE,
+        });
 
-      if (!user) {
-        console.log("User not found for notification");
+        if (tutor) {
+          await tutor.increment("balance", {
+            by: paymentRequest.amount,
+            transaction,
+          });
+        }
       }
 
-      await sendNotificationToUser(
-        user.id,
-        user.deviceId,
-        title,
-        body,
-        {
-          loginTime: new Date().toISOString(),
-          deviceId: user.deviceId,
-          role: user.role,
-          userId: user.id,
-          type: NotificationType.PAYMENT_STATUS_UPDATE,
-        },
-        "http://15.235.204.49:5000/logo.png", // imageUrl
-        "/payment", // clickAction
-        NotificationType.PAYMENT_STATUS_UPDATE
-      );
+      paymentRequest.status = status as TutorPaymentStatus;
+      await paymentRequest.save({ transaction });
+
+      await transaction.commit();
+
+      // Send notification to tutor about payment status update
+      // Notifications are sent after commit to avoid sending if transaction fails
+      try {
+        let title = "Payment Update";
+        let body = `Your payment request status has been updated to ${status}`;
+
+        if (status === TutorPaymentStatus.PAID) {
+          title = "💰 Payment Received";
+          body = `Your payment request for ${paymentRequest.amount} has been processed and paid.`;
+        } else if (status === TutorPaymentStatus.REJECTED) {
+          title = "❌ Payment Rejected";
+          body = `Your payment request for ${paymentRequest.amount} has been rejected. Please contact support for more details.`;
+        }
+
+        const user = await User.findByPk(paymentRequest.tutorId);
+
+        if (!user) {
+          console.log("User not found for notification");
+        } else {
+          await sendNotificationToUser(
+            user.id,
+            user.deviceId,
+            title,
+            body,
+            {
+              loginTime: new Date().toISOString(),
+              deviceId: user.deviceId,
+              role: user.role,
+              userId: user.id,
+              type: NotificationType.PAYMENT_STATUS_UPDATE,
+            },
+            "http://15.235.204.49:5000/logo.png", // imageUrl
+            "/payment", // clickAction
+            NotificationType.PAYMENT_STATUS_UPDATE
+          );
+        }
+      } catch (notificationError) {
+        console.error("Error sending notification:", notificationError);
+        // We don't throw here because the main operation (status update) succeeded
+      }
+
+      return paymentRequest;
     } catch (error) {
-      console.error(
-        `❌ Error sending payment status notification to tutor ${paymentRequest.tutorId}:`,
-        error
-      );
+      await transaction.rollback();
+      throw error;
     }
-
-    return paymentRequest;
   }
 
   async createAdmin(userData: {

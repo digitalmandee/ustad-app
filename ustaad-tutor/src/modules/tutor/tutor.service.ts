@@ -1448,36 +1448,57 @@ export default class TutorService {
 
   // Payment Request Methods
   async createPaymentRequest(data: PaymentRequestData) {
+    const transaction = await sequelize.transaction();
     try {
-      // Check if tutor exists
-      const tutor = await Tutor.findByPk(data.tutorId);
+      // Check if tutor exists with lock to prevent race conditions
+      const tutor = await Tutor.findByPk(data.tutorId, {
+        transaction,
+        lock: transaction.LOCK.UPDATE,
+      });
       if (!tutor) {
         throw new UnProcessableEntityError("Tutor not found");
       }
 
-      // Create payment request
+      // Check balance
+      if (tutor.balance < data.amount) {
+        throw new UnProcessableEntityError("Insufficient balance");
+      }
+
+      // Check if payment request already exists
       const paymentRequest = await PaymentRequests.findOne({
         where: {
           tutorId: tutor.userId,
-          status:
-            TutorPaymentStatus.PENDING ||
-            TutorPaymentStatus.REQUESTED ||
-            TutorPaymentStatus.IN_REVIEW,
+          status: {
+            [Op.or]: [
+              TutorPaymentStatus.PENDING,
+              TutorPaymentStatus.REQUESTED,
+              TutorPaymentStatus.IN_REVIEW,
+            ],
+          },
         },
+        transaction,
       });
 
       if (paymentRequest) {
         throw new UnProcessableEntityError("Payment request already exists");
       }
 
-      await PaymentRequests.create({
-        tutorId: tutor.userId,
-        status: TutorPaymentStatus.REQUESTED,
-        amount: data.amount,
-      });
+      const newPaymentRequest = await PaymentRequests.create(
+        {
+          tutorId: tutor.userId,
+          status: TutorPaymentStatus.REQUESTED,
+          amount: data.amount,
+        },
+        { transaction }
+      );
 
-      return paymentRequest;
+      // Deduct balance
+      await tutor.decrement("balance", { by: data.amount, transaction });
+
+      await transaction.commit();
+      return newPaymentRequest;
     } catch (error) {
+      await transaction.rollback();
       console.error("Error in createPaymentRequest:", error);
       throw error;
     }
