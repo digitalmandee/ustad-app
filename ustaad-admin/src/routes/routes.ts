@@ -20,6 +20,7 @@ const routes = {
   // Contract dispute management
   DISPUTED_CONTRACTS: "/admin/contracts/disputed",
   RESOLVE_DISPUTE: "/admin/contracts/:contractId/resolve",
+  REFUND: "/admin/contracts/refund",
 
   // User data retrieval
   USER_DATA_BY_ID: "/admin/users/data/:id",

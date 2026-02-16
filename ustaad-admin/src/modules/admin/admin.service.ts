@@ -1761,4 +1761,96 @@ export default class AdminService {
     const user = await User.findByPk(id);
     return user;
   };
+  async refundContract(contractId: string) {
+    try {
+      // 1. Get contract with Offer
+      const contract = await ParentSubscription.findOne({
+        where: { id: contractId },
+        include: [
+          {
+            model: Offer,
+          },
+        ],
+      });
+
+      if (!contract) {
+        throw new Error("Contract not found");
+      }
+
+      const offer = await Offer.findOne({
+        where: { id: contract.offerId },
+        include: [
+          {
+            model: Offer,
+          },
+        ],
+      });
+
+      if (!offer) {
+        throw new Error("Offer not found for this contract");
+      }
+
+      // 2. Calculate refund amount
+      const totalAmount = contract.amount;
+      const totalSessions = offer.sessions;
+
+      if (!totalSessions || totalSessions === 0) {
+        throw new Error("Invalid session count in offer");
+      }
+
+      const sessionCost = totalAmount / totalSessions;
+
+      const completedSessions = await TutorSessionsDetail.count({
+        where: {
+          parentId: contract.parentId,
+          status: TutorSessionStatus.COMPLETED,
+        },
+        include: [
+          {
+            model: TutorSessions,
+            where: { offerId: contract.offerId },
+            required: true,
+          },
+        ],
+      });
+
+      const usedAmount = completedSessions * sessionCost;
+      let refundAmount = totalAmount - usedAmount;
+
+      // Ensure refund doesn't exceed total amount and is not negative
+      if (refundAmount < 0) refundAmount = 0;
+      if (refundAmount > totalAmount) refundAmount = totalAmount;
+
+      // 3. Update parent balance
+      const parent = await Parent.findOne({
+        where: { userId: contract.parentId },
+      });
+
+      if (!parent) {
+        throw new Error("Parent not found");
+      }
+
+      const currentBalance = parseFloat(parent.balance || "0");
+      const newBalance = currentBalance + refundAmount;
+
+      await parent.update({ balance: newBalance.toString() });
+
+      // 4. Update contract status
+      await contract.update({
+        status: ParentSubscriptionStatus.CANCELLED, // Or REFUNDED if available, but using CANCELLED as per plan
+      });
+
+      return {
+        success: true,
+        message: "Refund processed successfully",
+        refundAmount,
+        currency: "ZAR", // Assuming currency
+        newBalance,
+        contractId: contract.id,
+      };
+    } catch (error) {
+      console.error("Error in refundContract:", error);
+      throw error;
+    }
+  }
 }

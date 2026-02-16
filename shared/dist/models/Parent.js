@@ -43,6 +43,10 @@ function initParentModel(sequelize) {
             type: sequelize_1.DataTypes.STRING,
             allowNull: true,
         },
+        balance: {
+            type: sequelize_1.DataTypes.STRING,
+            allowNull: true,
+        },
     }, {
         sequelize,
         tableName: "parents",

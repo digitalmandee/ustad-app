@@ -138,4 +138,12 @@ router.get(
   adminController.getUserDataById
 );
 
+// Refund Contract
+router.post(
+  routes.REFUND,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
+  adminController.refundContract
+);
+
 export { router as adminRouter };

@@ -378,4 +378,33 @@ export default class AdminController {
       throw new GenericError(e, ` Error from getUserDataById ${__filename}`);
     }
   };
+  refundContract = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { contractId } = req.body;
+      if (!contractId) {
+        return sendErrorResponse(res, "Contract ID is required", 400);
+      }
+
+      const result = await this.adminService.refundContract(contractId);
+      return sendSuccessResponse(
+        res,
+        "Refund processed successfully",
+        200,
+        result
+      );
+    } catch (e: any) {
+      if (
+        e.message === "Contract not found" ||
+        e.message === "Offer not found for this contract" ||
+        e.message === "Parent not found"
+      ) {
+        return sendErrorResponse(res, e.message, 404);
+      }
+      return sendErrorResponse(
+        res,
+        e.message || "Failed to process refund",
+        500
+      );
+    }
+  };
 }
