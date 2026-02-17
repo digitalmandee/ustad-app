@@ -68,8 +68,8 @@ const routes = {
   UPDATE_BANK_DETAILS: "/parent/bank-details",
 
   // Tutor Payment Request routes
-  ADD_PAYMENT_REQUEST: "/tutor/payment-request",
-  GET_PAYMENT_REQUESTS: "/tutor/payment-request",
+  ADD_PAYMENT_REQUEST: "/parent/payment-request",
+  GET_PAYMENT_REQUESTS: "/parent/payment-request",
 };
 
 export default routes;
