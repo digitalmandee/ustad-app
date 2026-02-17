@@ -2761,13 +2761,21 @@ export default class ParentService {
   }
   async addPaymentRequest(userId: string, amount: number) {
     try {
-      const tutor = await Parent.findOne({
+      const parent = await Parent.findOne({
         where: { userId },
       });
 
-      if (!tutor) {
-        throw new UnProcessableEntityError("Tutor profile not found");
+      if (!parent) {
+        throw new UnProcessableEntityError("Parent profile not found");
       }
+
+      if (parent.balance && Number(parent.balance) < Number(amount)) {
+        throw new UnProcessableEntityError("Insufficient balance");
+      }
+
+      const currentBalance = Number(parent.balance || 0) - Number(amount);
+
+      await parent.update({ balance: currentBalance.toString() });
 
       const paymentRequest = await PaymentRequests.create({
         tutorId: userId,
