@@ -233,14 +233,14 @@ router.patch(
 router.post(
   routes.ADD_PAYMENT_REQUEST,
   authenticateJwt,
-  authorizeRoles("TUTOR"),
+  authorizeRoles("PARENT"),
   parentController.addPaymentRequest
 );
 
 router.get(
   routes.GET_PAYMENT_REQUESTS,
   authenticateJwt,
-  authorizeRoles("TUTOR"),
+  authorizeRoles("PARENT"),
   parentController.getPaymentRequests
 );
 // Transaction Routes
