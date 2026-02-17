@@ -236,9 +236,9 @@ export default class ParentService {
             attributes: [
               "bankName",
               "accountNumber",
-              "resumeUrl",
               "idFrontUrl",
               "idBackUrl",
+              "balance",
             ],
           },
           {
