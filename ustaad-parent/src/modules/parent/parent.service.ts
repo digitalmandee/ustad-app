@@ -2761,7 +2761,7 @@ export default class ParentService {
   }
   async addPaymentRequest(userId: string, amount: number) {
     try {
-      const tutor = await Tutor.findOne({
+      const tutor = await Parent.findOne({
         where: { userId },
       });
 
