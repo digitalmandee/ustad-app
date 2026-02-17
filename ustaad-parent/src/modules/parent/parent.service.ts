@@ -2773,6 +2773,23 @@ export default class ParentService {
         throw new UnProcessableEntityError("Insufficient balance");
       }
 
+      const paymentRequests = await PaymentRequests.findOne({
+        where: {
+          tutorId: parent.userId,
+          status: {
+            [Op.or]: [
+              TutorPaymentStatus.PENDING,
+              TutorPaymentStatus.REQUESTED,
+              TutorPaymentStatus.IN_REVIEW,
+            ],
+          },
+        },
+      });
+
+      if (paymentRequests) {
+        throw new UnProcessableEntityError("Payment request already exists");
+      }
+
       const currentBalance = Number(parent.balance || 0) - Number(amount);
 
       await parent.update({ balance: currentBalance.toString() });
