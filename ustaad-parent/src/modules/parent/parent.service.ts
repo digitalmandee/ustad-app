@@ -232,7 +232,7 @@ export default class ParentService {
         attributes: { exclude: ["password"] },
         include: [
           {
-            model: Tutor,
+            model: Parent,
             attributes: [
               "bankName",
               "accountNumber",
