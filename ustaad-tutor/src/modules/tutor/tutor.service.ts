@@ -699,7 +699,14 @@ export default class TutorService {
         include: [
           {
             model: Parent,
-            attributes: ["idFrontUrl", "idBackUrl", "customerId"],
+            attributes: [
+              "idFrontUrl",
+              "idBackUrl",
+              "customerId",
+              "balance",
+              "accountNumber",
+              "bankName",
+            ],
           },
         ],
       });
