@@ -44,13 +44,13 @@ export class GoogleAuthService {
       }
 
       // 1. Find by Google ID first
-      let user = await User.findOne({ where: { googleId } });
+      let user = await User.findOne({ where: { googleId, isDeleted: false } });
       if (user) {
         throw new UnProcessableEntityError("User already exists");
       }
 
       // 2. Check if email exists → Link account
-      user = await User.findOne({ where: { email } });
+      user = await User.findOne({ where: { email, isDeleted: false } });
 
       if (user) {
         throw new UnProcessableEntityError("User already exists");
