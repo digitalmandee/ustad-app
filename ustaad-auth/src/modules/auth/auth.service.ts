@@ -45,6 +45,7 @@ export default class AuthService implements IAuthService {
             { phone: userCreateDTO.phone },
             { cnic: userCreateDTO.cnic },
           ],
+          isDeleted: false,
         },
       });
 
