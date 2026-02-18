@@ -46,7 +46,10 @@ export async function sendNotificationToUser(
       notification: {
         title: headline,
         body: message,
-        imageUrl: imageUrl,
+        imageUrl:
+          typeof imageUrl === "string" && imageUrl.length > 0
+            ? imageUrl
+            : "https://ustaad-app.s3.ap-south-1.amazonaws.com/ustaad-logo.png",
       },
       data: dataPayload,
       android: {
