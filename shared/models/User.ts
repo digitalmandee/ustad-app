@@ -158,7 +158,7 @@ export function initUserModel(sequelize: Sequelize): typeof User {
       cnic: {
         type: DataTypes.STRING(13),
         allowNull: true,
-        unique: true,
+        // unique: true,
       },
       address: DataTypes.STRING,
       city: DataTypes.STRING,
@@ -172,7 +172,7 @@ export function initUserModel(sequelize: Sequelize): typeof User {
       email: {
         type: DataTypes.STRING,
         allowNull: false,
-        unique: true,
+        // unique: true,
       },
       isEmailVerified: {
         type: DataTypes.BOOLEAN,
@@ -181,7 +181,7 @@ export function initUserModel(sequelize: Sequelize): typeof User {
       phone: {
         type: DataTypes.STRING,
         allowNull: true,
-        unique: true,
+        // unique: true,
       },
       isPhoneVerified: {
         type: DataTypes.BOOLEAN,
