@@ -76,7 +76,7 @@ export async function sendNotificationToUser(
         body: safeBody,
         // ...(imageUrl && { imageUrl }), // Only add if valid
       },
-      data: dataPayload,
+      // data: dataPayload,
       android: {
         priority: 'high',
         notification: {
