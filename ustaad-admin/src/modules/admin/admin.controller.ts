@@ -359,10 +359,10 @@ export default class AdminController {
       if (e.message === "Contract not found") {
         return sendErrorResponse(res, e.message, 404);
       }
-      if (e.message === "Contract is not in dispute status") {
-        return sendErrorResponse(res, e.message, 400);
-      }
-      throw new GenericError(e, ` Error from resolveDispute ${__filename}`);
+      // if (e.message === "Contract is not in dispute status") {
+      return sendErrorResponse(res, e.message, 400);
+      // }
+      // throw new GenericError(e, ` Error from resolveDispute ${__filename}`);
     }
   };
 
