@@ -336,7 +336,7 @@ export default class AdminService {
         COUNT(*) as "total",
         COUNT(CASE WHEN "role" = :parentRole THEN 1 END) as "parents",
         COUNT(CASE WHEN "role" = :tutorRole THEN 1 END) as "tutors"
-      FROM "Users"
+      FROM "users"
       WHERE "isDeleted" = false 
         AND "role" NOT IN (:adminRole, :superAdminRole)
         ${start ? 'AND "createdAt" >= :start' : ""}
