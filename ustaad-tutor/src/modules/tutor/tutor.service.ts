@@ -266,6 +266,7 @@ export default class TutorService {
 
   async getProfile(userId: string) {
     try {
+      // 1. Unread Message Count Logic
       const participants = await ConversationParticipant.findAll({
         where: { userId, isActive: true },
         attributes: ["conversationId", "lastReadAt"],
@@ -286,6 +287,7 @@ export default class TutorService {
         });
       }
 
+      // 2. Fetch User and Tutor Details
       const user = await User.findByPk(userId, {
         attributes: { exclude: ["password"] },
         include: [
@@ -307,63 +309,83 @@ export default class TutorService {
         ],
       });
 
+      // 3. Optimized Experience Calculation (Handles Overlapping Jobs)
       const experiences = await TutorExperience.findAll({
         where: { tutorId: userId },
       });
 
-      // Calculate total experience in years
-      let totalExperience = 0;
-      experiences.forEach((exp) => {
-        const startDate = new Date(exp.startDate);
-        let endDate: Date;
+      const intervals = experiences
+        .map((exp) => {
+          const start = new Date(exp.startDate).getTime();
+          let end: number;
+          if (exp.endDate === "Present" || !exp.endDate) {
+            end = new Date().getTime();
+          } else {
+            end = new Date(exp.endDate).getTime();
+          }
+          return { start, end };
+        })
+        .sort((a, b) => a.start - b.start);
 
-        if (exp.endDate === "Present" || !exp.endDate) {
-          endDate = new Date();
-        } else {
-          endDate = new Date(exp.endDate);
+      let totalExperienceMs = 0;
+      if (intervals.length > 0) {
+        const merged: { start: number; end: number }[] = [];
+        let currentInterval = { ...intervals[0] };
+
+        for (let i = 1; i < intervals.length; i++) {
+          const nextInterval = intervals[i];
+
+          if (nextInterval.start <= currentInterval.end) {
+            // Overlap: extend the current block to the latest end date
+            currentInterval.end = Math.max(
+              currentInterval.end,
+              nextInterval.end
+            );
+          } else {
+            // No overlap: save current block and start a new one
+            merged.push(currentInterval);
+            currentInterval = { ...nextInterval };
+          }
         }
+        merged.push(currentInterval);
 
-        const diffInYears =
-          (endDate.getTime() - startDate.getTime()) /
-          (1000 * 60 * 60 * 24 * 365);
-        totalExperience += diffInYears;
-      });
+        totalExperienceMs = merged.reduce((sum, interval) => {
+          return sum + (interval.end - interval.start);
+        }, 0);
+      }
 
+      const totalExperience =
+        totalExperienceMs / (1000 * 60 * 60 * 24 * 365.25);
+
+      // 4. Session Counting Logic
       const sessions = await TutorSessions.findAll({
         where: { tutorId: userId, status: "active" },
       });
 
-      // Get today's day name in lowercase
       const today = new Date()
         .toLocaleDateString("en-US", { weekday: "short" })
         .toLowerCase();
 
-      // Count sessions scheduled for today
       let totalSessions = 0;
+      const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+
       sessions.forEach((session) => {
-        // Check if today is in the session's days of week
-        if (
-          session.daysOfWeek.some((day) => {
-            if (day.includes("-")) {
-              // Handle ranges like "mon-fri"
-              const [start, end] = day.split("-");
-              const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-              const startIdx = days.indexOf(start);
-              const endIdx = days.indexOf(end);
-              const todayIdx = days.indexOf(today);
-              return todayIdx >= startIdx && todayIdx <= endIdx;
-            } else {
-              // Handle individual days
-              return day === today;
-            }
-          })
-        ) {
-          totalSessions++;
-        }
+        const isTodayScheduled = session.daysOfWeek.some((day) => {
+          const lowerDay = day.toLowerCase();
+          if (lowerDay.includes("-")) {
+            const [start, end] = lowerDay.split("-");
+            const startIdx = days.indexOf(start);
+            const endIdx = days.indexOf(end);
+            const todayIdx = days.indexOf(today);
+            return todayIdx >= startIdx && todayIdx <= endIdx;
+          }
+          return lowerDay === today;
+        });
+
+        if (isTodayScheduled) totalSessions++;
       });
 
-      // Get all reviews for this tutor from ContractReview
-      // Reviews where tutor is the reviewedId and reviewerRole is PARENT
+      // 5. Reviews and Ratings Logic
       const reviews = await ContractReview.findAll({
         where: {
           reviewedId: userId,
@@ -373,14 +395,12 @@ export default class TutorService {
           {
             model: User,
             as: "reviewer",
-            foreignKey: "reviewerId",
             attributes: ["id", "firstName", "lastName", "email", "image"],
           },
         ],
         order: [["createdAt", "DESC"]],
       });
 
-      // Calculate average rating and total reviews
       const totalReviews = reviews.length;
       const averageRating =
         totalReviews > 0
@@ -388,9 +408,8 @@ export default class TutorService {
             totalReviews
           : 0;
 
-      // Format reviews with parent information
       const formattedReviews = reviews.map((review) => {
-        const reviewData = review.toJSON() as any;
+        const reviewData = review.get({ plain: true }) as any;
         return {
           id: review.id,
           rating: review.rating,
@@ -408,9 +427,10 @@ export default class TutorService {
         };
       });
 
+      // 6. Final Return
       return {
         user,
-        totalExperience: Math.round(totalExperience * 10) / 10, // Round to 1 decimal place
+        totalExperience: Math.round(totalExperience * 10) / 10,
         totalSessions,
         reviews: formattedReviews,
         reviewStats: {
