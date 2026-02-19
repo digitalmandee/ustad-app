@@ -1890,21 +1890,21 @@ export default class TutorService {
       });
 
       // Update Tutor Balance
-      if (mainSession.offerId) {
-        const offer = await Offer.findByPk(mainSession.offerId);
-        if (offer && offer.sessions > 0) {
-          const perSessionAmount = offer.amountMonthly / offer.sessions;
-          const tutor = await Tutor.findOne({
-            where: { userId: data.tutorId },
-          });
-          if (tutor) {
-            // Ensure balance is treated as number
-            const currentBalance = Number(tutor.balance) || 0;
-            tutor.balance = currentBalance + perSessionAmount;
-            await tutor.save();
-          }
-        }
-      }
+      // if (mainSession.offerId) {
+      //   const offer = await Offer.findByPk(mainSession.offerId);
+      //   if (offer && offer.sessions > 0) {
+      //     const perSessionAmount = offer.amountMonthly / offer.sessions;
+      //     const tutor = await Tutor.findOne({
+      //       where: { userId: data.tutorId },
+      //     });
+      //     // if (tutor) {
+      //     //   // Ensure balance is treated as number
+      //     //   const currentBalance = Number(tutor.balance) || 0;
+      //     //   tutor.balance = currentBalance + perSessionAmount;
+      //     //   await tutor.save();
+      //     // }
+      //   }
+      // }
     }
 
     return await TutorSessionsDetail.update(
