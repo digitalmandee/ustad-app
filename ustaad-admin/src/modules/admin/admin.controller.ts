@@ -28,6 +28,8 @@ export default class AdminController {
       const stats = await this.adminService.getStats(days);
       sendSuccessResponse(res, "Stats fetched successfully", 200, stats);
     } catch (e: any) {
+      console.log("error", e);
+
       throw new GenericError(e, ` Error from getStats ${__filename}`);
     }
   };
