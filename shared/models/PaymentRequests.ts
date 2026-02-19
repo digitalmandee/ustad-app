@@ -2,11 +2,15 @@ import { Model, DataTypes, Sequelize, Optional } from "sequelize";
 import { User } from "./User";
 import { ParentSubscription } from "./ParentSubscription";
 import { TutorPaymentStatus, TutorTransactionType } from "../constant/enums";
-import { TutorTransaction, TutorTransactionAttributes, TutorTransactionCreationAttributes } from "./TutorTransaction";
+import {
+  TutorTransaction,
+  TutorTransactionAttributes,
+  TutorTransactionCreationAttributes,
+} from "./TutorTransaction";
 
 export interface PaymentRequestsAttributes {
   id: string;
-  tutorId: string;
+  userId: string;
   status: TutorPaymentStatus;
   amount: number;
   createdAt?: Date;
@@ -19,14 +23,11 @@ export type PaymentRequestsCreationAttributes = Optional<
 >;
 
 export class PaymentRequests
-  extends Model<
-    PaymentRequestsAttributes,
-    PaymentRequestsCreationAttributes
-  >
+  extends Model<PaymentRequestsAttributes, PaymentRequestsCreationAttributes>
   implements PaymentRequestsAttributes
 {
   public id!: string;
-  public tutorId!: string;
+  public userId!: string;
   public status!: TutorPaymentStatus;
   public amount!: number;
   public readonly createdAt!: Date;
@@ -43,7 +44,7 @@ export function initPaymentRequestsModel(
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
-      tutorId: {
+      userId: {
         type: DataTypes.UUID,
         allowNull: false,
         references: {
@@ -68,8 +69,8 @@ export function initPaymentRequestsModel(
   );
 
   // Define associations
-  PaymentRequests.belongsTo(User, { foreignKey: "tutorId" });
-  User.hasMany(PaymentRequests, { foreignKey: "tutorId" });
+  PaymentRequests.belongsTo(User, { foreignKey: "userId" });
+  User.hasMany(PaymentRequests, { foreignKey: "userId" });
 
   return PaymentRequests;
 }

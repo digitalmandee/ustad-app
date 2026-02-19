@@ -138,6 +138,14 @@ router.get(
   adminController.getUserDataById
 );
 
+// Delete User
+router.delete(
+  routes.DELETE_USER,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN"),
+  adminController.deleteUser
+);
+
 // Refund Contract
 router.post(
   routes.REFUND,

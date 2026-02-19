@@ -726,7 +726,7 @@ export default class TutorController {
       }
 
       const result = await this.tutorService.createPaymentRequest({
-        tutorId: tutor.id,
+        userId: tutor.id,
         amount: parseFloat(amount),
       });
 

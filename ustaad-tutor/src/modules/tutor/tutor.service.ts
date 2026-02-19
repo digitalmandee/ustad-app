@@ -81,7 +81,7 @@ interface EducationData {
 }
 
 interface PaymentRequestData {
-  tutorId: string;
+  userId: string;
   amount: number;
 }
 
@@ -1458,7 +1458,7 @@ export default class TutorService {
     const transaction = await sequelize.transaction();
     try {
       // Check if tutor exists with lock to prevent race conditions
-      const tutor = await Tutor.findByPk(data.tutorId, {
+      const tutor = await Tutor.findByPk(data.userId, {
         transaction,
         lock: transaction.LOCK.UPDATE,
       });
@@ -1474,7 +1474,7 @@ export default class TutorService {
       // Check if payment request already exists
       const paymentRequest = await PaymentRequests.findOne({
         where: {
-          tutorId: tutor.userId,
+          userId: tutor.userId,
           status: {
             [Op.or]: [
               TutorPaymentStatus.PENDING,
@@ -1492,7 +1492,7 @@ export default class TutorService {
 
       const newPaymentRequest = await PaymentRequests.create(
         {
-          tutorId: tutor.userId,
+          userId: tutor.userId,
           status: TutorPaymentStatus.REQUESTED,
           amount: data.amount,
         },
@@ -1511,16 +1511,16 @@ export default class TutorService {
     }
   }
 
-  async getPaymentRequests(tutorId: string) {
+  async getPaymentRequests(userId: string) {
     try {
-      const tutor = await Tutor.findOne({ where: { userId: tutorId } });
+      const tutor = await Tutor.findOne({ where: { userId: userId } });
       if (!tutor) {
         throw new UnProcessableEntityError("Tutor not found");
       }
 
       // Get all payment requests for the tutor
       const paymentRequests = await PaymentRequests.findAll({
-        where: { tutorId },
+        where: { userId: tutor.userId },
         order: [["createdAt", "DESC"]],
       });
 
@@ -2843,7 +2843,7 @@ export default class TutorService {
           // Get payment requests for this tutor (PaymentRequests doesn't have subscriptionId field)
           const paymentRequests = await PaymentRequests.findAll({
             where: {
-              tutorId: tutorId,
+              userId: tutorId,
             },
             order: [["createdAt", "DESC"]],
             limit: 10, // Limit to recent payment requests

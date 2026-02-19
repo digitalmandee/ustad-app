@@ -930,13 +930,13 @@ export default class AdminService {
       throw new Error("Payment request not found");
     }
 
-    const user = await User.findOne({ where: { id: paymentRequest.tutorId } });
+    const user = await User.findOne({ where: { id: paymentRequest.userId } });
     if (!user) {
       throw new Error("User not found");
     }
 
     const tutor = await Tutor.findOne({
-      where: { userId: paymentRequest.tutorId },
+      where: { userId: paymentRequest.userId },
     });
     if (!tutor) {
       throw new Error("Tutor not found");
@@ -975,7 +975,7 @@ export default class AdminService {
         paymentRequest.status !== TutorPaymentStatus.REJECTED
       ) {
         const tutor = await Tutor.findOne({
-          where: { userId: paymentRequest.tutorId },
+          where: { userId: paymentRequest.userId },
           transaction,
           lock: transaction.LOCK.UPDATE,
         });
@@ -1007,7 +1007,7 @@ export default class AdminService {
           body = `Your payment request for ${paymentRequest.amount} has been rejected. Please contact support for more details.`;
         }
 
-        const user = await User.findByPk(paymentRequest.tutorId);
+        const user = await User.findByPk(paymentRequest.userId);
 
         if (!user) {
           console.log("User not found for notification");
@@ -1125,6 +1125,16 @@ export default class AdminService {
     await admin.destroy();
     await admin.save();
     return admin;
+  }
+
+  async softDeleteUser(id: string) {
+    const user = await User.findByPk(id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    user.isDeleted = true;
+    await user.save();
+    return user;
   }
 
   async getPendingOnboardUsers(page = 1, limit = 20) {
@@ -1623,7 +1633,7 @@ export default class AdminService {
       if (completedSessions.length > 0 && totalAmount > 0) {
         try {
           await PaymentRequests.create({
-            tutorId: contract.tutorId,
+            userId: contract.tutorId,
             amount: totalAmount / 100, // Convert from cents to dollars if needed
             status: TutorPaymentStatus.REQUESTED,
           });

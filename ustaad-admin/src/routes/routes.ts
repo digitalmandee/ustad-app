@@ -24,6 +24,7 @@ const routes = {
 
   // User data retrieval
   USER_DATA_BY_ID: "/admin/users/data/:id",
+  DELETE_USER: "/admin/users/:id",
 };
 
 export default routes;

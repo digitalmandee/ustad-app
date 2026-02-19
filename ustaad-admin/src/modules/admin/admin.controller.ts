@@ -354,6 +354,8 @@ export default class AdminController {
         result
       );
     } catch (e: any) {
+      console.log("resolveDispute", e);
+
       if (e.message === "Contract not found") {
         return sendErrorResponse(res, e.message, 404);
       }
@@ -378,6 +380,20 @@ export default class AdminController {
       throw new GenericError(e, ` Error from getUserDataById ${__filename}`);
     }
   };
+
+  deleteUser = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const data = await this.adminService.softDeleteUser(id);
+      sendSuccessResponse(res, "User deleted successfully", 200, data);
+    } catch (e: any) {
+      if (e.message === "User not found") {
+        return sendErrorResponse(res, e.message, 404);
+      }
+      throw new GenericError(e, ` Error from deleteUser ${__filename}`);
+    }
+  };
+
   refundContract = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { contractId } = req.body;

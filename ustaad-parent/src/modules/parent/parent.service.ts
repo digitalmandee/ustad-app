@@ -1531,7 +1531,7 @@ export default class ParentService {
           // Get payment requests for this tutor (PaymentRequests doesn't have subscriptionId field)
           const paymentRequests = await PaymentRequests.findAll({
             where: {
-              tutorId: contract.tutorId,
+              userId: contract.tutorId,
             },
             order: [["createdAt", "DESC"]],
             limit: 10, // Limit to recent payment requests
@@ -2775,7 +2775,7 @@ export default class ParentService {
 
       const paymentRequests = await PaymentRequests.findOne({
         where: {
-          tutorId: parent.userId,
+          userId: parent.userId,
           status: {
             [Op.or]: [
               TutorPaymentStatus.PENDING,
@@ -2795,7 +2795,7 @@ export default class ParentService {
       await parent.update({ balance: currentBalance.toString() });
 
       const paymentRequest = await PaymentRequests.create({
-        tutorId: userId,
+        userId: userId,
         amount: amount,
         status: TutorPaymentStatus.PENDING,
       });
@@ -2810,7 +2810,7 @@ export default class ParentService {
   async getPaymentRequests(userId: string) {
     try {
       const paymentRequests = await PaymentRequests.findAll({
-        where: { tutorId: userId },
+        where: { userId: userId },
         order: [["createdAt", "DESC"]],
       });
 

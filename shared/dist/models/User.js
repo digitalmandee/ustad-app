@@ -61,7 +61,7 @@ function initUserModel(sequelize) {
         cnic: {
             type: sequelize_1.DataTypes.STRING(13),
             allowNull: true,
-            unique: true,
+            // unique: true,
         },
         address: sequelize_1.DataTypes.STRING,
         city: sequelize_1.DataTypes.STRING,
@@ -75,7 +75,7 @@ function initUserModel(sequelize) {
         email: {
             type: sequelize_1.DataTypes.STRING,
             allowNull: false,
-            unique: true,
+            // unique: true,
         },
         isEmailVerified: {
             type: sequelize_1.DataTypes.BOOLEAN,
@@ -84,7 +84,7 @@ function initUserModel(sequelize) {
         phone: {
             type: sequelize_1.DataTypes.STRING,
             allowNull: true,
-            unique: true,
+            // unique: true,
         },
         isPhoneVerified: {
             type: sequelize_1.DataTypes.BOOLEAN,
