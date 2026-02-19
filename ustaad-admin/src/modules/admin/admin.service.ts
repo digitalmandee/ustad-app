@@ -29,7 +29,7 @@ import { sendNotificationToUser } from "../../services/notification.service";
 import { TutorPaymentStatus } from "@ustaad/shared";
 import { Op } from "sequelize";
 import bcrypt from "bcrypt";
-import { Sequelize } from "sequelize";
+import { Sequelize, QueryTypes } from "sequelize";
 import { validate as isUUID } from "uuid";
 import { v4 as uuidv4 } from "uuid";
 
@@ -152,6 +152,9 @@ export default class AdminService {
       };
     };
 
+    // 2.5 Fetch Graph Data
+    const graphData = await this.fetchGraphData(days);
+
     // 3. Helper for calculating percentage changes
     const calculatePct = (curr: number, prev: number) => {
       if (!isRange || prev === 0) return 0; // Always 0 for All Time or if previous period had no data
@@ -180,6 +183,7 @@ export default class AdminService {
         ...currentStats,
         period: "all time",
         comparison,
+        graphData,
       };
     }
 
@@ -312,7 +316,84 @@ export default class AdminService {
           end: currentStart!.toISOString(),
         },
       },
+      graphData,
     };
+  }
+
+  async fetchGraphData(days?: number) {
+    const isRange = !!days && [7, 30, 90].includes(days);
+    const now = new Date();
+    const start = isRange
+      ? new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
+      : null;
+
+    const groupUnit = isRange ? "day" : "month";
+
+    const results: any[] = await sequelize.query(
+      `
+      SELECT 
+        DATE_TRUNC(:groupUnit, "createdAt") as "date",
+        COUNT(*) as "total",
+        COUNT(CASE WHEN "role" = :parentRole THEN 1 END) as "parents",
+        COUNT(CASE WHEN "role" = :tutorRole THEN 1 END) as "tutors"
+      FROM "Users"
+      WHERE "isDeleted" = false 
+        AND "role" NOT IN (:adminRole, :superAdminRole)
+        ${start ? 'AND "createdAt" >= :start' : ""}
+      GROUP BY 1
+      ORDER BY 1 ASC
+      `,
+      {
+        replacements: {
+          groupUnit,
+          parentRole: UserRole.PARENT,
+          tutorRole: UserRole.TUTOR,
+          adminRole: UserRole.ADMIN,
+          superAdminRole: UserRole.SUPER_ADMIN,
+          start: start,
+        },
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    // Map results for quick lookup
+    const resultMap = new Map();
+    results.forEach((r) => {
+      const d = new Date(r.date);
+      const key = isRange
+        ? d.toISOString().split("T")[0]
+        : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      resultMap.set(key, r);
+    });
+
+    const graphData: any[] = [];
+    if (isRange) {
+      // Fill missing days
+      for (let i = days! - 1; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const key = d.toISOString().split("T")[0];
+        const found = resultMap.get(key);
+        graphData.push({
+          date: key,
+          total: found ? parseInt(found.total) : 0,
+          parents: found ? parseInt(found.parents) : 0,
+          tutors: found ? parseInt(found.tutors) : 0,
+        });
+      }
+    } else {
+      // All time: use the results as is
+      results.forEach((r) => {
+        const d = new Date(r.date);
+        graphData.push({
+          date: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+          total: parseInt(r.total),
+          parents: parseInt(r.parents),
+          tutors: parseInt(r.tutors),
+        });
+      });
+    }
+
+    return graphData;
   }
 
   async getAllParents(
@@ -1571,6 +1652,10 @@ export default class AdminService {
 
     contract.parent = parent ? parent.toJSON() : null;
     contract.tutor = tutor ? tutor.toJSON() : null;
+
+    if (contractModel.status === ParentSubscriptionStatus.COMPLETED) {
+      throw new Error("Contract is already completed!");
+    }
 
     if (contractModel.status !== ParentSubscriptionStatus.DISPUTE) {
       throw new Error("Contract is not in dispute status");
