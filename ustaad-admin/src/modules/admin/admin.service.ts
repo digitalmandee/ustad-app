@@ -930,28 +930,34 @@ export default class AdminService {
       throw new Error("Payment request not found");
     }
 
-    const user = await User.findOne({ where: { id: paymentRequest.userId } });
+    const user = await User.findByPk(paymentRequest.userId);
     if (!user) {
       throw new Error("User not found");
     }
 
-    const tutor = await Tutor.findOne({
-      where: { userId: paymentRequest.userId },
-    });
-    if (!tutor) {
-      throw new Error("Tutor not found");
+    // Fetch both profile types simultaneously to save time
+    const [parent, tutor] = await Promise.all([
+      Parent.findOne({ where: { userId: user.id } }),
+      Tutor.findOne({ where: { userId: user.id } }),
+    ]);
+
+    // Identify which profile exists
+    const profile = tutor || parent;
+
+    if (!profile) {
+      throw new Error("Associated profile (Parent or Tutor) not found");
     }
 
     return {
       paymentRequest,
-      tutor: {
-        userId: tutor.userId,
-        id: tutor.userId,
-        bankName: tutor.bankName,
-        accountNumber: tutor.accountNumber,
+      accountInfo: {
+        userId: user.id,
+        role: tutor ? "tutor" : "parent",
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         phone: user.phone,
+        bankName: profile.bankName,
+        accountNumber: profile.accountNumber,
       },
     };
   }
