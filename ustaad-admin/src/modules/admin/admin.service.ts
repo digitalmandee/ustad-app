@@ -1983,6 +1983,43 @@ export default class AdminService {
 
       await transaction.commit();
 
+      // 6. Send Notifications
+      try {
+        const [parentUser, tutorUser] = await Promise.all([
+          User.findByPk(contract.parentId),
+          User.findByPk(contract.tutorId),
+        ]);
+
+        if (parentUser && parentUser.deviceId) {
+          await sendNotificationToUser(
+            parentUser.id,
+            parentUser.deviceId,
+            "💰 Refund Processed",
+            `A refund of ${refundAmount} ZAR has been added to your balance for contract ${contract.id}.`,
+            {
+              type: NotificationType.SYSTEM_NOTIFICATION,
+              contractId: contract.id,
+            }
+          );
+        }
+
+        if (tutorUser && tutorUser.deviceId) {
+          await sendNotificationToUser(
+            tutorUser.id,
+            tutorUser.deviceId,
+            "📉 Balance Adjusted",
+            `Your balance has been adjusted by -${refundAmount} ZAR due to a refund for contract ${contract.id}.`,
+            {
+              type: NotificationType.SYSTEM_NOTIFICATION,
+              contractId: contract.id,
+            }
+          );
+        }
+      } catch (notifyError) {
+        console.error("Error sending refund notifications:", notifyError);
+        // We don't throw here to avoid failing the already committed refund
+      }
+
       return {
         success: true,
         message: "Refund processed and tutor balance adjusted successfully",

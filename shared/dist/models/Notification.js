@@ -18,7 +18,7 @@ function initNotificationModel(sequelize) {
             allowNull: false,
         },
         type: {
-            type: sequelize_1.DataTypes.ENUM('NEW_MESSAGE', 'OFFER_RECEIVED', 'OFFER_ACCEPTED', 'OFFER_REJECTED', 'SESSION_REMINDER', 'SESSION_CANCELLED_BY_PARENT', 'SESSION_CANCELLED_BY_TUTOR', 'TUTOR_CHECKED_IN', 'TUTOR_CHECKED_OUT', 'TUTOR_ON_LEAVE', 'TUTOR_HOLIDAY', 'SUBSCRIPTION_CANCELLED_BY_PARENT', 'SUBSCRIPTION_CANCELLED_BY_TUTOR', 'REVIEW_RECEIVED_TUTOR', 'REVIEW_RECEIVED_CHILD', 'SYSTEM_NOTIFICATION'),
+            type: sequelize_1.DataTypes.STRING,
             allowNull: false,
             comment: "Notification type",
         },
@@ -50,9 +50,9 @@ function initNotificationModel(sequelize) {
             comment: "Firebase device token",
         },
         status: {
-            type: sequelize_1.DataTypes.ENUM('pending', 'sent', 'failed'),
+            type: sequelize_1.DataTypes.ENUM("pending", "sent", "failed"),
             allowNull: false,
-            defaultValue: 'pending',
+            defaultValue: "pending",
         },
         relatedEntityId: {
             type: sequelize_1.DataTypes.UUID,

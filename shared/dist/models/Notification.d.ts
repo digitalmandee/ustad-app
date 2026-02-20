@@ -10,7 +10,7 @@ export interface NotificationAttributes {
     sentAt: Date;
     readAt?: Date;
     deviceToken?: string;
-    status: 'pending' | 'sent' | 'failed';
+    status: "pending" | "sent" | "failed";
     relatedEntityId?: string;
     relatedEntityType?: string;
     actionUrl?: string;
@@ -29,7 +29,7 @@ export declare class Notification extends Model<NotificationAttributes, Notifica
     sentAt: Date;
     readAt?: Date;
     deviceToken?: string;
-    status: 'pending' | 'sent' | 'failed';
+    status: "pending" | "sent" | "failed";
     relatedEntityId?: string;
     relatedEntityType?: string;
     actionUrl?: string;

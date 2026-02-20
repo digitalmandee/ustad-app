@@ -11,7 +11,7 @@ export interface NotificationAttributes {
   sentAt: Date;
   readAt?: Date;
   deviceToken?: string;
-  status: 'pending' | 'sent' | 'failed';
+  status: "pending" | "sent" | "failed";
   relatedEntityId?: string;
   relatedEntityType?: string;
   actionUrl?: string;
@@ -20,7 +20,10 @@ export interface NotificationAttributes {
   updatedAt?: Date;
 }
 
-export type NotificationCreationAttributes = Optional<NotificationAttributes, "id">;
+export type NotificationCreationAttributes = Optional<
+  NotificationAttributes,
+  "id"
+>;
 
 export class Notification
   extends Model<NotificationAttributes, NotificationCreationAttributes>
@@ -35,7 +38,7 @@ export class Notification
   public sentAt!: Date;
   public readAt?: Date;
   public deviceToken?: string;
-  public status!: 'pending' | 'sent' | 'failed';
+  public status!: "pending" | "sent" | "failed";
   public relatedEntityId?: string;
   public relatedEntityType?: string;
   public actionUrl?: string;
@@ -44,7 +47,9 @@ export class Notification
   public readonly updatedAt!: Date;
 }
 
-export function initNotificationModel(sequelize: Sequelize): typeof Notification {
+export function initNotificationModel(
+  sequelize: Sequelize
+): typeof Notification {
   Notification.init(
     {
       id: {
@@ -57,24 +62,7 @@ export function initNotificationModel(sequelize: Sequelize): typeof Notification
         allowNull: false,
       },
       type: {
-        type: DataTypes.ENUM(
-          'NEW_MESSAGE',
-          'OFFER_RECEIVED',
-          'OFFER_ACCEPTED',
-          'OFFER_REJECTED',
-          'SESSION_REMINDER',
-          'SESSION_CANCELLED_BY_PARENT',
-          'SESSION_CANCELLED_BY_TUTOR',
-          'TUTOR_CHECKED_IN',
-          'TUTOR_CHECKED_OUT',
-          'TUTOR_ON_LEAVE',
-          'TUTOR_HOLIDAY',
-          'SUBSCRIPTION_CANCELLED_BY_PARENT',
-          'SUBSCRIPTION_CANCELLED_BY_TUTOR',
-          'REVIEW_RECEIVED_TUTOR',
-          'REVIEW_RECEIVED_CHILD',
-          'SYSTEM_NOTIFICATION'
-        ),
+        type: DataTypes.STRING,
         allowNull: false,
         comment: "Notification type",
       },
@@ -106,9 +94,9 @@ export function initNotificationModel(sequelize: Sequelize): typeof Notification
         comment: "Firebase device token",
       },
       status: {
-        type: DataTypes.ENUM('pending', 'sent', 'failed'),
+        type: DataTypes.ENUM("pending", "sent", "failed"),
         allowNull: false,
-        defaultValue: 'pending',
+        defaultValue: "pending",
       },
       relatedEntityId: {
         type: DataTypes.UUID,
@@ -118,7 +106,8 @@ export function initNotificationModel(sequelize: Sequelize): typeof Notification
       relatedEntityType: {
         type: DataTypes.STRING,
         allowNull: true,
-        comment: "Type of related entity (offer, message, session, review, etc.)",
+        comment:
+          "Type of related entity (offer, message, session, review, etc.)",
       },
       actionUrl: {
         type: DataTypes.STRING,
@@ -139,4 +128,4 @@ export function initNotificationModel(sequelize: Sequelize): typeof Notification
   );
 
   return Notification;
-} 
+}
