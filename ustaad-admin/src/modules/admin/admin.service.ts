@@ -1926,6 +1926,17 @@ export default class AdminService {
         throw new Error("Parent not found");
       }
 
+      await ParentTransaction.create({
+        parentId: offer.receiverId,
+        subscriptionId: contract.id,
+        invoiceId: contract.id,
+        basketId: contract.id,
+        status: "success",
+        orderStatus: "SUCCESS",
+        amount: refundAmount,
+        childName: offer.childName,
+      });
+
       const currentBalance = parseFloat(parent.balance || "0");
       const newBalance = currentBalance + refundAmount;
 
