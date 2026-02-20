@@ -1048,7 +1048,7 @@ export default class AdminService {
     try {
       const paymentRequest = await PaymentRequests.findByPk(id, {
         transaction,
-        lock: transaction.LOCK.UPDATE,
+        lock: true,
       });
 
       if (!paymentRequest) {
@@ -1064,7 +1064,7 @@ export default class AdminService {
         const tutor = await Tutor.findOne({
           where: { userId: paymentRequest.userId },
           transaction,
-          lock: transaction.LOCK.UPDATE,
+          lock: true,
         });
 
         if (tutor) {
@@ -1863,6 +1863,7 @@ export default class AdminService {
     return user;
   };
   async refundContract(contractId: string) {
+    const transaction = await sequelize.transaction();
     try {
       // 1. Get contract with Offer
       const contract = await ParentSubscription.findOne({
@@ -1872,14 +1873,21 @@ export default class AdminService {
             model: Offer,
           },
         ],
+        transaction,
+        lock: true,
       });
 
       if (!contract) {
         throw new Error("Contract not found");
       }
 
+      if (contract.isRefunded) {
+        throw new Error("Contract is already refunded");
+      }
+
       const offer = await Offer.findOne({
         where: { id: contract.offerId },
+        transaction,
       });
 
       if (!offer) {
@@ -1908,6 +1916,7 @@ export default class AdminService {
             required: true,
           },
         ],
+        transaction,
       });
 
       const usedAmount = completedSessions * sessionCost;
@@ -1920,42 +1929,71 @@ export default class AdminService {
       // 3. Update parent balance
       const parent = await Parent.findOne({
         where: { userId: contract.parentId },
+        transaction,
+        lock: true,
       });
 
       if (!parent) {
         throw new Error("Parent not found");
       }
 
-      await ParentTransaction.create({
-        parentId: offer.receiverId,
-        subscriptionId: contract.id,
-        invoiceId: contract.id,
-        basketId: contract.id,
-        status: "success",
-        orderStatus: "SUCCESS",
-        amount: refundAmount,
-        childName: offer.childName,
+      await ParentTransaction.create(
+        {
+          parentId: offer.receiverId,
+          subscriptionId: contract.id,
+          invoiceId: contract.id,
+          basketId: contract.id,
+          status: "success",
+          orderStatus: "SUCCESS",
+          amount: refundAmount,
+          childName: offer.childName,
+        },
+        { transaction }
+      );
+
+      const currentParentBalance = parseFloat(parent.balance || "0");
+      const newParentBalance = currentParentBalance + refundAmount;
+      await parent.update(
+        { balance: newParentBalance.toString() },
+        { transaction }
+      );
+
+      // 4. Deduct balance from tutor
+      const tutor = await Tutor.findOne({
+        where: { userId: contract.tutorId },
+        transaction,
+        lock: true,
       });
 
-      const currentBalance = parseFloat(parent.balance || "0");
-      const newBalance = currentBalance + refundAmount;
+      if (!tutor) {
+        throw new Error("Tutor not found");
+      }
 
-      await parent.update({ balance: newBalance.toString() });
+      const newTutorBalance = tutor.balance - refundAmount;
+      await tutor.update({ balance: newTutorBalance }, { transaction });
 
-      // 4. Update contract status
-      await contract.update({
-        status: ParentSubscriptionStatus.CANCELLED, // Or REFUNDED if available, but using CANCELLED as per plan
-      });
+      // 5. Update contract status
+      await contract.update(
+        {
+          status: ParentSubscriptionStatus.CANCELLED,
+          isRefunded: true,
+        },
+        { transaction }
+      );
+
+      await transaction.commit();
 
       return {
         success: true,
-        message: "Refund processed successfully",
+        message: "Refund processed and tutor balance adjusted successfully",
         refundAmount,
         currency: "ZAR", // Assuming currency
-        newBalance,
+        newParentBalance,
+        newTutorBalance,
         contractId: contract.id,
       };
     } catch (error) {
+      await transaction.rollback();
       console.error("Error in refundContract:", error);
       throw error;
     }

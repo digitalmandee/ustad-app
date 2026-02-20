@@ -20,6 +20,7 @@ export interface ParentSubscriptionAttributes {
     failureCount?: number;
     createdAt?: Date;
     updatedAt?: Date;
+    isRefunded?: boolean;
 }
 export type ParentSubscriptionCreationAttributes = Optional<ParentSubscriptionAttributes, "id">;
 export declare class ParentSubscription extends Model<ParentSubscriptionAttributes, ParentSubscriptionCreationAttributes> implements ParentSubscriptionAttributes {
@@ -43,5 +44,6 @@ export declare class ParentSubscription extends Model<ParentSubscriptionAttribut
     failureCount?: number;
     readonly createdAt: Date;
     readonly updatedAt: Date;
+    readonly isRefunded: boolean;
 }
 export declare function initParentSubscriptionModel(sequelize: Sequelize): typeof ParentSubscription;

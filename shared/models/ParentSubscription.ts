@@ -26,12 +26,19 @@ export interface ParentSubscriptionAttributes {
   failureCount?: number; // Consecutive payment failures
   createdAt?: Date;
   updatedAt?: Date;
+  isRefunded?: boolean;
 }
 
-export type ParentSubscriptionCreationAttributes = Optional<ParentSubscriptionAttributes, "id">;
+export type ParentSubscriptionCreationAttributes = Optional<
+  ParentSubscriptionAttributes,
+  "id"
+>;
 
 export class ParentSubscription
-  extends Model<ParentSubscriptionAttributes, ParentSubscriptionCreationAttributes>
+  extends Model<
+    ParentSubscriptionAttributes,
+    ParentSubscriptionCreationAttributes
+  >
   implements ParentSubscriptionAttributes
 {
   public id!: string;
@@ -54,10 +61,13 @@ export class ParentSubscription
   public lastPaymentAmount?: number;
   public failureCount?: number;
   public readonly createdAt!: Date;
-  public readonly updatedAt!: Date; 
+  public readonly updatedAt!: Date;
+  public readonly isRefunded!: boolean;
 }
 
-export function initParentSubscriptionModel(sequelize: Sequelize): typeof ParentSubscription {
+export function initParentSubscriptionModel(
+  sequelize: Sequelize
+): typeof ParentSubscription {
   ParentSubscription.init(
     {
       id: {
@@ -81,7 +91,8 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
           key: "id",
         },
       },
-      offerId: { // Added offerId
+      offerId: {
+        // Added offerId
         type: DataTypes.UUID,
         allowNull: false,
         references: {
@@ -90,7 +101,15 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
         },
       },
       status: {
-        type: DataTypes.ENUM(ParentSubscriptionStatus.ACTIVE, ParentSubscriptionStatus.CANCELLED, ParentSubscriptionStatus.EXPIRED, ParentSubscriptionStatus.CREATED, ParentSubscriptionStatus.DISPUTE, ParentSubscriptionStatus.COMPLETED, ParentSubscriptionStatus.PENDING_COMPLETION),
+        type: DataTypes.ENUM(
+          ParentSubscriptionStatus.ACTIVE,
+          ParentSubscriptionStatus.CANCELLED,
+          ParentSubscriptionStatus.EXPIRED,
+          ParentSubscriptionStatus.CREATED,
+          ParentSubscriptionStatus.DISPUTE,
+          ParentSubscriptionStatus.COMPLETED,
+          ParentSubscriptionStatus.PENDING_COMPLETION
+        ),
         allowNull: false,
         defaultValue: ParentSubscriptionStatus.ACTIVE,
       },
@@ -158,6 +177,11 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
         defaultValue: 0,
         comment: "Consecutive payment failures",
       },
+      isRefunded: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
     },
     {
       sequelize,
@@ -165,14 +189,14 @@ export function initParentSubscriptionModel(sequelize: Sequelize): typeof Parent
     }
   );
 
-    ParentSubscription.belongsTo(Offer, { foreignKey: "offerId" });
-    Offer.hasMany(ParentSubscription, { foreignKey: "offerId" });
+  ParentSubscription.belongsTo(Offer, { foreignKey: "offerId" });
+  Offer.hasMany(ParentSubscription, { foreignKey: "offerId" });
 
-    ParentSubscription.belongsTo(User, { foreignKey: "parentId" });
-    User.hasMany(ParentSubscription, { foreignKey: "parentId" });
+  ParentSubscription.belongsTo(User, { foreignKey: "parentId" });
+  User.hasMany(ParentSubscription, { foreignKey: "parentId" });
 
-    ParentSubscription.belongsTo(User, { foreignKey: "tutorId" });
-    User.hasMany(ParentSubscription, { foreignKey: "tutorId" });
+  ParentSubscription.belongsTo(User, { foreignKey: "tutorId" });
+  User.hasMany(ParentSubscription, { foreignKey: "tutorId" });
 
   return ParentSubscription;
 }

@@ -33,6 +33,7 @@ function initParentSubscriptionModel(sequelize) {
             },
         },
         offerId: {
+            // Added offerId
             type: sequelize_1.DataTypes.UUID,
             allowNull: false,
             references: {
@@ -108,6 +109,11 @@ function initParentSubscriptionModel(sequelize) {
             allowNull: false,
             defaultValue: 0,
             comment: "Consecutive payment failures",
+        },
+        isRefunded: {
+            type: sequelize_1.DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
         },
     }, {
         sequelize,
