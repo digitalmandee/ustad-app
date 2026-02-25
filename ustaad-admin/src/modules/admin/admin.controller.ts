@@ -103,12 +103,14 @@ export default class AdminController {
 
       const search = (req.query.search || "").toString().trim();
       const type = (req.query.status || "").toString().trim();
+      const date = (req.query.date as string) || undefined;
 
       const data = await this.adminService.getAllPaymentRequests(
         page,
         limit,
         search,
-        type
+        type,
+        date
       );
       sendSuccessResponse(
         res,
@@ -301,12 +303,14 @@ export default class AdminController {
 
       const search = (req.query.search as string) || "";
       const type = req.query.type as string;
+      const date = (req.query.date as string) || undefined;
 
       const result = await this.adminService.getDisputedContracts(
         page,
         limit,
         search,
-        type
+        type,
+        date
       );
 
       return sendSuccessResponse(

@@ -20,6 +20,7 @@ interface OfferAttributes {
   status: OfferStatus;
   daysOfWeek: string[];
   sessions: number;
+  isRefunded: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -49,6 +50,7 @@ export class Offer
   public description!: string;
   public status!: OfferStatus;
   public daysOfWeek!: string[];
+  public isRefunded!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -137,6 +139,11 @@ export function initOfferModel(sequelize: Sequelize): typeof Offer {
         ),
         allowNull: false,
         defaultValue: "PENDING",
+      },
+      isRefunded: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       },
       createdAt: {
         type: DataTypes.DATE,

@@ -16,6 +16,7 @@ interface OfferAttributes {
     status: OfferStatus;
     daysOfWeek: string[];
     sessions: number;
+    isRefunded: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -37,6 +38,7 @@ export declare class Offer extends Model<OfferAttributes, OfferCreationAttribute
     description: string;
     status: OfferStatus;
     daysOfWeek: string[];
+    isRefunded: boolean;
     readonly createdAt: Date;
     readonly updatedAt: Date;
 }

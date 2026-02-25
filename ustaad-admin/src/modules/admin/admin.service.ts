@@ -931,7 +931,8 @@ export default class AdminService {
     page = 1,
     limit = 20,
     search: string = "",
-    type: string = ""
+    type: string = "",
+    date?: string
   ) {
     const offset = (page - 1) * limit;
 
@@ -945,6 +946,15 @@ export default class AdminService {
       if (Object.values(TutorPaymentStatus).includes(type as any)) {
         where.status = type;
       }
+    }
+
+    if (date) {
+      const startDate = new Date(`${date}T00:00:00.000Z`);
+      const endDate = new Date(`${date}T23:59:59.999Z`);
+
+      where.createdAt = {
+        [Op.between]: [startDate, endDate],
+      };
     }
 
     if (search) {
@@ -961,8 +971,8 @@ export default class AdminService {
         const searchTerm = `%${search.toLowerCase()}%`;
         // Search user by email or phone
         userWhere[Op.or] = [
-          // { firstName: { [Op.iLike]: searchTerm } },
-          // { lastName: { [Op.iLike]: searchTerm } },
+          { firstName: { [Op.iLike]: searchTerm } },
+          { lastName: { [Op.iLike]: searchTerm } },
           { email: { [Op.iLike]: searchTerm } },
           { phone: { [Op.iLike]: searchTerm } },
           { userId: { [Op.iLike]: searchTerm } },
@@ -1403,18 +1413,39 @@ export default class AdminService {
     return updatedUser;
   }
 
-  async getDisputedContracts(page = 1, limit = 20, search = "", type?: string) {
+  async getDisputedContracts(
+    page = 1,
+    limit = 20,
+    search = "",
+    type?: string,
+    date?: string
+  ) {
     const offset = (page - 1) * limit;
 
     let where: any = {};
 
+    let offerWhere: any = undefined;
+    let offerRequired = false;
+
     // Filter by Type (Status)
     if (type === "all") {
       // Fetch all, no status filter
+    } else if (type === "REFUND") {
+      offerWhere = { isRefunded: true };
+      offerRequired = true;
     } else if (type) {
       where.status = type;
     } else {
       where.status = ParentSubscriptionStatus.DISPUTE;
+    }
+
+    if (date) {
+      const startDate = new Date(`${date}T00:00:00.000Z`);
+      const endDate = new Date(`${date}T23:59:59.999Z`);
+
+      where.createdAt = {
+        [Op.between]: [startDate, endDate],
+      };
     }
 
     // Handle Search
@@ -1489,7 +1520,10 @@ export default class AdminService {
             "amountMonthly",
             "sessions",
             "description",
+            "isRefunded",
           ],
+          where: offerWhere,
+          required: offerRequired,
         },
       ],
       order: [["disputedAt", "DESC"]],
@@ -1868,11 +1902,6 @@ export default class AdminService {
       // 1. Get contract with Offer
       const contract = await ParentSubscription.findOne({
         where: { id: contractId },
-        include: [
-          {
-            model: Offer,
-          },
-        ],
         transaction,
         lock: true,
       });
@@ -1888,10 +1917,15 @@ export default class AdminService {
       const offer = await Offer.findOne({
         where: { id: contract.offerId },
         transaction,
+        lock: true,
       });
 
       if (!offer) {
         throw new Error("Offer not found for this contract");
+      }
+
+      if (offer.isRefunded) {
+        throw new Error("Offer is already refunded");
       }
 
       // 2. Calculate refund amount
@@ -1976,6 +2010,13 @@ export default class AdminService {
       await contract.update(
         {
           status: ParentSubscriptionStatus.CANCELLED,
+          isRefunded: true,
+        },
+        { transaction }
+      );
+      await offer.update(
+        {
+          status: OfferStatus.CANCELLED,
           isRefunded: true,
         },
         { transaction }

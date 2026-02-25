@@ -83,9 +83,7 @@ export class CronService {
         try {
           this.lastRecurringPaymentRun = new Date();
           await this.processRecurringPayments();
-          console.log(
-            "✅ Recurring payment cron job completed successfully"
-          );
+          console.log("✅ Recurring payment cron job completed successfully");
         } catch (error) {
           console.error("❌ Error in recurring payment cron job:", error);
         }
@@ -96,9 +94,7 @@ export class CronService {
     );
 
     this.recurringPaymentCron.start();
-    console.log(
-      "🚀 Recurring payment cron job started - runs every hour"
-    );
+    console.log("🚀 Recurring payment cron job started - runs every hour");
   }
 
   /**
@@ -167,9 +163,7 @@ export class CronService {
   /**
    * Charge a single recurring subscription
    */
-  private async chargeRecurringSubscription(
-    subscription: any
-  ): Promise<void> {
+  private async chargeRecurringSubscription(subscription: any): Promise<void> {
     try {
       if (!subscription.instrumentToken) {
         console.log(
@@ -193,7 +187,9 @@ export class CronService {
       const basketId = this.payfastService.generateBasketId("RECUR");
 
       // Create invoice/transaction
-      const offer = subscription.offer || (await require("@ustaad/shared").Offer.findByPk(subscription.offerId));
+      const offer =
+        subscription.offer ||
+        (await require("@ustaad/shared").Offer.findByPk(subscription.offerId));
       const invoice = await ParentTransaction.create({
         parentId: subscription.parentId,
         subscriptionId: subscription.id,
@@ -288,9 +284,7 @@ export class CronService {
    */
   private async processCancelledSubscription(subscription: any): Promise<void> {
     try {
-      console.log(
-        `🔍 Processing cancelled subscription ${subscription.id}`
-      );
+      console.log(`🔍 Processing cancelled subscription ${subscription.id}`);
 
       // Get the offer from the subscription
       const offer = subscription.offer;
@@ -328,15 +322,12 @@ export class CronService {
       );
 
       // 3. Mark subscription as processed (optional - to avoid reprocessing)
-      await subscription.update({ 
+      await subscription.update({
         status: "cancelled_processed",
-        updatedAt: new Date()
+        updatedAt: new Date(),
       });
 
-      console.log(
-        `✅ Subscription ${subscription.id} marked as processed`
-      );
-
+      console.log(`✅ Subscription ${subscription.id} marked as processed`);
     } catch (error) {
       console.error(
         `❌ Error processing cancelled subscription ${subscription.id}:`,
@@ -346,21 +337,22 @@ export class CronService {
     }
   }
 
-
   /**
    * Get cron job status for all jobs
    */
-  getCronStatus(): { 
+  getCronStatus(): {
     cancelledSubscription: { isRunning: boolean; lastRun?: Date };
     recurringPayment: { isRunning: boolean; lastRun?: Date };
   } {
     return {
       cancelledSubscription: {
-        isRunning: this.cancelledSubscriptionCron?.getStatus() === "scheduled" || false,
+        isRunning:
+          this.cancelledSubscriptionCron?.getStatus() === "scheduled" || false,
         lastRun: this.lastCancelledSubscriptionRun,
       },
       recurringPayment: {
-        isRunning: this.recurringPaymentCron?.getStatus() === "scheduled" || false,
+        isRunning:
+          this.recurringPaymentCron?.getStatus() === "scheduled" || false,
         lastRun: this.lastRecurringPaymentRun,
       },
     };
@@ -369,7 +361,10 @@ export class CronService {
   /**
    * Manually trigger recurring payment processing (for testing)
    */
-  async processDueSubscriptions(): Promise<{ processed: number; timestamp: Date }> {
+  async processDueSubscriptions(): Promise<{
+    processed: number;
+    timestamp: Date;
+  }> {
     await this.processRecurringPayments();
     return {
       processed: 0, // Will be updated by processRecurringPayments

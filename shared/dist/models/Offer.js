@@ -87,6 +87,11 @@ function initOfferModel(sequelize) {
             allowNull: false,
             defaultValue: "PENDING",
         },
+        isRefunded: {
+            type: sequelize_1.DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+        },
         createdAt: {
             type: sequelize_1.DataTypes.DATE,
             defaultValue: sequelize_1.DataTypes.NOW,
