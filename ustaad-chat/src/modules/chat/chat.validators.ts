@@ -108,10 +108,21 @@ export const createMessageValidator = () => {
       .exists()
       .withMessage('offer.subject is required')
       .bail()
-      .isString()
-      .withMessage('offer.subject must be a string')
-      .notEmpty()
-      .withMessage('offer.subject cannot be empty'),
+      .custom((value) => {
+        if (typeof value === 'string' && value.trim().length > 0) {
+          return true;
+        }
+        if (
+          Array.isArray(value) &&
+          value.length > 0 &&
+          value.every((item) => typeof item === 'string' && item.trim().length > 0)
+        ) {
+          return true;
+        }
+        throw new Error(
+          'offer.subject must be a non-empty string or an array of non-empty strings'
+        );
+      }),
 
     body('offer.startDate')
       .if(body('type').equals('OFFER'))

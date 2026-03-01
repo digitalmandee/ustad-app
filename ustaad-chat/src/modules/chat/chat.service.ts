@@ -85,6 +85,9 @@ export default class ChatService {
         }
 
         const offerData = messageData.offer as OfferData;
+        const normalizedSubject = Array.isArray(offerData.subject)
+          ? offerData.subject
+          : [offerData.subject];
 
         const searchName = offerData.childName.toLowerCase();
         const children = await Child.findAll({
@@ -111,13 +114,15 @@ export default class ChatService {
             senderId,
             receiverId: offerData.receiverId,
             childName: offerData.childName.toLowerCase(),
-            subject: offerData.subject,
+            subject: { [Op.overlap]: normalizedSubject },
             status: { [Op.in]: [OfferStatus.ACCEPTED] },
           },
         });
 
         if (existingOffer) {
-          throw new BadRequestError("An active offer already exists for this parent's child");
+          throw new BadRequestError(
+            "An active offer already exists for this parent's child with overlapping subjects"
+          );
         }
 
         const savedOfferdata = await Offer.create(
@@ -128,7 +133,7 @@ export default class ChatService {
             messageId: message.id, // Link to message
             childName: offerData.childName.toLowerCase(),
             amountMonthly: offerData.amountMonthly,
-            subject: offerData.subject,
+            subject: normalizedSubject,
             sessions: offerData.sessions,
             startDate: offerData.startDate,
             startTime: offerData.startTime,
