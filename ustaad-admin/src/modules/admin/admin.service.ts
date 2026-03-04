@@ -1436,11 +1436,12 @@ export default class AdminService {
     // Filter by Type (Status)
     if (type === "all") {
       // Fetch all, no status filter
-    } else if (type === "REFUND") {
+    } else if (type === "REFUNaaaD") {
       offerWhere = { isRefunded: true };
       offerRequired = true;
     } else if (type) {
       where.status = type;
+      offerRequired = true;
     } else {
       where.status = ParentSubscriptionStatus.DISPUTE;
     }
