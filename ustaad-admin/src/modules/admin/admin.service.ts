@@ -1528,6 +1528,7 @@ export default class AdminService {
             "sessions",
             "description",
             "isRefunded",
+            "daysOfWeek",
           ],
           where: offerWhere,
           required: offerRequired,
