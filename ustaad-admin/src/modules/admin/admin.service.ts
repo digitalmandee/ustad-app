@@ -2044,7 +2044,7 @@ export default class AdminService {
             parentUser.id,
             parentUser.deviceId,
             "💰 Refund Processed",
-            `A refund of ${refundAmount} ZAR has been added to your balance for contract ${contract.id}.`,
+            `A refund of ${refundAmount} PKR has been added to your balance for contract ${contract.id}.`,
             {
               type: NotificationType.SYSTEM_NOTIFICATION,
               contractId: contract.id,
@@ -2057,7 +2057,7 @@ export default class AdminService {
             tutorUser.id,
             tutorUser.deviceId,
             "📉 Balance Adjusted",
-            `Your balance has been adjusted by -${refundAmount} ZAR due to a refund for contract ${contract.id}.`,
+            `Your balance has been adjusted by -${refundAmount} PKR due to a refund for contract ${contract.id}.`,
             {
               type: NotificationType.SYSTEM_NOTIFICATION,
               contractId: contract.id,
@@ -2073,7 +2073,7 @@ export default class AdminService {
         success: true,
         message: "Refund processed and tutor balance adjusted successfully",
         refundAmount,
-        currency: "ZAR", // Assuming currency
+        currency: "PKR", // Assuming currency
         newParentBalance,
         newTutorBalance,
         contractId: contract.id,
