@@ -1049,6 +1049,7 @@ export default class AdminService {
         phone: user.phone,
         bankName: profile.bankName,
         accountNumber: profile.accountNumber,
+        balance: profile.balance,
       },
     };
   }
@@ -1065,12 +1066,17 @@ export default class AdminService {
         throw new Error("Payment request not found");
       }
 
-      // If status is being changed to REJECTED and it wasn't already REJECTED
-      // Refund the amount to the tutor
-      if (
-        status === TutorPaymentStatus.REJECTED &&
-        paymentRequest.status !== TutorPaymentStatus.REJECTED
-      ) {
+      if (paymentRequest.status === status) {
+        throw new Error("Same status already!");
+      }
+      if (paymentRequest.status === TutorPaymentStatus.PAID) {
+        throw new Error("Payment request already paid!");
+      }
+      if (paymentRequest.status === TutorPaymentStatus.REJECTED) {
+        throw new Error("Payment request already rejected!");
+      }
+
+      if (status === TutorPaymentStatus.PAID) {
         const tutor = await Tutor.findOne({
           where: { userId: paymentRequest.userId },
           transaction,
@@ -1078,7 +1084,7 @@ export default class AdminService {
         });
 
         if (tutor) {
-          await tutor.increment("balance", {
+          await tutor.decrement("balance", {
             by: paymentRequest.amount,
             transaction,
           });
