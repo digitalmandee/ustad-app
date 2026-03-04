@@ -1520,7 +1520,7 @@ export default class TutorService {
       );
 
       // Deduct balance
-      await tutor.decrement("balance", { by: data.amount, transaction });
+      // await tutor.decrement("balance", { by: data.amount, transaction });
 
       await transaction.commit();
       return newPaymentRequest;

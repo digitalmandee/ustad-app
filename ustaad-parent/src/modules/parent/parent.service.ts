@@ -2790,9 +2790,9 @@ export default class ParentService {
         throw new UnProcessableEntityError("Payment request already exists");
       }
 
-      const currentBalance = Number(parent.balance || 0) - Number(amount);
+      // const currentBalance = Number(parent.balance || 0) - Number(amount);
 
-      await parent.update({ balance: currentBalance.toString() });
+      // await parent.update({ balance: currentBalance.toString() });
 
       const paymentRequest = await PaymentRequests.create({
         userId: userId,
