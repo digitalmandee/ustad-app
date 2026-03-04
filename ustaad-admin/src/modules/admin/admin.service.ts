@@ -2015,7 +2015,7 @@ export default class AdminService {
       // 5. Update contract status
       await contract.update(
         {
-          status: ParentSubscriptionStatus.CANCELLED,
+          status: ParentSubscriptionStatus.REFUNDED,
           isRefunded: true,
         },
         { transaction }

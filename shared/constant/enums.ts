@@ -156,6 +156,7 @@ export enum ParentSubscriptionStatus {
   DISPUTE = "DISPUTE",
   COMPLETED = "COMPLETED",
   PENDING_COMPLETION = "PENDING_COMPLETION",
+  REFUNDED = "REFUNDED",
 }
 
 export enum TutorTransactionType {

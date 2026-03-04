@@ -121,7 +121,8 @@ export declare enum ParentSubscriptionStatus {
     CREATED = "CREATED",
     DISPUTE = "DISPUTE",
     COMPLETED = "COMPLETED",
-    PENDING_COMPLETION = "PENDING_COMPLETION"
+    PENDING_COMPLETION = "PENDING_COMPLETION",
+    REFUNDED = "REFUNDED"
 }
 export declare enum TutorTransactionType {
     PAYMENT = "PAYMENT",

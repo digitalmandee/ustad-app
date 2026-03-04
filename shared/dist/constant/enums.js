@@ -154,6 +154,7 @@ var ParentSubscriptionStatus;
     ParentSubscriptionStatus["DISPUTE"] = "DISPUTE";
     ParentSubscriptionStatus["COMPLETED"] = "COMPLETED";
     ParentSubscriptionStatus["PENDING_COMPLETION"] = "PENDING_COMPLETION";
+    ParentSubscriptionStatus["REFUNDED"] = "REFUNDED";
 })(ParentSubscriptionStatus || (exports.ParentSubscriptionStatus = ParentSubscriptionStatus = {}));
 var TutorTransactionType;
 (function (TutorTransactionType) {
