@@ -1077,14 +1077,26 @@ export default class AdminService {
       }
 
       if (status === TutorPaymentStatus.PAID) {
-        const tutor = await Tutor.findOne({
-          where: { userId: paymentRequest.userId },
-          transaction,
-          lock: true,
-        });
+        const [tutor, parent] = await Promise.all([
+          Tutor.findOne({
+            where: { userId: paymentRequest.userId },
+            transaction,
+            lock: true,
+          }),
+          Parent.findOne({
+            where: { userId: paymentRequest.userId },
+            transaction,
+            lock: true,
+          }),
+        ]);
 
         if (tutor) {
           await tutor.decrement("balance", {
+            by: paymentRequest.amount,
+            transaction,
+          });
+        } else if (parent) {
+          await parent.decrement("balance", {
             by: paymentRequest.amount,
             transaction,
           });

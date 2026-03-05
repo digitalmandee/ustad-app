@@ -2797,7 +2797,7 @@ export default class ParentService {
       const paymentRequest = await PaymentRequests.create({
         userId: userId,
         amount: amount,
-        status: TutorPaymentStatus.PENDING,
+        status: TutorPaymentStatus.REQUESTED,
       });
 
       return paymentRequest;
