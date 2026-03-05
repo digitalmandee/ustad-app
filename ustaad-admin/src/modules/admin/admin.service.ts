@@ -2044,7 +2044,7 @@ export default class AdminService {
             parentUser.id,
             parentUser.deviceId,
             "💰 Refund Processed",
-            `A refund of ${refundAmount} PKR has been added to your balance for contract ${contract.id}.`,
+            `A refund of ${refundAmount} PKR has been credited to your balance, Check out on your Refunding Dashboard.`,
             {
               type: NotificationType.SYSTEM_NOTIFICATION,
               contractId: contract.id,
