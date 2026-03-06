@@ -434,6 +434,7 @@ export default class AdminService {
           { firstName: { [Op.iLike]: searchTerm } },
           { lastName: { [Op.iLike]: searchTerm } },
           { email: { [Op.iLike]: searchTerm } },
+          { cnic: { [Op.iLike]: searchTerm } },
         ];
       }
     }
@@ -449,6 +450,7 @@ export default class AdminService {
             "lastName",
             "email",
             "phone",
+            "cnic",
             "image",
             "role",
             "isAdminVerified",
@@ -714,6 +716,7 @@ export default class AdminService {
           { firstName: { [Op.iLike]: searchTerm } },
           { lastName: { [Op.iLike]: searchTerm } },
           { email: { [Op.iLike]: searchTerm } },
+          { cnic: { [Op.iLike]: searchTerm } },
         ];
       }
     }
@@ -729,6 +732,7 @@ export default class AdminService {
             "lastName",
             "email",
             "phone",
+            "cnic",
             "image",
             "role",
             "isAdminVerified",
@@ -975,6 +979,7 @@ export default class AdminService {
           { lastName: { [Op.iLike]: searchTerm } },
           { email: { [Op.iLike]: searchTerm } },
           { phone: { [Op.iLike]: searchTerm } },
+          { cnic: { [Op.iLike]: searchTerm } },
           { userId: { [Op.iLike]: searchTerm } },
         ];
       }
@@ -1492,6 +1497,7 @@ export default class AdminService {
             [Op.or]: [
               { email: { [Op.iLike]: `%${searchTerm}%` } },
               { phone: { [Op.iLike]: `%${searchTerm}%` } },
+              { cnic: { [Op.iLike]: `%${searchTerm}%` } },
               { userId: { [Op.iLike]: `%${searchTerm}%` } },
             ],
           },
