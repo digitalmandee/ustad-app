@@ -1917,8 +1917,7 @@ export default class ParentService {
                 transactionType: TutorTransactionType.PAYMENT,
               });
 
-              tutor.balance =
-                Number(tutor.balance) + Number(subscription.amount);
+              tutor.balance += subscription.amount;
               await tutor.save();
 
               // Create TutorSessions entry
@@ -2073,7 +2072,7 @@ export default class ParentService {
             transactionType: TutorTransactionType.PAYMENT,
           });
 
-          tutor.balance = Number(tutor.balance) + Number(subscription.amount);
+          tutor.balance += subscription.amount;
           await tutor.save();
         }
 
@@ -2643,7 +2642,7 @@ export default class ParentService {
             transactionType: TutorTransactionType.PAYMENT,
           });
 
-          tutor.balance = Number(tutor.balance) + Number(subscription.amount);
+          tutor.balance += subscription.amount;
           await tutor.save();
 
           // Create TutorSessions entry
@@ -2769,7 +2768,7 @@ export default class ParentService {
         throw new UnProcessableEntityError("Parent profile not found");
       }
 
-      if (parent.balance && Number(parent.balance) < Number(amount)) {
+      if (parent.balance < amount) {
         throw new UnProcessableEntityError("Insufficient balance");
       }
 

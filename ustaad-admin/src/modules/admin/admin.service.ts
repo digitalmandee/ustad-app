@@ -2017,12 +2017,8 @@ export default class AdminService {
         { transaction }
       );
 
-      const currentParentBalance = parseFloat(parent.balance || "0");
-      const newParentBalance = currentParentBalance + refundAmount;
-      await parent.update(
-        { balance: newParentBalance.toString() },
-        { transaction }
-      );
+      const newParentBalance = (parent.balance || 0) + refundAmount;
+      await parent.update({ balance: newParentBalance }, { transaction });
 
       // 4. Deduct balance from tutor
       const tutor = await Tutor.findOne({

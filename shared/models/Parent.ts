@@ -11,7 +11,7 @@ export interface TutorAttributes {
   updatedAt?: Date;
   accountNumber?: string;
   bankName?: string;
-  balance?: string;
+  balance?: number;
 }
 
 export type TutorCreationAttributes = Optional<TutorAttributes, "id">;
@@ -29,7 +29,7 @@ export class Parent
   public readonly updatedAt!: Date;
   public accountNumber!: string;
   public bankName!: string;
-  public balance!: string;
+  public balance!: number;
 }
 
 export function initParentModel(sequelize: Sequelize): typeof Parent {
@@ -70,8 +70,9 @@ export function initParentModel(sequelize: Sequelize): typeof Parent {
         allowNull: true,
       },
       balance: {
-        type: DataTypes.STRING,
-        allowNull: true,
+        type: DataTypes.FLOAT,
+        allowNull: false,
+        defaultValue: 0,
       },
     },
     {

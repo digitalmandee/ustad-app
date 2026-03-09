@@ -44,8 +44,9 @@ function initParentModel(sequelize) {
             allowNull: true,
         },
         balance: {
-            type: sequelize_1.DataTypes.STRING,
-            allowNull: true,
+            type: sequelize_1.DataTypes.FLOAT,
+            allowNull: false,
+            defaultValue: 0,
         },
     }, {
         sequelize,

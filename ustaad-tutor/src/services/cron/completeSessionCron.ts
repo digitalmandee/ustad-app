@@ -103,8 +103,7 @@ export const runSessionCompletionCron = async () => {
               where: { userId: sessionDetail.tutorId },
             });
             if (tutor) {
-              const currentBalance = Number(tutor.balance) || 0;
-              tutor.balance = currentBalance + perSessionAmount;
+              tutor.balance = (tutor.balance || 0) + perSessionAmount;
               await tutor.save();
               console.log(
                 `Updated balance for tutor ${tutor.userId}: +${perSessionAmount}`
