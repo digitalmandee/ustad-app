@@ -71,7 +71,7 @@ export function initParentModel(sequelize: Sequelize): typeof Parent {
       },
       balance: {
         type: DataTypes.FLOAT,
-        allowNull: false,
+        allowNull: true,
         defaultValue: 0,
       },
     },

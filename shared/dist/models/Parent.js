@@ -45,7 +45,7 @@ function initParentModel(sequelize) {
         },
         balance: {
             type: sequelize_1.DataTypes.FLOAT,
-            allowNull: false,
+            allowNull: true,
             defaultValue: 0,
         },
     }, {

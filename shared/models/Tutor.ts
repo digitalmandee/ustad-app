@@ -100,7 +100,7 @@ export function initTutorModel(sequelize: Sequelize): typeof Tutor {
       },
       balance: {
         type: DataTypes.FLOAT,
-        allowNull: false,
+        allowNull: true,
         defaultValue: 0,
       },
     },
