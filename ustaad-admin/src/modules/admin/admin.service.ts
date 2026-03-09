@@ -2017,7 +2017,8 @@ export default class AdminService {
         { transaction }
       );
 
-      const newParentBalance = (parent.balance || 0) + refundAmount;
+      const newParentBalance =
+        Number(parent.balance || 0) + Number(refundAmount || 0);
       await parent.update({ balance: newParentBalance }, { transaction });
 
       // 4. Deduct balance from tutor
@@ -2031,7 +2032,8 @@ export default class AdminService {
         throw new Error("Tutor not found");
       }
 
-      const newTutorBalance = tutor.balance - refundAmount;
+      const newTutorBalance =
+        Number(tutor.balance || 0) - Number(refundAmount || 0);
       await tutor.update({ balance: newTutorBalance }, { transaction });
 
       // 5. Update contract status

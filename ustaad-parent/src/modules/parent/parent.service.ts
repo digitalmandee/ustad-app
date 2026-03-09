@@ -1917,7 +1917,8 @@ export default class ParentService {
                 transactionType: TutorTransactionType.PAYMENT,
               });
 
-              tutor.balance += subscription.amount;
+              tutor.balance =
+                Number(tutor.balance || 0) + Number(subscription.amount || 0);
               await tutor.save();
 
               // Create TutorSessions entry
@@ -2072,7 +2073,8 @@ export default class ParentService {
             transactionType: TutorTransactionType.PAYMENT,
           });
 
-          tutor.balance += subscription.amount;
+          tutor.balance =
+            Number(tutor.balance || 0) + Number(subscription.amount || 0);
           await tutor.save();
         }
 
@@ -2642,7 +2644,8 @@ export default class ParentService {
             transactionType: TutorTransactionType.PAYMENT,
           });
 
-          tutor.balance += subscription.amount;
+          tutor.balance =
+            Number(tutor.balance || 0) + Number(subscription.amount || 0);
           await tutor.save();
 
           // Create TutorSessions entry

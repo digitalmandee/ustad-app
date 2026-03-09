@@ -32,6 +32,7 @@ export default async ({ expressApp }: { expressApp: Application }) => {
         email,
         password: hashed,
         role: UserRole.SUPER_ADMIN,
+        userId: "SA-001",
         firstName: "Super",
         lastName: "Admin",
         phone,
