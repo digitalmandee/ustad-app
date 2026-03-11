@@ -799,6 +799,7 @@ export default class AdminService {
       transactionsCount,
       sessionsCount,
       reviewsCount,
+      notes,
     ] = await Promise.all([
       TutorEducation.findAll({ where: { tutorId: tutor.userId } }),
       TutorEducation.count({ where: { tutorId: tutor.userId } }),
@@ -816,6 +817,7 @@ export default class AdminService {
       TutorTransaction.count({ where: { tutorId: tutor.userId } }),
       TutorSessions.count({ where: { tutorId: tutor.userId } }),
       TutorReview.count({ where: { tutorId: tutor.userId } }),
+      ChildNotes.findAll({ where: { tutorId: tutor.userId } }),
     ]);
 
     // Fetch parent details separately to avoid alias issues
@@ -930,6 +932,7 @@ export default class AdminService {
       timesHired,
       sessionsCount,
       reviewsCount,
+      notes,
     };
   }
 
