@@ -1674,6 +1674,12 @@ export default class TutorService {
       );
     }
 
+    if (data.status === TutorSessionStatus.COMPLETED) {
+      throw new UnProcessableEntityError(
+        "Cannot add a session with COMPLETED status directly. Please check-in first and then mark as completed."
+      );
+    }
+
     const offer = await Offer.findOne({
       where: { id: session.offerId },
     });
@@ -1681,6 +1687,13 @@ export default class TutorService {
     if (!offer) {
       throw new UnProcessableEntityError("Offer not found");
     }
+
+    // Check if total sessions limit is reached
+    // if (session.sessionsCompleted >= offer.sessions) {
+    //   throw new UnProcessableEntityError(
+    //     "All sessions for this offer have already been completed."
+    //   );
+    // }
 
     const currentSessions = await TutorSessionsDetail.count({
       where: {
@@ -1734,10 +1747,7 @@ export default class TutorService {
         let title = "";
         let body = "";
 
-        if (
-          data.status === TutorSessionStatus.CREATED ||
-          data.status === TutorSessionStatus.COMPLETED
-        ) {
+        if (data.status === TutorSessionStatus.CREATED) {
           // This is essentially a check-in
           notificationType = NotificationType.TUTOR_CHECKED_IN;
           title = "✅ Session Started";
@@ -1890,21 +1900,24 @@ export default class TutorService {
       });
 
       // Update Tutor Balance
-      // if (mainSession.offerId) {
-      //   const offer = await Offer.findByPk(mainSession.offerId);
-      //   if (offer && offer.sessions > 0) {
-      //     const perSessionAmount = offer.amountMonthly / offer.sessions;
-      //     const tutor = await Tutor.findOne({
-      //       where: { userId: data.tutorId },
-      //     });
-      //     // if (tutor) {
-      //     //   // Ensure balance is treated as number
-      //     //   const currentBalance = Number(tutor.balance) || 0;
-      //     //   tutor.balance = currentBalance + perSessionAmount;
-      //     //   await tutor.save();
-      //     // }
-      //   }
-      // }
+      if (mainSession.offerId) {
+        const offer = await Offer.findByPk(mainSession.offerId);
+        if (offer && offer.sessions > 0) {
+          const perSessionAmount =
+            Number(offer.amountMonthly || 0) / Number(offer.sessions);
+          const tutor = await Tutor.findOne({
+            where: { userId: data.tutorId },
+          });
+          if (tutor) {
+            const currentBalance = Number(tutor.availableBalance) || 0;
+            tutor.availableBalance = currentBalance + perSessionAmount;
+            await tutor.save();
+            console.log(
+              `✅ Updated tutor balance for session completion: ${perSessionAmount}`
+            );
+          }
+        }
+      }
     }
 
     return await TutorSessionsDetail.update(
@@ -3012,6 +3025,62 @@ export default class TutorService {
     } catch (error) {
       console.error("Error in createHelpRequestAgainstContract:", error);
       throw error;
+    }
+  }
+
+  async notifyAdminsAboutOnboarding(userId: string) {
+    try {
+      const user = await User.findByPk(userId);
+      if (!user) return;
+
+      const admins = await User.findAll({
+        where: {
+          role: {
+            [Op.in]: [UserRole.ADMIN, UserRole.SUPER_ADMIN],
+          },
+          isDeleted: false,
+        },
+      });
+
+      const roleLabel = user.role === UserRole.PARENT ? "Parent" : "Tutor";
+
+      for (const adminUser of admins) {
+        if (adminUser.deviceId) {
+          await sendNotificationToUser(
+            adminUser.id,
+            adminUser.deviceId,
+            `New ${roleLabel} Onboarding`,
+            `${user.firstName} ${user.lastName} has submitted onboarding details.`,
+            {
+              type: NotificationType.ONBOARDING_SUBMITTED,
+              userId: user.id,
+              role: user.role,
+            },
+            undefined,
+            "/admin/users"
+          );
+        } else {
+          // Create DB notification only
+          await Notification.create({
+            userId: adminUser.id,
+            type: NotificationType.ONBOARDING_SUBMITTED,
+            title: `New ${roleLabel} Onboarding`,
+            body: `${user.firstName} ${user.lastName} has submitted onboarding details.`,
+            status: "failed",
+            isRead: false,
+            relatedEntityId: user.id,
+            relatedEntityType: "user",
+            actionUrl: "/admin/users",
+            metadata: {
+              userId: user.id,
+              role: user.role,
+            },
+            sentAt: new Date(),
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error in notifyAdminsAboutOnboarding:", error);
     }
   }
 

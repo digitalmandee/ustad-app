@@ -14,6 +14,7 @@ export interface TutorAttributes {
     grade: string[];
     curriculum: string[];
     balance: number;
+    availableBalance: number;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -31,6 +32,7 @@ export declare class Tutor extends Model<TutorAttributes, TutorCreationAttribute
     grade: string[];
     curriculum: string[];
     balance: number;
+    availableBalance: number;
     readonly createdAt: Date;
     readonly updatedAt: Date;
 }

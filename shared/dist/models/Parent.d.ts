@@ -10,6 +10,7 @@ export interface TutorAttributes {
     accountNumber?: string;
     bankName?: string;
     balance?: number;
+    availableBalance?: number;
 }
 export type TutorCreationAttributes = Optional<TutorAttributes, "id">;
 export declare class Parent extends Model<TutorAttributes, TutorCreationAttributes> implements TutorAttributes {
@@ -23,5 +24,6 @@ export declare class Parent extends Model<TutorAttributes, TutorCreationAttribut
     accountNumber: string;
     bankName: string;
     balance: number;
+    availableBalance: number;
 }
 export declare function initParentModel(sequelize: Sequelize): typeof Parent;

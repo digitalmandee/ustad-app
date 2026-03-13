@@ -53,6 +53,9 @@ export default class TutorController {
         { where: { id: userId } }
       );
 
+      // 🔔 Notify admins about new onboarding
+      this.tutorService.notifyAdminsAboutOnboarding(userId);
+
       return sendSuccessResponse(
         res,
         InfoMessages.GENERIC.ITEM_CREATED_SUCCESSFULLY("Tutor Profile"),

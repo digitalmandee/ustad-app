@@ -16,6 +16,7 @@ export interface TutorAttributes {
   grade: string[];
   curriculum: string[];
   balance: number; // Added balance field
+  availableBalance: number; // Added balance field
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -41,6 +42,7 @@ export class Tutor
   public grade!: string[];
   public curriculum!: string[];
   public balance!: number; // Added balance field
+  public availableBalance!: number; // Added balance field
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -99,6 +101,11 @@ export function initTutorModel(sequelize: Sequelize): typeof Tutor {
         allowNull: true,
       },
       balance: {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+        defaultValue: 0,
+      },
+      availableBalance: {
         type: DataTypes.FLOAT,
         allowNull: true,
         defaultValue: 0,

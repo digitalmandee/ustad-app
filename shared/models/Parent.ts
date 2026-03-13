@@ -12,6 +12,7 @@ export interface TutorAttributes {
   accountNumber?: string;
   bankName?: string;
   balance?: number;
+  availableBalance?: number;
 }
 
 export type TutorCreationAttributes = Optional<TutorAttributes, "id">;
@@ -30,6 +31,7 @@ export class Parent
   public accountNumber!: string;
   public bankName!: string;
   public balance!: number;
+  public availableBalance!: number;
 }
 
 export function initParentModel(sequelize: Sequelize): typeof Parent {
@@ -70,6 +72,11 @@ export function initParentModel(sequelize: Sequelize): typeof Parent {
         allowNull: true,
       },
       balance: {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+        defaultValue: 0,
+      },
+      availableBalance: {
         type: DataTypes.FLOAT,
         allowNull: true,
         defaultValue: 0,

@@ -51,6 +51,9 @@ export default class ParentController {
         { where: { id: userId } }
       );
 
+      // 🔔 Notify admins about new onboarding
+      this.parentService.notifyAdminsAboutOnboarding(userId);
+
       return sendSuccessResponse(
         res,
         InfoMessages.GENERIC.ITEM_CREATED_SUCCESSFULLY("Parent Profile"),

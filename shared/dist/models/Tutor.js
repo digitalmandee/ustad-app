@@ -64,6 +64,11 @@ function initTutorModel(sequelize) {
             allowNull: true,
             defaultValue: 0,
         },
+        availableBalance: {
+            type: sequelize_1.DataTypes.FLOAT,
+            allowNull: true,
+            defaultValue: 0,
+        },
     }, {
         sequelize,
         tableName: "tutors",

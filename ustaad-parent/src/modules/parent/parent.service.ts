@@ -35,6 +35,7 @@ import {
   Message,
   ConversationParticipant,
   sequelize, // Needed for transaction
+  UserRole,
 } from "@ustaad/shared";
 import Stripe from "stripe";
 import { TutorPaymentStatus } from "@ustaad/shared";
@@ -2688,6 +2689,62 @@ export default class ParentService {
     } catch (error) {
       console.error("Error in handlePayFastSuccess:", error);
       throw error;
+    }
+  }
+
+  async notifyAdminsAboutOnboarding(userId: string) {
+    try {
+      const user = await User.findByPk(userId);
+      if (!user) return;
+
+      const admins = await User.findAll({
+        where: {
+          role: {
+            [Op.in]: [UserRole.ADMIN, UserRole.SUPER_ADMIN],
+          },
+          isDeleted: false,
+        },
+      });
+
+      const roleLabel = user.role === UserRole.PARENT ? "Parent" : "Tutor";
+
+      for (const adminUser of admins) {
+        if (adminUser.deviceId) {
+          await sendNotificationToUser(
+            adminUser.id,
+            adminUser.deviceId,
+            `New ${roleLabel} Onboarding`,
+            `${user.firstName} ${user.lastName} has submitted onboarding details.`,
+            {
+              type: NotificationType.ONBOARDING_SUBMITTED,
+              userId: user.id,
+              role: user.role,
+            },
+            undefined,
+            "/admin/users"
+          );
+        } else {
+          // Create DB notification only
+          await Notification.create({
+            userId: adminUser.id,
+            type: NotificationType.ONBOARDING_SUBMITTED,
+            title: `New ${roleLabel} Onboarding`,
+            body: `${user.firstName} ${user.lastName} has submitted onboarding details.`,
+            status: "failed",
+            isRead: false,
+            relatedEntityId: user.id,
+            relatedEntityType: "user",
+            actionUrl: "/admin/users",
+            metadata: {
+              userId: user.id,
+              role: user.role,
+            },
+            sentAt: new Date(),
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error in notifyAdminsAboutOnboarding:", error);
     }
   }
 
