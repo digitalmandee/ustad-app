@@ -1061,6 +1061,7 @@ export default class AdminService {
         bankName: profile.bankName,
         accountNumber: profile.accountNumber,
         balance: profile.balance,
+        availableBalance: profile.availableBalance,
       },
     };
   }
@@ -1102,12 +1103,12 @@ export default class AdminService {
         ]);
 
         if (tutor) {
-          await tutor.decrement("balance", {
+          await tutor.decrement(["balance", "availableBalance"], {
             by: paymentRequest.amount,
             transaction,
           });
         } else if (parent) {
-          await parent.decrement("balance", {
+          await parent.decrement(["balance", "availableBalance"], {
             by: paymentRequest.amount,
             transaction,
           });
@@ -2022,7 +2023,12 @@ export default class AdminService {
 
       const newParentBalance =
         Number(parent.balance || 0) + Number(refundAmount || 0);
-      await parent.update({ balance: newParentBalance }, { transaction });
+      const newParentAvailableBalance =
+        Number(parent.availableBalance || 0) + Number(refundAmount || 0);
+      await parent.update(
+        { balance: newParentBalance, availableBalance: newParentAvailableBalance },
+        { transaction }
+      );
 
       // 4. Deduct balance from tutor
       const tutor = await Tutor.findOne({
@@ -2037,7 +2043,12 @@ export default class AdminService {
 
       const newTutorBalance =
         Number(tutor.balance || 0) - Number(refundAmount || 0);
-      await tutor.update({ balance: newTutorBalance }, { transaction });
+      const newTutorAvailableBalance =
+        Number(tutor.availableBalance || 0) - Number(refundAmount || 0);
+      await tutor.update(
+        { balance: newTutorBalance, availableBalance: newTutorAvailableBalance },
+        { transaction }
+      );
 
       // 5. Update contract status
       await contract.update(
@@ -2100,7 +2111,9 @@ export default class AdminService {
         refundAmount,
         currency: "PKR", // Assuming currency
         newParentBalance,
+        newParentAvailableBalance,
         newTutorBalance,
+        newTutorAvailableBalance,
         contractId: contract.id,
       };
     } catch (error) {
