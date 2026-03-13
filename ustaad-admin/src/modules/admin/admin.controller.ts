@@ -450,7 +450,7 @@ export default class AdminController {
   markNotificationAsRead = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const { id } = req.params;
-      const userId = req.user!.userId;
+      const userId = req.user!.id;
 
       const data = await this.adminService.markNotificationAsRead(id, userId);
       sendSuccessResponse(
