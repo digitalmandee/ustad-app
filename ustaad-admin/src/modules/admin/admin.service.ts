@@ -14,6 +14,7 @@ import {
   ParentSubscription,
   ParentTransaction,
   PaymentRequests,
+  Notification,
   Tutor,
   TutorEducation,
   TutorExperience,
@@ -1103,12 +1104,12 @@ export default class AdminService {
         ]);
 
         if (tutor) {
-          await tutor.decrement(["balance", "availableBalance"], {
+          await tutor.decrement(["availableBalance"], {
             by: paymentRequest.amount,
             transaction,
           });
         } else if (parent) {
-          await parent.decrement(["balance", "availableBalance"], {
+          await parent.decrement(["availableBalance"], {
             by: paymentRequest.amount,
             transaction,
           });
@@ -2026,7 +2027,10 @@ export default class AdminService {
       const newParentAvailableBalance =
         Number(parent.availableBalance || 0) + Number(refundAmount || 0);
       await parent.update(
-        { balance: newParentBalance, availableBalance: newParentAvailableBalance },
+        {
+          balance: newParentBalance,
+          availableBalance: newParentAvailableBalance,
+        },
         { transaction }
       );
 
@@ -2046,7 +2050,10 @@ export default class AdminService {
       const newTutorAvailableBalance =
         Number(tutor.availableBalance || 0) - Number(refundAmount || 0);
       await tutor.update(
-        { balance: newTutorBalance, availableBalance: newTutorAvailableBalance },
+        {
+          balance: newTutorBalance,
+          availableBalance: newTutorAvailableBalance,
+        },
         { transaction }
       );
 
@@ -2121,5 +2128,43 @@ export default class AdminService {
       console.error("Error in refundContract:", error);
       throw error;
     }
+  }
+
+  async getNotifications(userId: string, page: number = 1, limit: number = 20) {
+    const offset = (page - 1) * limit;
+    const { rows, count } = await Notification.findAndCountAll({
+      where: { userId },
+      order: [["createdAt", "DESC"]],
+      limit,
+      offset,
+    });
+
+    return {
+      items: rows,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+        hasNext: page * limit < count,
+        hasPrev: page > 1,
+      },
+    };
+  }
+
+  async markNotificationAsRead(id: string, userId: string) {
+    const notification = await Notification.findOne({
+      where: { id, userId },
+    });
+
+    if (!notification) {
+      throw new Error("Notification not found");
+    }
+
+    notification.isRead = true;
+    notification.readAt = new Date();
+    await notification.save();
+
+    return notification;
   }
 }

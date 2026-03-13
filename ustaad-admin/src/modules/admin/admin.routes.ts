@@ -154,4 +154,19 @@ router.post(
   adminController.refundContract
 );
 
+// Notifications
+router.get(
+  routes.NOTIFICATIONS,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
+  adminController.getNotifications
+);
+
+router.put(
+  routes.MARK_NOTIFICATION_READ,
+  authenticateJwt,
+  authorizeRoles("SUPER_ADMIN", "ADMIN"),
+  adminController.markNotificationAsRead
+);
+
 export { router as adminRouter };

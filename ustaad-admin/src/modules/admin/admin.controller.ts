@@ -429,4 +429,41 @@ export default class AdminController {
       );
     }
   };
+
+  getNotifications = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+      const userId = req.user!.userId;
+
+      const data = await this.adminService.getNotifications(
+        userId,
+        page,
+        limit
+      );
+      sendSuccessResponse(res, "Notifications fetched successfully", 200, data);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from getNotifications ${__filename}`);
+    }
+  };
+
+  markNotificationAsRead = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.userId;
+
+      const data = await this.adminService.markNotificationAsRead(id, userId);
+      sendSuccessResponse(
+        res,
+        "Notification marked as read successfully",
+        200,
+        data
+      );
+    } catch (e: any) {
+      throw new GenericError(
+        e,
+        ` Error from markNotificationAsRead ${__filename}`
+      );
+    }
+  };
 }

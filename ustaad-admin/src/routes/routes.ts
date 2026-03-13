@@ -25,6 +25,10 @@ const routes = {
   // User data retrieval
   USER_DATA_BY_ID: "/admin/users/data/:id",
   DELETE_USER: "/admin/users/:id",
+
+  // Notifications
+  NOTIFICATIONS: "/admin/notifications",
+  MARK_NOTIFICATION_READ: "/admin/notifications/:id/read",
 };
 
 export default routes;

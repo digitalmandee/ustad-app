@@ -1487,7 +1487,7 @@ export default class TutorService {
       }
 
       // Check balance
-      if (tutor.balance < data.amount) {
+      if (tutor.availableBalance < data.amount) {
         throw new UnProcessableEntityError("Insufficient balance");
       }
 
