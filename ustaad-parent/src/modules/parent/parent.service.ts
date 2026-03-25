@@ -2828,7 +2828,7 @@ export default class ParentService {
         throw new UnProcessableEntityError("Parent profile not found");
       }
 
-      if (parent.balance < amount) {
+      if (parent.availableBalance < amount) {
         throw new UnProcessableEntityError("Insufficient balance");
       }
 
