@@ -1108,8 +1108,16 @@ export default class AdminService {
             by: paymentRequest.amount,
             transaction,
           });
+          await tutor.decrement(["balance"], {
+            by: paymentRequest.amount,
+            transaction,
+          });
         } else if (parent) {
           await parent.decrement(["availableBalance"], {
+            by: paymentRequest.amount,
+            transaction,
+          });
+          await parent.decrement(["balance"], {
             by: paymentRequest.amount,
             transaction,
           });
