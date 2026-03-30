@@ -1044,18 +1044,18 @@ export default class AdminService {
       Tutor.findOne({ where: { userId: user.id } }),
     ]);
 
-    // Identify which profile exists
-    const profile = tutor || parent;
+    // Identify which profile exists based on user role
+    const profile = user.role === UserRole.TUTOR ? tutor : parent;
 
     if (!profile) {
-      throw new Error("Associated profile (Parent or Tutor) not found");
+      throw new Error(`Profile for role ${user.role} not found`);
     }
 
     return {
       paymentRequest,
       accountInfo: {
         userId: user.id,
-        role: tutor ? "tutor" : "parent",
+        role: user.role.toLowerCase(),
         name: `${user.firstName} ${user.lastName}`,
         email: user.email,
         phone: user.phone,
@@ -1090,37 +1090,47 @@ export default class AdminService {
       }
 
       if (status === TutorPaymentStatus.PAID) {
-        const [tutor, parent] = await Promise.all([
-          Tutor.findOne({
-            where: { userId: paymentRequest.userId },
-            transaction,
-            lock: true,
-          }),
-          Parent.findOne({
-            where: { userId: paymentRequest.userId },
-            transaction,
-            lock: true,
-          }),
-        ]);
+        const user = await User.findByPk(paymentRequest.userId, {
+          transaction,
+          lock: true,
+        });
 
-        if (tutor) {
-          await tutor.decrement(["availableBalance"], {
-            by: paymentRequest.amount,
+        if (!user) {
+          throw new Error("User not found");
+        }
+
+        if (user.role === UserRole.TUTOR) {
+          const tutor = await Tutor.findOne({
+            where: { userId: paymentRequest.userId },
             transaction,
+            lock: true,
           });
-          await tutor.decrement(["balance"], {
-            by: paymentRequest.amount,
+          if (tutor) {
+            await tutor.decrement(["availableBalance"], {
+              by: paymentRequest.amount,
+              transaction,
+            });
+            await tutor.decrement(["balance"], {
+              by: paymentRequest.amount,
+              transaction,
+            });
+          }
+        } else if (user.role === UserRole.PARENT) {
+          const parent = await Parent.findOne({
+            where: { userId: paymentRequest.userId },
             transaction,
+            lock: true,
           });
-        } else if (parent) {
-          await parent.decrement(["availableBalance"], {
-            by: paymentRequest.amount,
-            transaction,
-          });
-          await parent.decrement(["balance"], {
-            by: paymentRequest.amount,
-            transaction,
-          });
+          if (parent) {
+            await parent.decrement(["availableBalance"], {
+              by: paymentRequest.amount,
+              transaction,
+            });
+            await parent.decrement(["balance"], {
+              by: paymentRequest.amount,
+              transaction,
+            });
+          }
         }
       }
 
