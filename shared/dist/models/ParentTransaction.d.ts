@@ -9,6 +9,7 @@ export interface ParentTransactionAttributes {
     childName: string;
     basketId?: string;
     orderStatus?: string;
+    isDeleted?: boolean;
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -23,6 +24,7 @@ export declare class ParentTransaction extends Model<ParentTransactionAttributes
     childName: string;
     basketId?: string;
     orderStatus?: string;
+    isDeleted: boolean;
     readonly createdAt: Date;
     readonly updatedAt: Date;
 }

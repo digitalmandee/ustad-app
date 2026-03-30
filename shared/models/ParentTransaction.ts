@@ -13,6 +13,7 @@ export interface ParentTransactionAttributes {
   // PayFast fields
   basketId?: string; // PayFast basket ID
   orderStatus?: string; // PENDING, SUCCESS, FAILED
+  isDeleted?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -39,6 +40,7 @@ export class ParentTransaction
   // PayFast fields
   public basketId?: string;
   public orderStatus?: string;
+  public isDeleted!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 }
@@ -98,6 +100,11 @@ export function initParentTransactionModel(
         validate: {
           isIn: [["PENDING", "SUCCESS", "FAILED"]],
         },
+      },
+      isDeleted: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       },
     },
     {

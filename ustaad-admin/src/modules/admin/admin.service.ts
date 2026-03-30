@@ -105,9 +105,9 @@ export default class AdminService {
         ParentSubscription.count({
           where: { status: ParentSubscriptionStatus.CREATED, ...dateFilter },
         }),
-        ParentTransaction.count({ where: { ...dateFilter } }),
+        ParentTransaction.count({ where: { isDeleted: false, ...dateFilter } }),
         ParentTransaction.sum("amount", {
-          where: { status: "created", ...dateFilter },
+          where: { isDeleted: false, status: "created", ...dateFilter },
         }),
         User.count({
           where: {
@@ -528,7 +528,7 @@ export default class AdminService {
       }),
       ParentSubscription.count({ where: { parentId: parent.userId } }),
       ParentTransaction.findAll({
-        where: { parentId: parent.userId },
+        where: { parentId: parent.userId, isDeleted: false },
         include: [
           {
             model: ParentSubscription,
@@ -536,7 +536,9 @@ export default class AdminService {
           },
         ],
       }),
-      ParentTransaction.count({ where: { parentId: parent.userId } }),
+      ParentTransaction.count({
+        where: { parentId: parent.userId, isDeleted: false },
+      }),
       TutorSessions.findAll({
         where: { parentId: parent.userId },
         attributes: ["id", "offerId"],
@@ -849,6 +851,7 @@ export default class AdminService {
       const parentTransactions = await ParentTransaction.findAll({
         where: {
           subscriptionId: { [Op.in]: Array.from(subscriptionIds) },
+          isDeleted: false,
         },
       });
       // Group by subscriptionId
@@ -2026,6 +2029,19 @@ export default class AdminService {
         throw new Error("Parent not found");
       }
 
+      // Mark old transactions for this contract as deleted
+      await ParentTransaction.update(
+        { isDeleted: true },
+        {
+          where: {
+            parentId: contract.parentId,
+            subscriptionId: contract.id,
+            isDeleted: false,
+          },
+          transaction,
+        }
+      );
+
       await ParentTransaction.create(
         {
           parentId: offer.receiverId,
@@ -2036,6 +2052,7 @@ export default class AdminService {
           orderStatus: "SUCCESS",
           amount: refundAmount,
           childName: offer.childName,
+          isDeleted: false,
         },
         { transaction }
       );

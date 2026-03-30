@@ -984,6 +984,7 @@ export default class ParentService {
       const transactions = await ParentTransaction.findAll({
         where: {
           parentId: parentId,
+          isDeleted: false,
           createdAt: {
             [Op.gte]: sixMonthsAgo,
           },
@@ -1814,7 +1815,7 @@ export default class ParentService {
     try {
       // Find transaction by basketId
       const transaction = await ParentTransaction.findOne({
-        where: { basketId: data.basketId },
+        where: { basketId: data.basketId, isDeleted: false },
         include: [{ model: ParentSubscription }],
       });
 
@@ -1998,7 +1999,7 @@ export default class ParentService {
     try {
       // Find transaction/invoice by basketId
       const transaction = await ParentTransaction.findOne({
-        where: { basketId: data.basketId },
+        where: { basketId: data.basketId, isDeleted: false },
         include: [{ model: ParentSubscription }],
       });
 
@@ -2191,7 +2192,7 @@ export default class ParentService {
   async getSubscriptionStatusByBasketId(basketId: string) {
     try {
       const transaction = await ParentTransaction.findOne({
-        where: { basketId },
+        where: { basketId, isDeleted: false },
         include: [{ model: ParentSubscription }],
       });
 
@@ -2574,7 +2575,7 @@ export default class ParentService {
 
       // Find transaction by basketId
       const transaction = await ParentTransaction.findOne({
-        where: { basketId },
+        where: { basketId, isDeleted: false },
         include: [{ model: ParentSubscription }],
       });
 
@@ -2882,7 +2883,7 @@ export default class ParentService {
   async getTransactions(userId: string) {
     try {
       const transactions = await ParentTransaction.findAll({
-        where: { parentId: userId },
+        where: { parentId: userId, isDeleted: false },
         order: [["createdAt", "DESC"]],
         include: [
           {

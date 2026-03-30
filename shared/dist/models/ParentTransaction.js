@@ -61,6 +61,11 @@ function initParentTransactionModel(sequelize) {
                 isIn: [["PENDING", "SUCCESS", "FAILED"]],
             },
         },
+        isDeleted: {
+            type: sequelize_1.DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+        },
     }, {
         sequelize,
         tableName: "parent_transactions",
