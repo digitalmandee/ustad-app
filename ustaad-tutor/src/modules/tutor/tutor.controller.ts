@@ -1303,5 +1303,30 @@ export default class TutorController {
         error?.message || "Something went wrong while deleting profile picture";
       return sendErrorResponse(res, errorMessage, 400);
     }
-  }
+  };
+
+  deleteTutor = async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id: userId } = req.user;
+      const result = await this.tutorService.deleteTutorAccount(userId);
+
+      return sendSuccessResponse(
+        res,
+        "Tutor account deleted successfully",
+        200,
+        result
+      );
+    } catch (error: any) {
+      console.error("Delete tutor account error:", error);
+
+      if (error instanceof GenericError) {
+        return sendErrorResponse(res, error.message, 400);
+      }
+
+      const errorMessage =
+        error?.message ||
+        "Something went wrong while deleting tutor account";
+      return sendErrorResponse(res, errorMessage, 400);
+    }
+  };
 }

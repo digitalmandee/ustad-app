@@ -53,6 +53,7 @@ const routes = {
   NOTIFICATION_READ: "/tutor/notification/read/:notificationId",
   UPDATE_TUTOR_DOCUMENTS: "/tutor/update-documents",
   TUTOR_Profile_IMAGE_DELETE: "/tutor/profile/image/delete",
+  DELETE_TUTOR: "/tutor/delete-account",
 };
 
 export default routes;

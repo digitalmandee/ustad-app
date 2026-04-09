@@ -3136,4 +3136,22 @@ export default class TutorService {
       throw error;
     }
   }
+
+  async deleteTutorAccount(userId: string) {
+    try {
+      const user = await User.findByPk(userId);
+      if (!user) {
+        throw new NotFoundError("User not found");
+      }
+
+      await user.update({ isDeleted: true });
+
+      return {
+        message: "Account deleted successfully",
+      };
+    } catch (error) {
+      console.error("Error in deleteTutorAccount:", error);
+      throw error;
+    }
+  }
 }

@@ -377,4 +377,11 @@ router.put(
   tutorController.updateDocuments
 );
 
+router.delete(
+  routes.DELETE_TUTOR,
+  authenticateJwt,
+  authorizeRoles("TUTOR"),
+  tutorController.deleteTutor
+);
+
 export { router as tutorRouter };
