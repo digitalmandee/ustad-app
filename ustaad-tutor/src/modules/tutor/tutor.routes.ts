@@ -380,7 +380,7 @@ router.put(
 router.delete(
   routes.DELETE_TUTOR,
   authenticateJwt,
-  authorizeRoles("TUTOR"),
+  authorizeRoles("TUTOR", "PARENT"),
   tutorController.deleteTutor
 );
 
