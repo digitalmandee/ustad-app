@@ -30,7 +30,7 @@ export default class SocialController {
   unblockUser = async (req: AuthenticatedRequest, res: Response) => {
     try {
       const blockerId = req.user.id;
-      const { userId } = req.params;
+      const userId = req.params.userId as string;
       const result = await socialService.unblockUser(blockerId, userId);
       sendSuccessResponse(res, "User unblocked successfully", 200, result);
     } catch (e: any) {
