@@ -164,3 +164,16 @@ export enum TutorTransactionType {
   PAYMENT = "PAYMENT",
   WITHDRAWAL = "WITHDRAWAL",
 }
+
+export enum ReportReason {
+  HARASSMENT = "HARASSMENT",
+  SPAM = "SPAM",
+  INAPPROPRIATE_CONTENT = "INAPPROPRIATE_CONTENT",
+  OTHER = "OTHER",
+}
+
+export enum ReportStatus {
+  PENDING = "PENDING",
+  RESOLVED = "RESOLVED",
+  DISMISSED = "DISMISSED",
+}

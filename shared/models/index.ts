@@ -46,6 +46,8 @@ import { initFileModel, File } from "./File";
 import { initHelpRequestsModel, HelpRequests } from "./HelpRequests";
 import { initPaymentRequestsModel, PaymentRequests } from "./PaymentRequests";
 import { initContractReviewModel, ContractReview } from "./ContractReview";
+import { initUserReportModel, UserReport } from "./UserReport";
+import { initUserBlockModel, UserBlock } from "./UserBlock";
 
 export function initAllModels(sequelize: Sequelize) {
   initUserModel(sequelize);
@@ -85,6 +87,8 @@ export function initAllModels(sequelize: Sequelize) {
 
   initPaymentRequestsModel(sequelize);
   initContractReviewModel(sequelize);
+  initUserReportModel(sequelize);
+  initUserBlockModel(sequelize);
   // Initialize remaining chat models
 }
 
@@ -119,4 +123,6 @@ export {
   ConversationParticipant,
   Message,
   Offer,
+  UserReport,
+  UserBlock,
 };

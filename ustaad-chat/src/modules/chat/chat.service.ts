@@ -31,6 +31,7 @@ import {
   sequelize,
   File,
   Child,
+  UserBlock,
   NotificationType,
 } from '@ustaad/shared';
 import { sendNotificationToUser } from '../../services/notification.service';
@@ -57,6 +58,32 @@ export default class ChatService {
 
       if (!participant) {
         throw new ForbiddenError('User is not a participant of this conversation');
+      }
+
+      // Check for blocks
+      const allParticipants = await ConversationParticipant.findAll({
+        where: {
+          conversationId: messageData.conversationId,
+          isActive: true,
+        },
+        transaction,
+      });
+
+      const receiver = allParticipants.find((p) => p.userId !== senderId);
+      if (receiver) {
+        const block = await UserBlock.findOne({
+          where: {
+            [Op.or]: [
+              { blockerId: senderId, blockedId: receiver.userId },
+              { blockerId: receiver.userId, blockedId: senderId },
+            ],
+          },
+          transaction,
+        });
+
+        if (block) {
+          throw new ForbiddenError('Cannot send message. One of the users has blocked the other.');
+        }
       }
       if (messageData.replyToId) {
         const originalMessage = await Message.findOne({

@@ -10,6 +10,7 @@ import { errorHandler } from '../middlewares';
 import config from '../config';
 import { authRouter } from '../modules/auth/auth.routes';
 import  emailRouter  from '../modules/otp/otp.routes';
+import { socialRouter } from '../modules/social/social.routes';
 
 export default ({ app }: { app: express.Application }) => {
   // It shows the real origin IP in the heroku or Cloudwatch logs
@@ -56,6 +57,7 @@ export default ({ app }: { app: express.Application }) => {
   // Load all API routes
   app.use(config.api.prefix, authRouter);
   app.use(config.api.prefix, emailRouter);
+  app.use(config.api.prefix, socialRouter);
 
   app.all('*', async (req, res) => {
     throw new NotFoundError(null);

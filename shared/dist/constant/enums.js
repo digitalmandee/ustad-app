@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TutorTransactionType = exports.ParentSubscriptionStatus = exports.NotificationType = exports.HelpRequestType = exports.HelpRequestStatus = exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.Gender = exports.IsOnBaord = exports.UserRole = void 0;
+exports.ReportStatus = exports.ReportReason = exports.TutorTransactionType = exports.ParentSubscriptionStatus = exports.NotificationType = exports.HelpRequestType = exports.HelpRequestStatus = exports.TutorSessionStatus = exports.OtpPurpose = exports.OtpStatus = exports.OtpType = exports.TutorPaymentStatus = exports.OfferStatus = exports.MessageStatus = exports.ConversationStatus = exports.ConversationType = exports.MessageType = exports.Gender = exports.IsOnBaord = exports.UserRole = void 0;
 var UserRole;
 (function (UserRole) {
     UserRole["ADMIN"] = "ADMIN";
@@ -162,3 +162,16 @@ var TutorTransactionType;
     TutorTransactionType["PAYMENT"] = "PAYMENT";
     TutorTransactionType["WITHDRAWAL"] = "WITHDRAWAL";
 })(TutorTransactionType || (exports.TutorTransactionType = TutorTransactionType = {}));
+var ReportReason;
+(function (ReportReason) {
+    ReportReason["HARASSMENT"] = "HARASSMENT";
+    ReportReason["SPAM"] = "SPAM";
+    ReportReason["INAPPROPRIATE_CONTENT"] = "INAPPROPRIATE_CONTENT";
+    ReportReason["OTHER"] = "OTHER";
+})(ReportReason || (exports.ReportReason = ReportReason = {}));
+var ReportStatus;
+(function (ReportStatus) {
+    ReportStatus["PENDING"] = "PENDING";
+    ReportStatus["RESOLVED"] = "RESOLVED";
+    ReportStatus["DISMISSED"] = "DISMISSED";
+})(ReportStatus || (exports.ReportStatus = ReportStatus = {}));

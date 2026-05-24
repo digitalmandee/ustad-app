@@ -76,6 +76,21 @@ export default class AuthService implements IAuthService {
         isActive: true,
       });
 
+      // Send Email OTP on signup
+      try {
+        const otpService = new OtpServices();
+        if (newUser.email) {
+          await otpService.sendOtp({
+            userId: newUser.id,
+            type: OtpType.EMAIL,
+            purpose: OtpPurpose.EMAIL_VERIFICATION,
+            email: newUser.email,
+          });
+        }
+      } catch (otpErr) {
+        console.error("⚠️ Failed to send verification email OTP during signup:", otpErr);
+      }
+
       const sanitizedUser = newUser.toJSON();
       delete sanitizedUser.password;
       delete sanitizedUser.isActive;
@@ -180,6 +195,61 @@ export default class AuthService implements IAuthService {
           "❌ Error sending login notification:",
           notificationError
         );
+      }
+
+      // Send email if user is an ADMIN or SUPER_ADMIN
+      if (user.role === 'ADMIN' || user.role === 'SUPER_ADMIN') {
+        try {
+          const { sendEmailViaSES } = await import("../../services/aws-email.service");
+          const subject = `⚠️ Ustaad Security: Admin Login Detected`;
+          const html = `
+            <div style="font-family: 'Outfit', 'Inter', sans-serif; background-color: #0f172a; color: #f8fafc; padding: 40px 20px; border-radius: 12px; max-width: 600px; margin: 0 auto; border: 1px solid #1e293b; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <span style="background: linear-gradient(135deg, #f43f5e, #e11d48); padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; letter-spacing: 1px; color: white; text-transform: uppercase;">Security Alert</span>
+              </div>
+              <h2 style="color: #ffffff; text-align: center; margin-top: 10px; font-size: 24px; font-weight: 700; letter-spacing: -0.025em;">Admin Account Login</h2>
+              <p style="color: #94a3b8; font-size: 16px; line-height: 1.6; text-align: center; margin-bottom: 30px;">
+                A new sign-in was detected for an administrative account on Ustaad.
+              </p>
+              <div style="background-color: #1e293b; border-radius: 8px; padding: 20px; border: 1px solid #334155; margin-bottom: 30px;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
+                  <tr>
+                    <td style="padding: 8px 0; color: #94a3b8; font-weight: 500; width: 35%;">User ID</td>
+                    <td style="padding: 8px 0; color: #f1f5f9; font-weight: 600;">\${user.id}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #94a3b8; font-weight: 500;">Name</td>
+                    <td style="padding: 8px 0; color: #f1f5f9; font-weight: 600;">\${user.firstName} \${user.lastName}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #94a3b8; font-weight: 500;">Email</td>
+                    <td style="padding: 8px 0; color: #38bdf8; font-weight: 600; text-decoration: none;">\${user.email}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #94a3b8; font-weight: 500;">Role</td>
+                    <td style="padding: 8px 0; color: #fbbf24; font-weight: 700; text-transform: uppercase;">\${user.role}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #94a3b8; font-weight: 500;">Login Time</td>
+                    <td style="padding: 8px 0; color: #f1f5f9; font-weight: 600;">\${new Date().toLocaleString()}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #94a3b8; font-weight: 500;">Login Method</td>
+                    <td style="padding: 8px 0; color: #f1f5f9; font-weight: 600;">Email & Password</td>
+                  </tr>
+                </table>
+              </div>
+              <div style="border-top: 1px solid #1e293b; padding-top: 20px; text-align: center; font-size: 12px; color: #64748b;">
+                This is a secure automated notification from Ustaad Identity & Access Management.
+              </div>
+            </div>
+          `;
+
+          await sendEmailViaSES("abrarjamil906@gmail.com", subject, html);
+          console.log(`📧 Admin login alert email sent to abrarjamil906@gmail.com for admin: \${user.email}`);
+        } catch (emailErr) {
+          console.error("❌ Failed to send admin login notification email:", emailErr);
+        }
       }
 
       return { ...sanitizedUser, token };

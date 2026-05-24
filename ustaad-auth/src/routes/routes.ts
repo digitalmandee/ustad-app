@@ -11,5 +11,9 @@ export default {
   GOOGLE_SIGNUP: '/auth/google-signup',
   GOOGLE_LOGIN: '/auth/google-login',
   
-  // Other module routes
+  // Social routes
+  REPORT_USER: '/user/report',
+  BLOCK_USER: '/user/block',
+  UNBLOCK_USER: '/user/unblock/:userId',
+  GET_BLOCKED_USERS: '/user/blocks',
 };
