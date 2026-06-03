@@ -1,0 +1,313 @@
+{
+  "info": {
+    "name": "Ustaad – User Block & Report",
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "description": "API collection for the User Block and Report social features in the Ustaad Auth service.\n\nAll requests require a Bearer JWT token obtained from the sign-in endpoint.\n\nBase URL variable: `{{baseUrl}}` – set to your server root, e.g. `http://localhost:3000`",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "bearerToken",
+      "value": "<paste JWT here>",
+      "type": "string"
+    },
+    {
+      "key": "targetUserId",
+      "value": "<paste target user UUID here>",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Report",
+      "description": "Endpoints for reporting users.",
+      "item": [
+        {
+          "name": "Report a User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/report",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "report"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportedId\": \"{{targetUserId}}\",\n  \"reason\": \"HARASSMENT\",\n  \"description\": \"This user sent me harassing messages.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Report a user for a specific reason.\n\n**Auth:** Bearer JWT required.\n\n**Body fields:**\n- `reportedId` *(string, required)* – UUID of the user being reported.\n- `reason` *(enum, required)* – One of: `HARASSMENT`, `SPAM`, `INAPPROPRIATE_CONTENT`, `OTHER`.\n- `description` *(string, required)* – Free-text explanation of the report."
+          },
+          "response": [
+            {
+              "name": "201 – Report Created",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User reported successfully\",\n  \"data\": {\n    \"id\": \"report-uuid\",\n    \"reporterId\": \"reporter-uuid\",\n    \"reportedId\": \"reported-uuid\",\n    \"reason\": \"HARASSMENT\",\n    \"description\": \"This user sent me harassing messages.\",\n    \"status\": \"PENDING\",\n    \"createdAt\": \"2026-05-24T12:00:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "401 – Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Unauthorized\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Report a User – Spam",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/report",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "report"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportedId\": \"{{targetUserId}}\",\n  \"reason\": \"SPAM\",\n  \"description\": \"This user keeps sending spam promotional messages.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Example report using the SPAM reason."
+          },
+          "response": []
+        },
+        {
+          "name": "Report a User – Inappropriate Content",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/report",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "report"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportedId\": \"{{targetUserId}}\",\n  \"reason\": \"INAPPROPRIATE_CONTENT\",\n  \"description\": \"User shared inappropriate images in chat.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Example report using the INAPPROPRIATE_CONTENT reason."
+          },
+          "response": []
+        },
+        {
+          "name": "Report a User – Other",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/report",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "report"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportedId\": \"{{targetUserId}}\",\n  \"reason\": \"OTHER\",\n  \"description\": \"Reason does not fit any of the above categories.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Example report using the OTHER reason."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Block",
+      "description": "Endpoints for blocking and unblocking users.",
+      "item": [
+        {
+          "name": "Block a User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/block",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "block"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"blockedId\": \"{{targetUserId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Block another user.\n\n**Auth:** Bearer JWT required.\n\n**Body fields:**\n- `blockedId` *(string, required)* – UUID of the user to block."
+          },
+          "response": [
+            {
+              "name": "201 – User Blocked",
+              "status": "Created",
+              "code": 201,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User blocked successfully\",\n  \"data\": {\n    \"id\": \"block-uuid\",\n    \"blockerId\": \"blocker-uuid\",\n    \"blockedId\": \"blocked-uuid\",\n    \"createdAt\": \"2026-05-24T12:00:00.000Z\"\n  }\n}"
+            },
+            {
+              "name": "401 – Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Unauthorized\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Unblock a User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/unblock/{{targetUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "unblock", "{{targetUserId}}"]
+            },
+            "description": "Unblock a previously blocked user.\n\n**Auth:** Bearer JWT required.\n\n**Path param:**\n- `userId` – UUID of the user to unblock (set via `{{targetUserId}}` variable)."
+          },
+          "response": [
+            {
+              "name": "200 – User Unblocked",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User unblocked successfully\",\n  \"data\": {\n    \"unblocked\": true\n  }\n}"
+            },
+            {
+              "name": "401 – Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Unauthorized\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Blocked Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{bearerToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/blocks",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "blocks"]
+            },
+            "description": "Retrieve the list of all users blocked by the authenticated user.\n\n**Auth:** Bearer JWT required.\n\nNo request body or query params required."
+          },
+          "response": [
+            {
+              "name": "200 – Blocked Users List",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Blocked users fetched successfully\",\n  \"data\": [\n    {\n      \"id\": \"block-uuid-1\",\n      \"blockerId\": \"current-user-uuid\",\n      \"blockedId\": \"blocked-user-uuid-1\",\n      \"createdAt\": \"2026-05-24T10:00:00.000Z\"\n    },\n    {\n      \"id\": \"block-uuid-2\",\n      \"blockerId\": \"current-user-uuid\",\n      \"blockedId\": \"blocked-user-uuid-2\",\n      \"createdAt\": \"2026-05-24T11:00:00.000Z\"\n    }\n  ]\n}"
+            },
+            {
+              "name": "401 – Unauthorized",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                { "key": "Content-Type", "value": "application/json" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Unauthorized\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

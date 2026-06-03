@@ -1706,6 +1706,7 @@ export default class ParentService {
    */
   async handlePayFastIPN(ipnData: any) {
     try {
+      console.log("📥 PayFast IPN received:", JSON.stringify(ipnData));
       // Extract IPN data (PayFast sends in various formats)
       const basketId =
         ipnData.basket_id ||
@@ -1747,7 +1748,7 @@ export default class ParentService {
         ipnData.RecurringTxn;
 
       if (!basketId) {
-        console.error("PayFast IPN: Missing basketId");
+        console.error("❌ PayFast IPN: Missing basketId");
         return;
       }
 
@@ -1759,7 +1760,7 @@ export default class ParentService {
           validationHash
         );
         if (!isValid) {
-          console.error("PayFast IPN: Invalid validation hash", {
+          console.error("❌ PayFast IPN: Invalid validation hash", {
             basketId,
             errCode,
             receivedHash: validationHash,
@@ -1769,12 +1770,12 @@ export default class ParentService {
       }
 
       // Check if this is a recurring charge (basket ID starts with "RECUR-")
-      const isRecurringCharge = basketId.startsWith("SUB-");
-
-      console.log("aaaaaa");
+      const isRecurringCharge = basketId.startsWith("RECUR-");
+      console.log(`🔍 PayFast IPN: basketId=${basketId}, isRecurringCharge=${isRecurringCharge}, errCode=${errCode}`);
 
       if (isRecurringCharge) {
         // Handle recurring payment IPN
+        console.log("🔄 Routing PayFast IPN to handleRecurringPaymentIPN");
         await this.handleRecurringPaymentIPN({
           basketId,
           errCode,
@@ -1784,6 +1785,7 @@ export default class ParentService {
         });
       } else {
         // Handle initial subscription payment IPN
+        console.log("🆕 Routing PayFast IPN to handleInitialPaymentIPN");
         await this.handleInitialPaymentIPN({
           basketId,
           errCode,
@@ -1795,7 +1797,7 @@ export default class ParentService {
         });
       }
     } catch (error) {
-      console.error("Error in handlePayFastIPN:", error);
+      console.error("❌ Error in handlePayFastIPN:", error);
       throw error;
     }
   }
@@ -1813,6 +1815,7 @@ export default class ParentService {
     recurringTxn?: string;
   }) {
     try {
+      console.log(`📥 Starting handleInitialPaymentIPN: basketId=${data.basketId}, errCode=${data.errCode}, transactionId=${data.transactionId}`);
       // Find transaction by basketId
       const transaction = await ParentTransaction.findOne({
         where: { basketId: data.basketId, isDeleted: false },
@@ -1821,7 +1824,7 @@ export default class ParentService {
 
       if (!transaction) {
         console.error(
-          `PayFast IPN: Transaction not found for basketId: ${data.basketId}`
+          `❌ PayFast IPN: Transaction not found for basketId: ${data.basketId}`
         );
         return;
       }
@@ -1832,13 +1835,14 @@ export default class ParentService {
 
       if (!subscription) {
         console.error(
-          `PayFast IPN: Subscription not found for basketId: ${data.basketId}`
+          `❌ PayFast IPN: Subscription not found for basketId: ${data.basketId}`
         );
         return;
       }
 
       // Update transaction status
       const orderStatus = data.errCode === "000" ? "SUCCESS" : "FAILED";
+      console.log(`✍️ Updating ParentTransaction status. orderStatus=${orderStatus}`);
       await transaction.update({
         orderStatus,
         invoiceId: data.transactionId || transaction.invoiceId,
@@ -1847,8 +1851,10 @@ export default class ParentService {
 
       // If payment successful
       if (data.errCode === "000") {
+        console.log(`✅ PayFast Payment Successful for basketId=${data.basketId}`);
         // Store instrument token if recurring is enabled
         if (data.instrumentToken && data.recurringTxn === "TRUE") {
+          console.log(`💳 Tokenization active. Creating PaymentMethod and updating subscription with instrumentToken`);
           // Store in PaymentMethod
           const paymentMethod = await PaymentMethod.create({
             parentId: subscription.parentId,
@@ -1868,49 +1874,82 @@ export default class ParentService {
             lastPaymentAmount: parseFloat(data.transactionAmount || "0") / 100, // PayFast sends in smallest currency unit
             failureCount: 0,
           });
+        } else {
+          console.log(`💳 One-time payment (no token/recurring). Activating subscription.`);
+          // One-time payment, activate subscription, set payment date & amount
+          await subscription.update({
+            status: ParentSubscriptionStatus.ACTIVE,
+            lastPaymentDate: new Date(),
+            lastPaymentAmount: parseFloat(data.transactionAmount || "0") / 100,
+            failureCount: 0,
+          });
+        }
 
-          // 🔔 Notify parent + tutor that subscription is active
-          try {
-            await this.pushToUser(
-              subscription.parentId,
-              "✅ Payment Successful",
-              "Your subscription payment was successful and is now active.",
-              {
-                type: "SUBSCRIPTION_ACTIVE",
-                subscriptionId: subscription.id,
-                basketId: data.basketId,
-                transactionId: data.transactionId || "",
-              },
-              undefined,
-              `/subscriptions`
-            );
-            await this.pushToUser(
-              subscription.tutorId,
-              "✅ New Active Subscription",
-              "A new subscription is now active for you.",
-              {
-                type: "SUBSCRIPTION_ACTIVE",
-                subscriptionId: subscription.id,
-                basketId: data.basketId,
-                transactionId: data.transactionId || "",
-              },
-              undefined,
-              `/subscriptions`
-            );
-          } catch (e) {
-            console.error(
-              "❌ Error sending subscription active notification:",
-              e
-            );
+        // 🔔 Notify parent + tutor that subscription is active
+        try {
+          console.log(`🔔 Sending SUBSCRIPTION_ACTIVE notifications to parent=${subscription.parentId} and tutor=${subscription.tutorId}`);
+          await this.pushToUser(
+            subscription.parentId,
+            "✅ Payment Successful",
+            "Your subscription payment was successful and is now active.",
+            {
+              type: "SUBSCRIPTION_ACTIVE",
+              subscriptionId: subscription.id,
+              basketId: data.basketId,
+              transactionId: data.transactionId || "",
+            },
+            undefined,
+            `/subscriptions`
+          );
+          await this.pushToUser(
+            subscription.tutorId,
+            "✅ New Active Subscription",
+            "A new subscription is now active for you.",
+            {
+              type: "SUBSCRIPTION_ACTIVE",
+              subscriptionId: subscription.id,
+              basketId: data.basketId,
+              transactionId: data.transactionId || "",
+            },
+            undefined,
+            `/subscriptions`
+          );
+        } catch (e) {
+          console.error(
+            "❌ Error sending subscription active notification:",
+            e
+          );
+        }
+
+        // Create TutorTransaction and TutorSessions and update Offer status to ACCEPTED
+        console.log(`🔍 Finding Offer ID=${subscription.offerId} to mark as ACCEPTED`);
+        const offer = await Offer.findByPk(subscription.offerId);
+        if (offer) {
+          if (offer.status !== OfferStatus.ACCEPTED) {
+            console.log(`✍️ Updating Offer status from ${offer.status} to ACCEPTED`);
+            offer.status = OfferStatus.ACCEPTED;
+            await offer.save();
+          } else {
+            console.log(`ℹ️ Offer status is already ACCEPTED`);
           }
 
-          // Create TutorTransaction and TutorSessions
-          const offer = await Offer.findByPk(subscription.offerId);
-          if (offer) {
-            const tutor = await Tutor.findOne({
-              where: { userId: subscription.tutorId },
+          console.log(`🔍 Finding Tutor details for user=${subscription.tutorId}`);
+          const tutor = await Tutor.findOne({
+            where: { userId: subscription.tutorId },
+          });
+          if (tutor) {
+            // Check if TutorTransaction already exists
+            console.log(`🔍 Checking if TutorTransaction already exists for subscription=${subscription.id}`);
+            const existingTutorTx = await TutorTransaction.findOne({
+              where: {
+                subscriptionId: subscription.id,
+                tutorId: subscription.tutorId,
+                transactionType: TutorTransactionType.PAYMENT,
+              },
             });
-            if (tutor) {
+
+            if (!existingTutorTx) {
+              console.log(`💸 Creating TutorTransaction and crediting tutor balance with amount=${subscription.amount}`);
               await TutorTransaction.create({
                 tutorId: subscription.tutorId,
                 subscriptionId: subscription.id,
@@ -1922,11 +1961,28 @@ export default class ParentService {
               tutor.balance =
                 Number(tutor.balance || 0) + Number(subscription.amount || 0);
               await tutor.save();
+              console.log(`✅ Tutor balance updated. New balance=${tutor.balance}`);
+            } else {
+              console.log(`ℹ️ TutorTransaction already exists, skipping balance update`);
+            }
 
-              // Create TutorSessions entry
-              const currentDate = new Date();
-              const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-01`;
+            // Create TutorSessions entry
+            const currentDate = new Date();
+            const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-01`;
 
+            console.log(`🔍 Checking if TutorSessions already exists for offer=${subscription.offerId} and month=${currentMonth}`);
+            const existingTutorSession = await TutorSessions.findOne({
+              where: {
+                offerId: subscription.offerId,
+                tutorId: subscription.tutorId,
+                parentId: subscription.parentId,
+                month: currentMonth,
+                status: "active",
+              },
+            });
+
+            if (!existingTutorSession) {
+              console.log(`📅 Creating TutorSessions active entry for parent=${subscription.parentId}, child=${offer.childName}`);
               await TutorSessions.create({
                 tutorId: subscription.tutorId,
                 parentId: subscription.parentId,
@@ -1946,22 +2002,26 @@ export default class ParentService {
                   paymentProvider: "PAYFAST",
                 },
               });
+              console.log("✅ TutorSessions entry created successfully");
+            } else {
+              console.log(`ℹ️ TutorSessions entry already exists, skipping creation`);
             }
+          } else {
+            console.error(`❌ Tutor record not found for userId: ${subscription.tutorId}`);
           }
         } else {
-          // One-time payment, just activate subscription
-          await subscription.update({
-            status: ParentSubscriptionStatus.ACTIVE,
-          });
+          console.error(`❌ Offer record not found for ID: ${subscription.offerId}`);
         }
       } else {
         // Payment failed
+        console.warn(`❌ PayFast Payment Failed: errCode=${data.errCode}, errMsg=${data.errMsg}. Cancelling subscription.`);
         await subscription.update({
           status: ParentSubscriptionStatus.CANCELLED,
         });
 
         // 🔔 Notify parent payment failed
         try {
+          console.log(`🔔 Sending PAYMENT_FAILED notification to parent=${subscription.parentId}`);
           await this.pushToUser(
             subscription.parentId,
             "❌ Payment Failed",
@@ -1981,7 +2041,7 @@ export default class ParentService {
         }
       }
     } catch (error) {
-      console.error("Error in handleInitialPaymentIPN:", error);
+      console.error("❌ Error in handleInitialPaymentIPN:", error);
       throw error;
     }
   }
@@ -1997,6 +2057,7 @@ export default class ParentService {
     transactionAmount?: string;
   }) {
     try {
+      console.log(`📥 Starting handleRecurringPaymentIPN: basketId=${data.basketId}, errCode=${data.errCode}, transactionId=${data.transactionId}`);
       // Find transaction/invoice by basketId
       const transaction = await ParentTransaction.findOne({
         where: { basketId: data.basketId, isDeleted: false },
@@ -2005,7 +2066,7 @@ export default class ParentService {
 
       if (!transaction) {
         console.error(
-          `PayFast IPN: Recurring transaction not found for basketId: ${data.basketId}`
+          `❌ PayFast IPN: Recurring transaction not found for basketId: ${data.basketId}`
         );
         return;
       }
@@ -2016,13 +2077,14 @@ export default class ParentService {
 
       if (!subscription) {
         console.error(
-          `PayFast IPN: Subscription not found for recurring payment`
+          `❌ PayFast IPN: Subscription not found for recurring payment`
         );
         return;
       }
 
       // Update transaction status
       const orderStatus = data.errCode === "000" ? "SUCCESS" : "FAILED";
+      console.log(`✍️ Updating ParentTransaction status. orderStatus=${orderStatus}`);
       await transaction.update({
         orderStatus,
         invoiceId: data.transactionId || transaction.invoiceId,
@@ -2031,6 +2093,7 @@ export default class ParentService {
 
       if (data.errCode === "000") {
         // Payment successful
+        console.log(`✅ PayFast Recurring Payment Successful for basketId=${data.basketId}`);
         const nextBillingDate = new Date();
         nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
 
@@ -2044,6 +2107,7 @@ export default class ParentService {
 
         // 🔔 Notify parent recurring payment success
         try {
+          console.log(`🔔 Sending RECURRING_PAYMENT_SUCCESS notification to parent=${subscription.parentId}`);
           await this.pushToUser(
             subscription.parentId,
             "✅ Recurring Payment Successful",
@@ -2063,10 +2127,12 @@ export default class ParentService {
         }
 
         // Create TutorTransaction
+        console.log(`🔍 Finding Tutor details for user=${subscription.tutorId}`);
         const tutor = await Tutor.findOne({
           where: { userId: subscription.tutorId },
         });
         if (tutor) {
+          console.log(`💸 Creating TutorTransaction and crediting tutor balance with amount=${subscription.amount}`);
           await TutorTransaction.create({
             tutorId: subscription.tutorId,
             subscriptionId: subscription.id,
@@ -2078,15 +2144,20 @@ export default class ParentService {
           tutor.balance =
             Number(tutor.balance || 0) + Number(subscription.amount || 0);
           await tutor.save();
+          console.log(`✅ Tutor balance updated. New balance=${tutor.balance}`);
+        } else {
+          console.error(`❌ Tutor record not found for userId: ${subscription.tutorId}`);
         }
 
         // Create TutorSessions for recurring payment if offer exists
+        console.log(`🔍 Finding Offer ID=${subscription.offerId} for recurring session creation`);
         const offer = await Offer.findByPk(subscription.offerId);
         if (offer) {
           const currentDate = new Date();
           const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-01`;
 
           // Check if session already exists for this month
+          console.log(`🔍 Checking if TutorSessions already exists for offer=${subscription.offerId} and month=${currentMonth}`);
           const existingSession = await TutorSessions.findOne({
             where: {
               tutorId: subscription.tutorId,
@@ -2098,6 +2169,7 @@ export default class ParentService {
           });
 
           if (!existingSession) {
+            console.log(`📅 Creating recurring TutorSessions active entry for parent=${subscription.parentId}, child=${offer.childName}`);
             await TutorSessions.create({
               tutorId: subscription.tutorId,
               parentId: subscription.parentId,
@@ -2117,14 +2189,21 @@ export default class ParentService {
                 paidAt: new Date(),
               },
             });
+            console.log("✅ TutorSessions entry created successfully");
+          } else {
+            console.log(`ℹ️ TutorSessions entry already exists, skipping creation`);
           }
+        } else {
+          console.error(`❌ Offer record not found for ID: ${subscription.offerId}`);
         }
       } else {
         // Payment failed
         const failureCount = (subscription.failureCount || 0) + 1;
+        console.warn(`❌ PayFast Recurring Payment Failed: errCode=${data.errCode}, errMsg=${data.errMsg}. failureCount=${failureCount}`);
 
         if (failureCount >= 3) {
           // Suspend subscription after 3 failures
+          console.warn(`⚠️ Suspending subscription ID=${subscription.id} after 3 consecutive failures`);
           await subscription.update({
             status: ParentSubscriptionStatus.EXPIRED, // Using EXPIRED as suspended status
             failureCount,
@@ -2132,6 +2211,7 @@ export default class ParentService {
 
           // 🔔 Notify parent subscription suspended
           try {
+            console.log(`🔔 Sending SUBSCRIPTION_SUSPENDED notification to parent=${subscription.parentId}`);
             await this.pushToUser(
               subscription.parentId,
               "⚠️ Subscription Suspended",
@@ -2151,12 +2231,14 @@ export default class ParentService {
             console.error("❌ Error sending suspension notification:", e);
           }
         } else {
+          console.log(`✍️ Incrementing failureCount to ${failureCount} for subscription ID=${subscription.id}`);
           await subscription.update({
             failureCount,
           });
 
           // 🔔 Notify parent recurring payment failed
           try {
+            console.log(`🔔 Sending RECURRING_PAYMENT_FAILED notification to parent=${subscription.parentId}`);
             await this.pushToUser(
               subscription.parentId,
               "❌ Recurring Payment Failed",
@@ -2181,7 +2263,7 @@ export default class ParentService {
         }
       }
     } catch (error) {
-      console.error("Error in handleRecurringPaymentIPN:", error);
+      console.error("❌ Error in handleRecurringPaymentIPN:", error);
       throw error;
     }
   }
@@ -2542,6 +2624,7 @@ export default class ParentService {
     [key: string]: any;
   }) {
     try {
+      console.log("📥 handlePayFastSuccess callback received with params:", JSON.stringify(queryParams));
       const basketId = queryParams.basket_id;
       const errCode = queryParams.err_code || "000";
       const errMsg = queryParams.err_msg || "";
@@ -2550,28 +2633,9 @@ export default class ParentService {
       const transactionAmount = queryParams.transaction_amount;
       const isRecurring = queryParams.Recurring_txn === "true";
 
-      console.log("we here ");
-
       if (!basketId) {
         throw new BadRequestError("Missing basket_id in success callback");
       }
-
-      // Validate hash if provided
-      // if (validationHash) {
-      //   const isValid = this.payfastService.validateIPNHash(
-      //     basketId,
-      //     errCode,
-      //     validationHash
-      //   );
-      //   if (!isValid) {
-      //     console.error("PayFast Success: Invalid validation hash", {
-      //       basketId,
-      //       errCode,
-      //       receivedHash: validationHash,
-      //     });
-      //     throw new BadRequestError("Invalid validation hash");
-      //   }
-      // }
 
       // Find transaction by basketId
       const transaction = await ParentTransaction.findOne({
@@ -2593,6 +2657,7 @@ export default class ParentService {
 
       // Update transaction status
       const orderStatus = errCode === "000" ? "SUCCESS" : "FAILED";
+      console.log(`✍️ handlePayFastSuccess: Updating ParentTransaction status. orderStatus=${orderStatus}`);
       await transaction.update({
         orderStatus,
         invoiceId: transactionId || transaction.invoiceId,
@@ -2600,24 +2665,10 @@ export default class ParentService {
       });
 
       // Payment successful
-      // if (isRecurring) {
-      //   // Handle recurring payment
-      //   const nextBillingDate = new Date();
-      //   nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
-
-      //   await subscription.update({
-      //     status: ParentSubscriptionStatus.ACTIVE,
-      //     nextBillingDate,
-      //     lastPaymentDate: new Date(),
-      //     lastPaymentAmount: parseFloat(transactionAmount || "0"),
-      //     failureCount: 0,
-      //   });
-      // } else {
-      // Handle initial payment
       const nextBillingDate = new Date();
       nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
-      console.log("FDSFAS");
 
+      console.log(`✍️ handlePayFastSuccess: Activating subscription.`);
       await subscription.update({
         status: ParentSubscriptionStatus.ACTIVE,
         instrumentToken:
@@ -2629,15 +2680,16 @@ export default class ParentService {
       });
 
       // Create TutorTransaction and TutorSessions for initial payment
+      console.log(`🔍 handlePayFastSuccess: Finding Offer ID=${subscription.offerId}`);
       const offer = await Offer.findByPk(subscription.offerId);
 
-      console.log("FSDFSDFSDFS");
-
       if (offer) {
+        console.log(`🔍 handlePayFastSuccess: Finding Tutor details for user=${subscription.tutorId}`);
         const tutor = await Tutor.findOne({
           where: { userId: subscription.tutorId },
         });
         if (tutor) {
+          console.log(`💸 handlePayFastSuccess: Creating TutorTransaction and crediting tutor balance`);
           await TutorTransaction.create({
             tutorId: subscription.tutorId,
             subscriptionId: subscription.id,
@@ -2649,11 +2701,13 @@ export default class ParentService {
           tutor.balance =
             Number(tutor.balance || 0) + Number(subscription.amount || 0);
           await tutor.save();
+          console.log(`✅ handlePayFastSuccess: Tutor balance updated. New balance=${tutor.balance}`);
 
           // Create TutorSessions entry
           const currentDate = new Date();
           const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-01`;
 
+          console.log(`📅 handlePayFastSuccess: Creating TutorSessions active entry for month=${currentMonth}`);
           await TutorSessions.create({
             tutorId: subscription.tutorId,
             parentId: subscription.parentId,
@@ -2662,7 +2716,7 @@ export default class ParentService {
             endTime: offer.endTime,
             offerId: subscription.offerId,
             daysOfWeek: offer.daysOfWeek,
-            price: Number(subscription.amount),
+            price: Math.round(subscription.amount * 100), // Convert to cents
             status: "active",
             month: currentMonth,
             totalSessions: offer.sessions,
@@ -2673,11 +2727,19 @@ export default class ParentService {
               paymentProvider: "PAYFAST",
             },
           });
+          console.log("✅ handlePayFastSuccess: TutorSessions entry created successfully");
+        } else {
+          console.error(`❌ handlePayFastSuccess: Tutor record not found for userId: ${subscription.tutorId}`);
         }
+      } else {
+        console.error(`❌ handlePayFastSuccess: Offer record not found for ID: ${subscription.offerId}`);
       }
 
-      offer.status = OfferStatus.ACCEPTED;
-      offer.save();
+      if (offer) {
+        console.log(`✍️ handlePayFastSuccess: Setting offer status to ACCEPTED`);
+        offer.status = OfferStatus.ACCEPTED;
+        await offer.save();
+      }
 
       return {
         success: errCode === "000",
