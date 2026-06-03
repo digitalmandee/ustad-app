@@ -67,7 +67,7 @@ export class PayFastService {
       // successUrl: "https://63fa2444770f.ngrok-free.app/parent/payfast/success",
       // failureUrl: "https://63fa2444770f.ngrok-free.app /parent/payfast/failure",
       failureUrl: process.env.PAYFAST_FAILURE_URL || "https://fasdfsadfasdfasdfsf.com/payfast/success",
-      checkoutUrl: `${process.env.PAYFAST_CHECKOUT_URL}/api/payfast/ipn` || "",
+      checkoutUrl: process.env.PAYFAST_CHECKOUT_URL || "",
       // checkoutUrl: "https://63fa2444770f.ngrok-free.app/api/payfast/ipn",
     };
 
