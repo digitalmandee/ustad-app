@@ -1612,7 +1612,12 @@ export default class TutorService {
         type: QueryTypes.SELECT,
       });
 
-      return { sessions, runningSessions };
+      const formattedSessions = sessions.map((session: any) => ({
+        ...session,
+        price: session.price ? Number(session.price) / 100 : 0,
+      }));
+
+      return { sessions: formattedSessions, runningSessions };
     } catch (error) {
       console.error("Error in getTutorSessions:", error);
       throw error;
