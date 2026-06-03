@@ -119,6 +119,7 @@ export class PayFastService {
 
     try {
       const url = `${this.getBaseUrl()}/GetAccessToken`;
+      console.log(`🌐 PayFast API: Requesting Access Token at URL=${url} with MERCHANT_ID=${this.config.merchantId}`);
 
       const response = await axios.post(
         url,
@@ -136,19 +137,19 @@ export class PayFastService {
         }
       );
 
-      // console.log("response", response);
-
+      console.log(`🌐 PayFast API: Access Token response status=${response.status}`);
 
       if (response.status === 200) {
         this.accessToken = response.data.ACCESS_TOKEN;
+        console.log(`🌐 PayFast API: Successfully retrieved token. Length=${this.accessToken?.length || 0}`);
         // Token typically expires in 1 hour, cache for 55 minutes
         this.tokenExpiry = new Date(Date.now() + 55 * 60 * 1000);
         return this.accessToken;
       }
 
-      throw new Error("Failed to get access token from PayFast");
+      throw new Error(`Failed to get access token from PayFast. Status: ${response.status}`);
     } catch (error: any) {
-      console.error("PayFast getAccessToken error:", error.response?.data || error.message);
+      console.error("❌ PayFast API Error: getAccessToken failed:", error.response?.data || error.message);
       throw new GenericError(
         error,
         "Failed to get PayFast access token"
@@ -210,17 +211,13 @@ export class PayFastService {
     basketId: string;
   }> {
     try {
-      console.log("request", request.amount);
+      console.log(`🌐 PayFast Service: initiateSubscription started. Amount=${request.amount}, offerId=${request.offerId}`);
 
       // Generate basket ID
       const basketId = this.generateBasketId("SUB");
+      console.log(`🌐 PayFast Service: Generated basketId=${basketId}`);
 
       const token = await this.getAccessToken(basketId, Number(request.amount).toFixed(2));
-      // Format order date
-
-
-      console.log("token", token);
-
       const orderDate = new Date().toISOString().replace("T", " ").substring(0, 19);
 
       // Prepare form fields
@@ -251,12 +248,15 @@ export class PayFastService {
         formFields.CUSTOMER_MOBILE_NO = request.customerMobile;
       }
 
+      console.log(`🌐 PayFast Service: Form fields prepared (excluding signature):`, JSON.stringify(formFields));
+
       // Generate signature (excluding SIGNATURE field)
       const fieldsForSignature = { ...formFields };
       delete fieldsForSignature.SIGNATURE;
       formFields.SIGNATURE = this.generateSignature(fieldsForSignature);
 
       const payfastUrl = `${this.getBaseUrl()}/PostTransaction`;
+      console.log(`🌐 PayFast Service: Generated checkout signature. Final transaction redirect URL=${payfastUrl}`);
 
       return {
         payfastUrl,
@@ -264,7 +264,7 @@ export class PayFastService {
         basketId,
       };
     } catch (error: any) {
-      console.error("PayFast initiateSubscription error:", error);
+      console.error("❌ PayFast Service: initiateSubscription error:", error);
       throw new GenericError(error, "Failed to initiate PayFast subscription");
     }
   }

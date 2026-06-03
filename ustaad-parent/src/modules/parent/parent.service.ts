@@ -1619,23 +1619,31 @@ export default class ParentService {
    */
   async initiatePayFastSubscription(data: { userId: string; offerId: string }) {
     try {
+      console.log(`🆕 Service: initiatePayFastSubscription started for userId=${data.userId}, offerId=${data.offerId}`);
+      
       const user = await User.findByPk(data.userId);
       if (!user) {
+        console.error(`❌ Service: User not found for userId=${data.userId}`);
         throw new UnProcessableEntityError("User not found");
       }
+      console.log(`🔍 Service: Found User email=${user.email}, phone=${user.phone}`);
 
       const offer = await Offer.findByPk(data.offerId);
       if (!offer) {
+        console.error(`❌ Service: Offer not found for offerId=${data.offerId}`);
         throw new NotFoundError("Offer not found");
       }
+      console.log(`🔍 Service: Found Offer childName=${offer.childName}, receiverId=${offer.receiverId}, senderId=${offer.senderId}, amountMonthly=${offer.amountMonthly}, status=${offer.status}`);
 
       if (offer.receiverId !== user.id) {
+        console.error(`❌ Service: User is not the receiver of this offer. receiverId=${offer.receiverId}, userId=${user.id}`);
         throw new UnProcessableEntityError(
           "You are not the receiver of this offer"
         );
       }
 
       if (offer.status === OfferStatus.ACCEPTED) {
+        console.error("❌ Service: Offer is already accepted");
         throw new UnProcessableEntityError("Offer already accepted");
       }
 
@@ -1643,6 +1651,7 @@ export default class ParentService {
       const customerEmail = user.email;
       const customerMobile = user.phone;
 
+      console.log(`🌐 Service: Calling payfastService.initiateSubscription with amount=${offer.amountMonthly}`);
       // Initiate PayFast subscription
       const payfastResult = await this.payfastService.initiateSubscription({
         userId: user.id,
@@ -1652,13 +1661,16 @@ export default class ParentService {
         offerId: offer.id,
         childName: offer.childName,
       });
+      console.log(`🌐 Service: payfastService.initiateSubscription returned basketId=${payfastResult.basketId}`);
 
       // Check if subscription already exists
+      console.log(`🔍 Service: Checking if subscription already exists for offerId=${data.offerId}`);
       let subscription = await ParentSubscription.findOne({
         where: { offerId: data.offerId },
       });
 
       if (!subscription) {
+        console.log("✍️ Service: Subscription not found. Creating a new ParentSubscription with status CREATED");
         subscription = await ParentSubscription.create({
           offerId: data.offerId,
           parentId: data.userId,
@@ -1671,11 +1683,13 @@ export default class ParentService {
           failureCount: 0,
         });
       } else {
+        console.log(`✍️ Service: Subscription found with ID=${subscription.id}. Updating basketId to ${payfastResult.basketId}`);
         await subscription.update({
           basketId: payfastResult.basketId,
         });
       }
 
+      console.log(`✍️ Service: Creating ParentTransaction record with basketId=${payfastResult.basketId}`);
       // Create transaction record
       const transaction = await ParentTransaction.create({
         parentId: data.userId,
@@ -1687,6 +1701,7 @@ export default class ParentService {
         amount: offer.amountMonthly,
         childName: offer.childName,
       });
+      console.log(`✅ Service: ParentTransaction created successfully with ID=${transaction.id}`);
 
       return {
         success: true,
@@ -1696,7 +1711,7 @@ export default class ParentService {
         // transactionId: transaction?.id,
       };
     } catch (error) {
-      console.error("Error in initiatePayFastSubscription:", error);
+      console.error("❌ Service: Error in initiatePayFastSubscription:", error);
       throw error;
     }
   }

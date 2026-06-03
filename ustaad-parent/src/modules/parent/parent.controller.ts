@@ -543,7 +543,10 @@ export default class ParentController {
       const { id: userId } = req.user;
       const { offerId } = req.body;
 
+      console.log(`🎮 Controller: initiatePayFastSubscription called by userId=${userId} with offerId=${offerId}`);
+
       if (!offerId) {
+        console.error("❌ Controller: Missing offerId in request body");
         return sendErrorResponse(res, "planId is required", 400);
       }
 
@@ -552,6 +555,7 @@ export default class ParentController {
         offerId,
       });
 
+      console.log(`🎮 Controller: initiatePayFastSubscription successful. Result basketId=${result.basketId}`);
       return sendSuccessResponse(
         res,
         "PayFast subscription initiated successfully",
@@ -559,7 +563,7 @@ export default class ParentController {
         result
       );
     } catch (error: any) {
-      console.error("Initiate PayFast subscription error:", error);
+      console.error("❌ Controller: initiatePayFastSubscription error:", error);
 
       if (error instanceof GenericError) {
         return sendErrorResponse(res, error.message, 400);
