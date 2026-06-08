@@ -208,7 +208,7 @@ router.get(
   authenticateJwt,
   // tutorSearchByLocationValidationRules(),
   validateRequest,
-  authorizeRoles("TUTOR", "PARENT"),
+  authorizeRoles("TUTOR", "PARENT", "GUEST"),
   tutorController.findTutorsByLocation
 );
 router.post(

@@ -34,6 +34,11 @@ router.post(
 );
 
 router.post(
+  routes.GUEST_LOGIN,
+  authController.guestLogin
+);
+
+router.post(
   routes.USER_LOGOUT,
   authenticateJwt,
   authController.logout

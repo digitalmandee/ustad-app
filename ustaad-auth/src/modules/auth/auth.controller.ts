@@ -98,4 +98,13 @@ export default class AuthController {
       throw new GenericError(e, ` Error from logout ${__filename}`);
     }
   };
+
+  guestLogin = async (req: Request, res: Response) => {
+    try {
+      let result = await this.authService.guestLogin();
+      sendSuccessResponse(res, "Guest login successful", 200, result);
+    } catch (e: any) {
+      throw new GenericError(e, ` Error from guestLogin ${__filename}`);
+    }
+  };
 }

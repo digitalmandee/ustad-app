@@ -3,6 +3,7 @@ export enum UserRole {
   PARENT = "PARENT",
   TUTOR = "TUTOR",
   SUPER_ADMIN = "SUPER_ADMIN",
+  GUEST = "GUEST",
 }
 
 // is on board

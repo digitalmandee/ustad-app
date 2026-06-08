@@ -56,9 +56,9 @@ async function validateSession(token: string): Promise<any> {
       throw new NotAuthorizedError("User does not exist or is not active");
     }
 
-    // if (user.role !== "PARENT" || user.role !== "TUTOR") {
-    //   throw new NotAuthorizedError("User is not a parent");
-    // }
+    if (user.role !== "PARENT" && user.role !== "TUTOR" && user.role !== "GUEST") {
+      throw new NotAuthorizedError("User is not authorized");
+    }
 
     return {
       id: user.id,

@@ -12,7 +12,7 @@ export interface ISignUpCreateDTO {
   state: string;
   country: string;
   email: string; // required and unique
-  phone: string; // required and unique
+  phone?: string; // optional and unique
 }
 
 export interface ISignInCreateDTO {

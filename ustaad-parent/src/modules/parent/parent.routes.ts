@@ -79,7 +79,7 @@ router.patch(
 router.get(
   routes.GET_TUTOR_PROFILE,
   authenticateJwt,
-  authorizeRoles("PARENT"),
+  authorizeRoles("PARENT", "GUEST"),
   parentController.getTutorProfile
 );
 

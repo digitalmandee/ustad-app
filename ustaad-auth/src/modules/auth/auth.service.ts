@@ -6,7 +6,7 @@ import {
   ISignInCreateDTO,
   IVerifyEmailOtpDTO,
 } from "./auth.dto";
-import { User, Otp, Session } from "@ustaad/shared";
+import { User, Otp, Session, Gender } from "@ustaad/shared";
 import { sendNotificationToUser } from "../../services/notification.service";
 import {
   comparePassword,
@@ -33,18 +33,25 @@ export interface IAuthService {
   validateSession: (token: string) => Promise<any>;
   cleanupExpiredSessions: () => Promise<number>;
   forgotPassword: (email?: string, phone?: string) => Promise<any>;
+  guestLogin: () => Promise<any>;
 }
 
 export default class AuthService implements IAuthService {
   public async signUp(userCreateDTO: ISignUpCreateDTO): Promise<any> {
     try {
+      const orConditions: any[] = [
+        { email: userCreateDTO.email }
+      ];
+      if (userCreateDTO.phone) {
+        orConditions.push({ phone: userCreateDTO.phone });
+      }
+      if (userCreateDTO.cnic) {
+        orConditions.push({ cnic: userCreateDTO.cnic });
+      }
+
       const existingUser = await User.findOne({
         where: {
-          [Op.or]: [
-            { email: userCreateDTO.email },
-            { phone: userCreateDTO.phone },
-            { cnic: userCreateDTO.cnic },
-          ],
+          [Op.or]: orConditions,
           isDeleted: false,
         },
       });
@@ -55,10 +62,10 @@ export default class AuthService implements IAuthService {
             "This email is already registered. Please login instead."
           );
         }
-        if (existingUser.phone === userCreateDTO.phone) {
+        if (userCreateDTO.phone && existingUser.phone === userCreateDTO.phone) {
           throw new ConflictError("This phone is already registered.");
         }
-        if (existingUser.cnic === userCreateDTO.cnic) {
+        if (userCreateDTO.cnic && existingUser.cnic === userCreateDTO.cnic) {
           throw new ConflictError(
             "This CNIC is already registered. Please login instead."
           );
@@ -460,7 +467,12 @@ export default class AuthService implements IAuthService {
   }
 
   private async generateCustomUserId(role: UserRole): Promise<string> {
-    const prefix = role === UserRole.TUTOR ? "TU-" : "PA-";
+    let prefix = "PA-";
+    if (role === UserRole.TUTOR) {
+      prefix = "TU-";
+    } else if (role === UserRole.GUEST) {
+      prefix = "GU-";
+    }
 
     const lastUser = await User.findOne({
       where: {
@@ -481,5 +493,58 @@ export default class AuthService implements IAuthService {
     }
 
     return `${prefix}${nextNumber.toString().padStart(4, "0")}`;
+  }
+
+  public async guestLogin(): Promise<any> {
+    try {
+      const role = UserRole.GUEST;
+      const userId = await this.generateCustomUserId(role);
+      
+      const email = `guest_${Date.now()}_${Math.floor(Math.random() * 10000)}@ustaad.com`;
+      const newUser = await User.create({
+        userId,
+        role,
+        email,
+        firstName: "Guest",
+        lastName: "Parent",
+        isActive: true,
+        isEmailVerified: true,
+        isPhoneVerified: true,
+        gender: Gender.OTHER,
+        password: null,
+      } as any);
+
+      const token = jwt.sign(
+        {
+          user: {
+            id: newUser.id,
+            email: newUser.email,
+            phone: newUser.phone,
+            role: newUser.role,
+          },
+        },
+        process.env.JWT_SECRET!,
+        { expiresIn: "6d" }
+      );
+
+      // Create session record
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 6); // 6 days from now
+
+      await Session.create({
+        userId: newUser.id,
+        token: token,
+        expiresAt: expiresAt,
+      });
+
+      const sanitizedUser = newUser.toJSON();
+      delete sanitizedUser.password;
+      delete sanitizedUser.isActive;
+
+      return { ...sanitizedUser, token };
+    } catch (err: any) {
+      console.error("Guest login error:", err);
+      throw new GenericError(err, "Unable to process guest login request");
+    }
   }
 }

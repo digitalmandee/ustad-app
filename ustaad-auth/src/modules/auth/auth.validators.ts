@@ -120,9 +120,7 @@ export const signupValidationRules = () => {
       .withMessage(constant.AUTH.INVALID_EMAIL),
 
     body("phone")
-      .exists()
-      .withMessage(constant.VALIDATION.KEY_MISSING("phone"))
-      .bail()
+      .optional({ nullable: true, checkFalsy: true })
       .isString()
       .withMessage(constant.VALIDATION.VALUE_MUST_BE_STRING("phone"))
       .bail()

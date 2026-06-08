@@ -1,0 +1,186 @@
+{
+  "new_apis": [
+    {
+      "name": "Guest Login",
+      "method": "POST",
+      "path": "/auth/guest-login",
+      "description": "Allows a user to log in as a guest, creating a temporary parent account with the GUEST role and returning a JWT token.",
+      "request": {
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "message": "Guest login successful",
+          "data": {
+            "id": 123,
+            "userId": "GU-0001",
+            "role": "GUEST",
+            "email": "guest_1717845600000_1234@ustaad.com",
+            "firstName": "Guest",
+            "lastName": "Parent",
+            "isEmailVerified": true,
+            "isPhoneVerified": true,
+            "gender": "OTHER",
+            "createdAt": "2026-06-08T15:22:29.000Z",
+            "updatedAt": "2026-06-08T15:22:29.000Z",
+            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+          }
+        }
+      }
+    }
+  ],
+  "modified_apis_supporting_guest_role": [
+    {
+      "name": "Get Tutor Profile",
+      "method": "GET",
+      "path": "/parent/tutor/:tutorId",
+      "description": "Retrieve detailed information of a tutor profile. Modified to be accessible by users with PARENT and GUEST roles.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <token>"
+        },
+        "params": {
+          "tutorId": "The ID of the tutor"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "message": "Profile retrieved successfully",
+          "data": {
+            "id": 12,
+            "userId": "TU-0001",
+            "firstName": "John",
+            "lastName": "Doe",
+            "email": "tutor@gmail.com",
+            "image": "uploads/tutor/12/profile.jpg",
+            "gender": "MALE",
+            "Tutor": {
+              "about": "Expert Math and Physics tutor with 5 years of experience",
+              "subjects": [
+                "Math",
+                "Physics"
+              ],
+              "grade": [
+                "Grade 9",
+                "Grade 10"
+              ],
+              "curriculum": [
+                "O Level",
+                "A Level"
+              ]
+            },
+            "TutorSettings": {
+              "minSubjects": 1,
+              "maxStudentsDaily": 5,
+              "subjectCosts": []
+            },
+            "TutorEducations": [
+              {
+                "institute": "University of Lahore",
+                "startDate": "2018-09-01",
+                "endDate": "2022-06-30",
+                "description": "Bachelor of Science in Mathematics",
+                "degree": "B.Sc"
+              }
+            ],
+            "TutorExperiences": [
+              {
+                "id": 5,
+                "company": "KIPS College",
+                "startDate": "2022-09-01",
+                "endDate": "Present",
+                "description": "Math Teacher",
+                "designation": "Lecturer"
+              }
+            ],
+            "experience": [
+              {
+                "id": 5,
+                "company": "KIPS College",
+                "startDate": "2022-09-01",
+                "endDate": "Present",
+                "description": "Math Teacher",
+                "designation": "Lecturer",
+                "totalMonths": 45
+              }
+            ],
+            "totalExperienceMonths": 45,
+            "reviews": [],
+            "reviewStats": {
+              "totalReviews": 0,
+              "averageRating": 0
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Get Tutor Locations / Search Nearby Tutors",
+      "method": "GET",
+      "path": "/tutor/locations",
+      "description": "Search and filter nearby tutors by geographical location, category, curriculum, grade, and gender. Modified to be accessible by users with TUTOR, PARENT, and GUEST roles.",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <token>"
+        },
+        "query": {
+          "latitude": "Latitude coordinate of search center",
+          "longitude": "Longitude coordinate of search center",
+          "radius": "Search radius in kilometers",
+          "limit": "Maximum number of records to return (default: 20)",
+          "offset": "Number of records to skip (default: 0)",
+          "category": "Filter tutors by subject category",
+          "curriculum": "Filter tutors by curriculum",
+          "grade": "Filter tutors by grade",
+          "gender": "Filter tutors by gender"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "message": "Nearby Tutors retrieved successfully",
+          "data": [
+            {
+              "id": 1,
+              "distance": 2.5,
+              "latitude": 31.5204,
+              "longitude": 74.3587,
+              "tutor": {
+                "id": 12,
+                "userId": "TU-0001",
+                "firstName": "John",
+                "lastName": "Doe",
+                "email": "tutor@gmail.com",
+                "image": "uploads/tutor/12/profile.jpg",
+                "gender": "MALE",
+                "Tutor": {
+                  "about": "Expert Math and Physics tutor with 5 years of experience",
+                  "subjects": [
+                    "Math",
+                    "Physics"
+                  ],
+                  "grade": [
+                    "Grade 9",
+                    "Grade 10"
+                  ],
+                  "curriculum": [
+                    "O Level",
+                    "A Level"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -29,6 +29,13 @@ export const connectToPostgres = async (retryCount = 0): Promise<Sequelize> => {
     await sequelize.authenticate();
     console.info("✅ Connected to PostgreSQL");
 
+    try {
+      await sequelize.query(`ALTER TYPE "enum_users_role" ADD VALUE IF NOT EXISTS 'GUEST'`);
+      console.info("✅ Updated enum_users_role to include GUEST");
+    } catch (enumErr) {
+      console.warn("⚠️ Could not update enum_users_role (it might not exist yet or was already updated):", enumErr);
+    }
+
     initAllModels(sequelize);
 
     // Temporarily use force: true to recreate tables with new enum
