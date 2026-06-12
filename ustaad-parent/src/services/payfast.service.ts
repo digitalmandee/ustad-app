@@ -461,7 +461,7 @@ export class PayFastService {
    */
   async getListsOfInstruments(userMobileNumber: string): Promise<any> {
     try {
-      const accessToken = await this.getTokenizationAccessToken();
+      const accessToken = await this.testGetTokenizationAccessToken();
       const url = `${this.getTokenizationBaseUrl()}/user/instruments`;
       const response = await axios.get(url, {
         params: {
@@ -500,7 +500,7 @@ export class PayFastService {
     checkoutUrl?: string;
   }): Promise<any> {
     try {
-      const accessToken = await this.getTokenizationAccessToken();
+      const accessToken = await this.testGetTokenizationAccessToken();
       const url = `${this.getTokenizationBaseUrl()}/transaction/recurring/otp`;
 
       const formData = new URLSearchParams({
@@ -561,7 +561,7 @@ export class PayFastService {
     checkoutUrl?: string;
   }): Promise<any> {
     try {
-      const accessToken = await this.getTokenizationAccessToken();
+      const accessToken = await this.testGetTokenizationAccessToken();
       const url = `${this.getTokenizationBaseUrl()}/transaction/recurring`;
 
       const formData = new URLSearchParams({
