@@ -462,7 +462,13 @@ export class PayFastService {
   async getListsOfInstruments(userMobileNumber: string): Promise<any> {
     try {
       const accessToken = await this.testGetTokenizationAccessToken();
-      const url = `${this.getBaseUrl()}/user/instruments`;
+      const url = `${this.getTokenizationBaseUrl()}/user/instruments`;
+
+      console.log("url");
+      console.log("access", accessToken);
+
+      console.log("userMobileNumber", userMobileNumber);
+
       const response = await axios.get(url, {
         params: {
           merchant_user_id: userMobileNumber,
