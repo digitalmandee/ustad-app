@@ -481,7 +481,7 @@ export class PayFastService {
         },
       });
 
-      return response.data.token;
+      return response.data;
     } catch (error: any) {
       console.error(
         "PayFast getListsOfInstruments error:",
