@@ -2500,7 +2500,7 @@ export default class ParentService {
         await this.payfastService.getListsOfInstruments(userMobileNumber);
 
       if (result.length === 0) {
-        throw new BadRequestError("No instruments found");
+        throw new NotFoundError("No instruments found");
       }
 
       const cards = result.map((item: any) => ({
