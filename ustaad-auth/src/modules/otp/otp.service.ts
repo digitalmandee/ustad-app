@@ -1,4 +1,4 @@
-import sgMail from "@sendgrid/mail";
+import { sendEmailViaSES } from "../../services/aws-email.service";
 import { EmailTemplates, EmailTemplateParams } from "./types";
 import { templates } from "./templates";
 import { InternalServerError } from "../../errors/internal-server-error";
@@ -18,11 +18,6 @@ import { Op } from "sequelize";
 import { smsService } from "../sms/sms.service";
 import { sendNotificationToUser } from "../../services/notification.service";
 
-const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY!;
-const FROM_EMAIL = process.env.FROM_EMAIL!;
-
-sgMail.setApiKey(SENDGRID_API_KEY);
-
 export class OtpServices {
   /**
    * Sends a raw HTML email
@@ -32,20 +27,13 @@ export class OtpServices {
     subject: string,
     html: string
   ): Promise<void> {
-    const msg = {
-      to,
-      from: FROM_EMAIL,
-      subject,
-      html,
-    };
-
     try {
-      await sgMail.send(msg);
+      await sendEmailViaSES(to, subject, html);
       console.log(`✅ Email sent to ${to} | Subject: "${subject}"`);
     } catch (error: any) {
       console.error(`❌ Email send failed for ${to}`, {
         subject,
-        error: error?.response?.body || error.message || error,
+        error: error.message || error,
       });
 
       throw new InternalServerError("Failed to send email [email001]");
@@ -114,11 +102,9 @@ export class OtpServices {
 
       // Send OTP based on type
       if (type === "email") {
-        // await this.sendEmailByTemplate(userEmail, 'otp', {
-        //   name: `${user.firstName} ${user.lastName}`,
-        //   otp: otpCode,
-        //   expiryMinutes: 10,
-        // });
+        await this.sendEmailByTemplate(userEmail, 'otp', {
+          otp: otpCode,
+        });
       } else if (type === "phone") {
         // Send SMS OTP using VeevoTech service
         // const formattedPhone = smsService.formatPhoneNumber(userPhone);

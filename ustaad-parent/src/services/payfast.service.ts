@@ -63,10 +63,14 @@ export class PayFastService {
       env: (process.env.PAYFAST_ENV as "UAT" | "LIVE") || "UAT",
       merchantName: process.env.PAYFAST_MERCHANT_NAME || "Test Merchant",
       currencyCode: process.env.PAYFAST_CURRENCY_CODE || "PKR",
-      successUrl: process.env.PAYFAST_SUCCESS_URL || "https://fasdfsadfasdfasdfsf.com/payfast/success",
+      successUrl:
+        process.env.PAYFAST_SUCCESS_URL ||
+        "https://fasdfsadfasdfasdfsf.com/payfast/success",
       // successUrl: "https://63fa2444770f.ngrok-free.app/parent/payfast/success",
       // failureUrl: "https://63fa2444770f.ngrok-free.app /parent/payfast/failure",
-      failureUrl: process.env.PAYFAST_FAILURE_URL || "https://fasdfsadfasdfasdfsf.com/payfast/success",
+      failureUrl:
+        process.env.PAYFAST_FAILURE_URL ||
+        "https://fasdfsadfasdfasdfsf.com/payfast/success",
       checkoutUrl: process.env.PAYFAST_CHECKOUT_URL || "",
       // checkoutUrl: "https://63fa2444770f.ngrok-free.app/api/payfast/ipn",
     };
@@ -119,7 +123,9 @@ export class PayFastService {
 
     try {
       const url = `${this.getBaseUrl()}/GetAccessToken`;
-      console.log(`🌐 PayFast API: Requesting Access Token at URL=${url} with MERCHANT_ID=${this.config.merchantId}`);
+      console.log(
+        `🌐 PayFast API: Requesting Access Token at URL=${url} with MERCHANT_ID=${this.config.merchantId}`
+      );
 
       const response = await axios.post(
         url,
@@ -137,23 +143,29 @@ export class PayFastService {
         }
       );
 
-      console.log(`🌐 PayFast API: Access Token response status=${response.status}`);
+      console.log(
+        `🌐 PayFast API: Access Token response status=${response.status}`
+      );
 
       if (response.status === 200) {
         this.accessToken = response.data.ACCESS_TOKEN;
-        console.log(`🌐 PayFast API: Successfully retrieved token. Length=${this.accessToken?.length || 0}`);
+        console.log(
+          `🌐 PayFast API: Successfully retrieved token. Length=${this.accessToken?.length || 0}`
+        );
         // Token typically expires in 1 hour, cache for 55 minutes
         this.tokenExpiry = new Date(Date.now() + 55 * 60 * 1000);
         return this.accessToken;
       }
 
-      throw new Error(`Failed to get access token from PayFast. Status: ${response.status}`);
-    } catch (error: any) {
-      console.error("❌ PayFast API Error: getAccessToken failed:", error.response?.data || error.message);
-      throw new GenericError(
-        error,
-        "Failed to get PayFast access token"
+      throw new Error(
+        `Failed to get access token from PayFast. Status: ${response.status}`
       );
+    } catch (error: any) {
+      console.error(
+        "❌ PayFast API Error: getAccessToken failed:",
+        error.response?.data || error.message
+      );
+      throw new GenericError(error, "Failed to get PayFast access token");
     }
   }
 
@@ -203,22 +215,25 @@ export class PayFastService {
   /**
    * Initiate subscription payment
    */
-  async initiateSubscription(
-    request: InitiateSubscriptionRequest
-  ): Promise<{
+  async initiateSubscription(request: InitiateSubscriptionRequest): Promise<{
     payfastUrl: string;
     formFields: PayFastFormFields;
     basketId: string;
   }> {
     try {
-      console.log(`🌐 PayFast Service: initiateSubscription started. Amount=${request.amount}, offerId=${request.offerId}`);
+      console.log(
+        `🌐 PayFast Service: initiateSubscription started. Amount=${request.amount}, offerId=${request.offerId}`
+      );
 
       // Generate basket ID
       const basketId = this.generateBasketId("SUB");
       console.log(`🌐 PayFast Service: Generated basketId=${basketId}`);
 
-      const token = await this.getAccessToken(basketId, Number(request.amount).toFixed(2));
-      const orderDate = new Date().toISOString().replace("T", " ").substring(0, 19);
+      const token = await this.getTokenizationAccessToken();
+      const orderDate = new Date()
+        .toISOString()
+        .replace("T", " ")
+        .substring(0, 19);
 
       // Prepare form fields
       const formFields: PayFastFormFields = {
@@ -248,7 +263,10 @@ export class PayFastService {
         formFields.CUSTOMER_MOBILE_NO = request.customerMobile;
       }
 
-      console.log(`🌐 PayFast Service: Form fields prepared (excluding signature):`, JSON.stringify(formFields));
+      console.log(
+        `🌐 PayFast Service: Form fields prepared (excluding signature):`,
+        JSON.stringify(formFields)
+      );
 
       // Generate signature (excluding SIGNATURE field)
       const fieldsForSignature = { ...formFields };
@@ -256,7 +274,9 @@ export class PayFastService {
       formFields.SIGNATURE = this.generateSignature(fieldsForSignature);
 
       const payfastUrl = `${this.getBaseUrl()}/PostTransaction`;
-      console.log(`🌐 PayFast Service: Generated checkout signature. Final transaction redirect URL=${payfastUrl}`);
+      console.log(
+        `🌐 PayFast Service: Generated checkout signature. Final transaction redirect URL=${payfastUrl}`
+      );
 
       return {
         payfastUrl,
@@ -272,19 +292,23 @@ export class PayFastService {
   /**
    * Charge recurring payment using stored token
    */
-  async chargeRecurringPayment(
-    request: ChargeRecurringRequest
-  ): Promise<{
+  async chargeRecurringPayment(request: ChargeRecurringRequest): Promise<{
     success: boolean;
     basketId: string;
     response: any;
   }> {
     try {
       // Get access token
-      const token = await this.getAccessToken(request.basketId, request.amount.toFixed(2));
+      const token = await this.getAccessToken(
+        request.basketId,
+        request.amount.toFixed(2)
+      );
 
       // Format order date
-      const orderDate = new Date().toISOString().replace("T", " ").substring(0, 19);
+      const orderDate = new Date()
+        .toISOString()
+        .replace("T", " ")
+        .substring(0, 19);
 
       // Prepare charge request
       const chargeData = {
@@ -331,11 +355,11 @@ export class PayFastService {
         response: response.data,
       };
     } catch (error: any) {
-      console.error("PayFast chargeRecurringPayment error:", error.response?.data || error.message);
-      throw new GenericError(
-        error,
-        "Failed to charge recurring payment"
+      console.error(
+        "PayFast chargeRecurringPayment error:",
+        error.response?.data || error.message
       );
+      throw new GenericError(error, "Failed to charge recurring payment");
     }
   }
 
@@ -357,17 +381,16 @@ export class PayFastService {
         },
       });
 
-
       // console.log("response", response.data);
-
 
       if (response.status === 200 && response.data?.token) {
         return response.data.token;
       }
 
-      throw new Error("Failed to get access token from PayFast tokenization API");
+      throw new Error(
+        "Failed to get access token from PayFast tokenization API"
+      );
     } catch (error: any) {
-
       console.log("error", error);
 
       console.error(
@@ -382,13 +405,10 @@ export class PayFastService {
     }
   }
 
-
   /**
    * 3.15 Get Lists of Instruments
    */
-  async getListsOfInstruments(
-    userMobileNumber: string
-  ): Promise<any> {
+  async getListsOfInstruments(userMobileNumber: string): Promise<any> {
     try {
       const accessToken = await this.getTokenizationAccessToken();
       const url = `${this.getTokenizationBaseUrl()}/user/instruments`;
@@ -403,15 +423,13 @@ export class PayFastService {
         },
       });
 
-
-
       return response.data;
     } catch (error: any) {
-      console.error("PayFast getListsOfInstruments error:", error.response?.data || error.message);
-      throw new GenericError(
-        error,
-        "Failed to get lists of instruments"
+      console.error(
+        "PayFast getListsOfInstruments error:",
+        error.response?.data || error.message
       );
+      throw new GenericError(error, "Failed to get lists of instruments");
     }
   }
 
@@ -461,7 +479,10 @@ export class PayFastService {
 
       return response.data;
     } catch (error: any) {
-      console.error("PayFast recurringTransactionOTP error:", error.response?.data || error.message);
+      console.error(
+        "PayFast recurringTransactionOTP error:",
+        error.response?.data || error.message
+      );
       throw new GenericError(
         error,
         "Failed to initiate recurring transaction OTP"
@@ -529,11 +550,11 @@ export class PayFastService {
 
       return response.data;
     } catch (error: any) {
-      console.error("PayFast initiateRecurringPayment error:", error.response?.data || error.message);
-      throw new GenericError(
-        error,
-        "Failed to initiate recurring payment"
+      console.error(
+        "PayFast initiateRecurringPayment error:",
+        error.response?.data || error.message
       );
+      throw new GenericError(error, "Failed to initiate recurring payment");
     }
   }
 }
