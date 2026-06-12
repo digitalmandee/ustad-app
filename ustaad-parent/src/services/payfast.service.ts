@@ -229,7 +229,7 @@ export class PayFastService {
       const basketId = this.generateBasketId("SUB");
       console.log(`🌐 PayFast Service: Generated basketId=${basketId}`);
 
-      const token = await this.getTokenizationAccessToken();
+      const token = await this.testGetTokenizationAccessToken();
       const orderDate = new Date()
         .toISOString()
         .replace("T", " ")
@@ -409,6 +409,51 @@ export class PayFastService {
     }
   }
 
+  async testGetTokenizationAccessToken() {
+    const baseUrl =
+      this.config.env === "LIVE"
+        ? "https://apipxy.apps.net.pk:8443/api"
+        : "https://apipxyuat.apps.net.pk:8443/api";
+
+    const url = `${baseUrl}/token`;
+
+    console.log("--- PayFast Tokenization API Test ---");
+    console.log(`URL: ${url}`);
+    console.log(`Merchant ID: ${this.config.merchantId}`);
+    console.log(`Secured Key: ${this.config.securedKey}`);
+    console.log(`Environment: ${this.config.env}`);
+    console.log("------------------------------------");
+
+    try {
+      const body = new URLSearchParams();
+      body.append("merchant_id", this.config.merchantId);
+      body.append("secured_key", this.config.securedKey);
+      body.append("grant_type", "client_credentials");
+
+      const response = await axios.post(url, body.toString(), {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      console.log("Status Code:", response.status);
+      console.log("Response Body:", response.data);
+
+      if (response.data && response.data.token) {
+        console.log("\n✅ Successfully retrieved token:", response.data.token);
+      } else {
+        console.log("\n❌ Failed: Token not found in response.");
+      }
+    } catch (error: any) {
+      console.error("\n❌ Request failed:");
+      if (error.response) {
+        console.error("Status:", error.response.status);
+        console.error("Data:", error.response.data);
+      } else {
+        console.error(error.message);
+      }
+    }
+  }
   /**
    * 3.15 Get Lists of Instruments
    */
