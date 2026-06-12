@@ -86,7 +86,8 @@ export class PayFastService {
   private getBaseUrl(): string {
     return this.config.env === "LIVE"
       ? "https://ipg1.apps.net.pk/Ecommerce/api/Transaction"
-      : "https://ipguat.apps.net.pk/Ecommerce/api/Transaction";
+      : "https://ipg1.apps.net.pk/Ecommerce/api/Transaction";
+    // : "https://ipguat.apps.net.pk/Ecommerce/api/Transaction";
   }
 
   /**
@@ -133,9 +134,9 @@ export class PayFastService {
         {
           MERCHANT_ID: this.config.merchantId,
           SECURED_KEY: this.config.securedKey,
-          // BASKET_ID: basketId,
-          // TXNAMT: txnAmt,
-          // CURRENCY_CODE: this.config.currencyCode
+          BASKET_ID: basketId,
+          TXNAMT: txnAmt,
+          CURRENCY_CODE: this.config.currencyCode,
         },
         {
           headers: {
@@ -230,7 +231,8 @@ export class PayFastService {
       const basketId = this.generateBasketId("SUB");
       console.log(`🌐 PayFast Service: Generated basketId=${basketId}`);
 
-      const token = await this.testGetTokenizationAccessToken();
+      // const token = await this.testGetTokenizationAccessToken();
+      const token = await this.getAccessToken(basketId, String(request.amount));
 
       console.log("token");
 

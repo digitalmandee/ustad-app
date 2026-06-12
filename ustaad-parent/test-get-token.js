@@ -84,7 +84,8 @@ async function getCheckoutAccessToken(basketId, amount) {
  */
 async function initiateSubscription(amount, customerEmail, customerMobile) {
   console.log(`\n🛒 [Step A2] Initiating Subscription for amount: ${amount}`);
-  const basketId = `SUB-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  // const basketId = `SUB-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const basketId = "SUB-1781267179741-2I0XS1";
 
   try {
     const formattedAmount = Number(amount).toFixed(2);
@@ -107,7 +108,7 @@ async function initiateSubscription(amount, customerEmail, customerMobile) {
       TRAN_TYPE: "ECOMM_PURCHASE",
       SUCCESS_URL: "https://your-frontend.com/payfast/success",
       FAILURE_URL: "https://your-frontend.com/payfast/failure",
-      CHECKOUT_URL: "http://15.235.204.49:5000/api/v1/parent/payfast/ipn",
+      CHECKOUT_URL: "http://15.235.204.49:5000/parent/payfast/ipn",
       VERSION: "MERCHANT-CART-0.1",
       RECURRING_TXN: "TRUE",
       CUSTOMER_EMAIL_ADDRESS: customerEmail,
@@ -321,9 +322,10 @@ async function initiateRecurringPayment(accessToken, params) {
 // TEST EXECUTION RUNNER
 // ==========================================
 async function runDemo() {
-  const demoEmail = "customer@test.com";
-  const demoMobile = CUSTOMER_MOBILE;
-  const demoAmount = "10.00";
+  const demoEmail = "parentrealdevmine@gmail.com";
+  // const demoMobile = CUSTOMER_MOBILE;
+  const demoMobile = "923188277301";
+  const demoAmount = "5.00";
 
   console.log(
     "================================================================="
