@@ -96,7 +96,8 @@ export class PayFastService {
   private getTokenizationBaseUrl(): string {
     return this.config.env === "LIVE"
       ? "https://apipxy.apps.net.pk:8443/api"
-      : "https://apipxyuat.apps.net.pk:8443/api";
+      : // : "https://apipxyuat.apps.net.pk:8443/api";
+        "https://apipxy.apps.net.pk:8443/api";
   }
 
   /**
