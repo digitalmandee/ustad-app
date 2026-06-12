@@ -464,7 +464,7 @@ export class PayFastService {
       const accessToken = await this.testGetTokenizationAccessToken();
       const url = `${this.getTokenizationBaseUrl()}/user/instruments`;
 
-      console.log("url");
+      console.log("url", url);
       console.log("access", accessToken);
 
       console.log("userMobileNumber", userMobileNumber);
