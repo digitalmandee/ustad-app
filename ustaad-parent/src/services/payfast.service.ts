@@ -230,6 +230,9 @@ export class PayFastService {
       console.log(`🌐 PayFast Service: Generated basketId=${basketId}`);
 
       const token = await this.testGetTokenizationAccessToken();
+
+      console.log("token");
+
       const orderDate = new Date()
         .toISOString()
         .replace("T", " ")
@@ -239,7 +242,7 @@ export class PayFastService {
       const formFields: PayFastFormFields = {
         MERCHANT_ID: this.config.merchantId,
         MERCHANT_NAME: this.config.merchantName,
-        TOKEN: token,
+        TOKEN: "",
         BASKET_ID: basketId,
         TXNAMT: Number(request.amount).toFixed(2),
         CURRENCY_CODE: this.config.currencyCode,
@@ -472,7 +475,7 @@ export class PayFastService {
         },
       });
 
-      return response.data;
+      return response.data.token;
     } catch (error: any) {
       console.error(
         "PayFast getListsOfInstruments error:",
