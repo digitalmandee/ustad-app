@@ -370,6 +370,10 @@ export class PayFastService {
     try {
       const url = `${this.getTokenizationBaseUrl()}/token`;
 
+      console.log(url);
+      console.log("this.config.merchantId", this.config.merchantId);
+      console.log("this.config.securedKey", this.config.securedKey);
+
       const body = new URLSearchParams();
       body.append("merchant_id", this.config.merchantId);
       body.append("secured_key", this.config.securedKey);
@@ -381,7 +385,7 @@ export class PayFastService {
         },
       });
 
-      // console.log("response", response.data);
+      console.log("response", response.data);
 
       if (response.status === 200 && response.data?.token) {
         return response.data.token;
@@ -391,7 +395,7 @@ export class PayFastService {
         "Failed to get access token from PayFast tokenization API"
       );
     } catch (error: any) {
-      console.log("error", error);
+      // console.log("error", error);
 
       console.error(
         "PayFast getTokenizationAccessToken error:",
