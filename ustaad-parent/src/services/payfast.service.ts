@@ -242,7 +242,7 @@ export class PayFastService {
       const formFields: PayFastFormFields = {
         MERCHANT_ID: this.config.merchantId,
         MERCHANT_NAME: this.config.merchantName,
-        TOKEN: "",
+        TOKEN: token || "",
         BASKET_ID: basketId,
         TXNAMT: Number(request.amount).toFixed(2),
         CURRENCY_CODE: this.config.currencyCode,
@@ -412,25 +412,21 @@ export class PayFastService {
     }
   }
 
-  async testGetTokenizationAccessToken() {
-    const baseUrl =
-      this.config.env === "LIVE"
-        ? "https://apipxy.apps.net.pk:8443/api"
-        : "https://apipxyuat.apps.net.pk:8443/api";
-
-    const url = `${baseUrl}/token`;
+  async testGetTokenizationAccessToken(): Promise<string> {
+    const url = "https://apipxy.apps.net.pk:8443/api/token";
+    const merchantId = "243567";
+    const securedKey = "ivL78zj1quN5BuZ63OG7Y2tU_D";
 
     console.log("--- PayFast Tokenization API Test ---");
     console.log(`URL: ${url}`);
-    console.log(`Merchant ID: ${this.config.merchantId}`);
-    console.log(`Secured Key: ${this.config.securedKey}`);
-    console.log(`Environment: ${this.config.env}`);
+    console.log(`Merchant ID: ${merchantId}`);
+    console.log(`Secured Key: ${securedKey}`);
     console.log("------------------------------------");
 
     try {
       const body = new URLSearchParams();
-      body.append("merchant_id", this.config.merchantId);
-      body.append("secured_key", this.config.securedKey);
+      body.append("merchant_id", merchantId);
+      body.append("secured_key", securedKey);
       body.append("grant_type", "client_credentials");
 
       const response = await axios.post(url, body.toString(), {
@@ -444,8 +440,10 @@ export class PayFastService {
 
       if (response.data && response.data.token) {
         console.log("\n✅ Successfully retrieved token:", response.data.token);
+        return response.data.token;
       } else {
         console.log("\n❌ Failed: Token not found in response.");
+        throw new Error("Token not found in response");
       }
     } catch (error: any) {
       console.error("\n❌ Request failed:");
@@ -455,6 +453,7 @@ export class PayFastService {
       } else {
         console.error(error.message);
       }
+      throw error;
     }
   }
   /**
