@@ -1,514 +1,631 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PayFast Checkout JSON Form Generator</title>
-  <!-- Modern Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  
-  <style>
-    :root {
-      --bg-color: #0b0f19;
-      --card-bg: rgba(22, 30, 49, 0.7);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --input-bg: #111827;
-      --input-border: rgba(255, 255, 255, 0.12);
-      --text-primary: #f3f4f6;
-      --text-secondary: #9ca3af;
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --accent-success: #10b981;
-      --accent-danger: #ef4444;
-      --glow-color: rgba(59, 130, 246, 0.35);
-      --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PayFast Checkout JSON Form Generator</title>
+    <!-- Modern Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    <style>
+      :root {
+        --bg-color: #0b0f19;
+        --card-bg: rgba(22, 30, 49, 0.7);
+        --card-border: rgba(255, 255, 255, 0.08);
+        --input-bg: #111827;
+        --input-border: rgba(255, 255, 255, 0.12);
+        --text-primary: #f3f4f6;
+        --text-secondary: #9ca3af;
+        --primary: #3b82f6;
+        --primary-hover: #2563eb;
+        --accent-success: #10b981;
+        --accent-danger: #ef4444;
+        --glow-color: rgba(59, 130, 246, 0.35);
+        --font-sans: "Outfit", -apple-system, BlinkMacSystemFont, sans-serif;
+        --font-mono: "JetBrains Mono", monospace;
+      }
 
-    body {
-      font-family: var(--font-sans);
-      background-color: var(--bg-color);
-      background-image: 
-        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
-      background-attachment: fixed;
-      color: var(--text-primary);
-      min-height: 100vh;
-      padding: 40px 20px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-    }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    .app-container {
-      width: 100%;
-      max-width: 1200px;
-      display: grid;
-      grid-template-columns: 1.2fr 1.8fr;
-      gap: 30px;
-    }
+      body {
+        font-family: var(--font-sans);
+        background-color: var(--bg-color);
+        background-image:
+          radial-gradient(
+            at 0% 0%,
+            rgba(59, 130, 246, 0.15) 0px,
+            transparent 50%
+          ),
+          radial-gradient(
+            at 100% 100%,
+            rgba(16, 185, 129, 0.1) 0px,
+            transparent 50%
+          );
+        background-attachment: fixed;
+        color: var(--text-primary);
+        min-height: 100vh;
+        padding: 40px 20px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+      }
 
-    @media (max-width: 900px) {
       .app-container {
-        grid-template-columns: 1fr;
+        width: 100%;
+        max-width: 1200px;
+        display: grid;
+        grid-template-columns: 1.2fr 1.8fr;
+        gap: 30px;
       }
-    }
 
-    .panel {
-      background: var(--card-bg);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 30px;
-      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
+      @media (max-width: 900px) {
+        .app-container {
+          grid-template-columns: 1fr;
+        }
+      }
 
-    .panel:hover {
-      border-color: rgba(255, 255, 255, 0.12);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
-    }
+      .panel {
+        background: var(--card-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--card-border);
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
 
-    h1 {
-      font-size: 26px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 8px;
-      letter-spacing: -0.5px;
-    }
+      .panel:hover {
+        border-color: rgba(255, 255, 255, 0.12);
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+      }
 
-    .subtitle {
-      color: var(--text-secondary);
-      font-size: 14px;
-      margin-bottom: 25px;
-      line-height: 1.5;
-    }
+      h1 {
+        font-size: 26px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 8px;
+        letter-spacing: -0.5px;
+      }
 
-    h2 {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      color: var(--text-primary);
-    }
+      .subtitle {
+        color: var(--text-secondary);
+        font-size: 14px;
+        margin-bottom: 25px;
+        line-height: 1.5;
+      }
 
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 16px;
-    }
+      h2 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-primary);
+      }
 
-    label {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-secondary);
-      margin-bottom: 6px;
-    }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 16px;
+      }
 
-    textarea, input, select {
-      background-color: var(--input-bg);
-      border: 1px solid var(--input-border);
-      border-radius: 10px;
-      color: var(--text-primary);
-      padding: 12px 16px;
-      font-family: var(--font-sans);
-      font-size: 14px;
-      transition: all 0.2s ease;
-    }
+      label {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+      }
 
-    textarea:focus, input:focus, select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--glow-color);
-    }
+      textarea,
+      input,
+      select {
+        background-color: var(--input-bg);
+        border: 1px solid var(--input-border);
+        border-radius: 10px;
+        color: var(--text-primary);
+        padding: 12px 16px;
+        font-family: var(--font-sans);
+        font-size: 14px;
+        transition: all 0.2s ease;
+      }
 
-    .json-textarea {
-      font-family: var(--font-mono);
-      font-size: 13px;
-      min-height: 380px;
-      resize: vertical;
-      line-height: 1.6;
-    }
+      textarea:focus,
+      input:focus,
+      select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px var(--glow-color);
+      }
 
-    .validation-badge {
-      font-size: 12px;
-      font-weight: 600;
-      padding: 6px 12px;
-      border-radius: 20px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      margin-top: 10px;
-      transition: all 0.3s ease;
-    }
+      .json-textarea {
+        font-family: var(--font-mono);
+        font-size: 13px;
+        min-height: 380px;
+        resize: vertical;
+        line-height: 1.6;
+      }
 
-    .badge-idle {
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text-secondary);
-    }
+      .validation-badge {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 12px;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 10px;
+        transition: all 0.3s ease;
+      }
 
-    .badge-success {
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--accent-success);
-      border: 1px solid rgba(16, 185, 129, 0.2);
-    }
+      .badge-idle {
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text-secondary);
+      }
 
-    .badge-error {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--accent-danger);
-      border: 1px solid rgba(239, 68, 68, 0.2);
-    }
+      .badge-success {
+        background: rgba(16, 185, 129, 0.15);
+        color: var(--accent-success);
+        border: 1px solid rgba(16, 185, 129, 0.2);
+      }
 
-    /* Grid Layout for populated fields */
-    .form-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-    }
+      .badge-error {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--accent-danger);
+        border: 1px solid rgba(239, 68, 68, 0.2);
+      }
 
-    @media (max-width: 600px) {
+      /* Grid Layout for populated fields */
       .form-grid {
-        grid-template-columns: 1fr;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
       }
-    }
 
-    .full-width {
-      grid-column: span 2;
-    }
+      @media (max-width: 600px) {
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+      }
 
-    @media (max-width: 600px) {
       .full-width {
-        grid-column: span 1;
+        grid-column: span 2;
       }
-    }
 
-    .env-selector {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      background: rgba(0, 0, 0, 0.2);
-      padding: 4px;
-      border-radius: 10px;
-      border: 1px solid var(--card-border);
-      margin-bottom: 20px;
-    }
+      @media (max-width: 600px) {
+        .full-width {
+          grid-column: span 1;
+        }
+      }
 
-    .env-btn {
-      padding: 10px;
-      border: none;
-      border-radius: 8px;
-      background: transparent;
-      color: var(--text-secondary);
-      font-family: var(--font-sans);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
+      .env-selector {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 4px;
+        border-radius: 10px;
+        border: 1px solid var(--card-border);
+        margin-bottom: 20px;
+      }
 
-    .env-btn.active {
-      background: var(--primary);
-      color: white;
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
+      .env-btn {
+        padding: 10px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--text-secondary);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
 
-    .action-btn {
-      background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 16px 24px;
-      font-family: var(--font-sans);
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-      margin-top: 25px;
-      transition: all 0.2s ease;
-      box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
-    }
+      .env-btn.active {
+        background: var(--primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      }
 
-    .action-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 15px 25px -5px rgba(59, 130, 246, 0.5);
-    }
+      .action-btn {
+        background: linear-gradient(135deg, var(--primary) 0%, #1d4ed8 100%);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        padding: 16px 24px;
+        font-family: var(--font-sans);
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        margin-top: 25px;
+        transition: all 0.2s ease;
+        box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4);
+      }
 
-    .action-btn:active {
-      transform: translateY(0);
-    }
+      .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 25px -5px rgba(59, 130, 246, 0.5);
+      }
 
-    .action-btn:disabled {
-      background: #374151;
-      color: #9ca3af;
-      cursor: not-allowed;
-      box-shadow: none;
-      transform: none;
-    }
+      .action-btn:active {
+        transform: translateY(0);
+      }
 
-    /* Subtle pulsing animations */
-    @keyframes pulse-light {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.6; }
-    }
+      .action-btn:disabled {
+        background: #374151;
+        color: #9ca3af;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
 
-    .pulse {
-      animation: pulse-light 2s infinite ease-in-out;
-    }
-  </style>
-</head>
-<body>
-  <div class="app-container">
-    <!-- Left Panel: Paste JSON -->
-    <div class="panel">
-      <h1>PayFast Form Bench</h1>
-      <p class="subtitle">Paste the full JSON payload from your server/console below. The form fields on the right will update in real-time.</p>
-      
-      <div class="form-group">
-        <label>JSON Payload</label>
-        <textarea id="json-input" class="json-textarea" placeholder="Paste JSON here...">{
+      /* Subtle pulsing animations */
+      @keyframes pulse-light {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.6;
+        }
+      }
+
+      .pulse {
+        animation: pulse-light 2s infinite ease-in-out;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-container">
+      <!-- Left Panel: Paste JSON -->
+      <div class="panel">
+        <h1>PayFast Form Bench</h1>
+        <p class="subtitle">
+          Paste the full JSON payload from your server/console below. The form
+          fields on the right will update in real-time.
+        </p>
+
+        <div class="form-group">
+          <label>JSON Payload</label>
+          <textarea
+            id="json-input"
+            class="json-textarea"
+            placeholder="Paste JSON here..."
+          >
+{
             "MERCHANT_ID": "243567",
-            "MERCHANT_NAME": "ustaad",
-            "TOKEN": "00a19513526f31fbd9c6333c267c205572b140b742803fcff07094b8defccb93",
-            "BASKET_ID": "SUB-1781288245260-NEPDGY",
+            "MERCHANT_NAME": "Ustaad",
+            "TOKEN": "j3jMf8fpGjldq6iuYnv-VububeAYBMOUllzf-J1mp_0",
+            "BASKET_ID": "SUB-1781507079693-3HR4TR",
             "TXNAMT": "5.00",
             "CURRENCY_CODE": "PKR",
-            "ORDER_DATE": "2026-06-12 18:17:26",
-            "TXNDESC": "Subscription purchase - for offer 421e7a09-e435-4b87-8ce5-531e01389213 against child alice",
+            "ORDER_DATE": "2026-06-15 07:04:39",
+            "TXNDESC": "Subscription purchase - for offer 2af8e8b8-b757-451e-8fed-b5cb8a2b73f2 against child alice",
             "PROCCODE": "00",
             "TRAN_TYPE": "ECOMM_PURCHASE",
             "SUCCESS_URL": "http://15.235.204.49:5000/parent/payfast/success",
             "FAILURE_URL": "http://15.235.204.49:5000/parent/payfast/failure",
             "CHECKOUT_URL": "http://15.235.204.49:5000/parent/payfast/ipn",
-            "SIGNATURE": "1df455c19cb37df8ebb4b5117187faaf0dc53c5675b8a936f975694ff2e14d2d",
+            "SIGNATURE": "6f8e6ff2924a1730502af6820598135cd5d720ca7bafe569d2e385534f3b772b",
             "VERSION": "MERCHANT-CART-0.1",
             "RECURRING_TXN": "TRUE",
-            "CUSTOMER_EMAIL_ADDRESS": "parent_165621@test.com",
-            "CUSTOMER_MOBILE_NO": "923181656210"
-        }</textarea>
-      </div>
-
-      <div class="validation-badge badge-idle" id="validation-status">
-        <span>●</span> Ready for JSON Input
-      </div>
-    </div>
-
-    <!-- Right Panel: Populated Fields & Action -->
-    <div class="panel">
-      <h2>Generated Checkout Form</h2>
-      
-      <label>Target Environment</label>
-      <div class="env-selector">
-        <button type="button" class="env-btn active" id="btn-env-uat" onclick="setEnvironment('uat')">Sandbox / UAT</button>
-        <button type="button" class="env-btn" id="btn-env-live" onclick="setEnvironment('live')">Live / Production</button>
-      </div>
-
-      <form id="payfast-form" method="POST" action="https://ipguat.apps.net.pk/Ecommerce/api/Transaction/PostTransaction">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Merchant ID</label>
-            <input type="text" name="MERCHANT_ID" id="field-MERCHANT_ID" readonly />
-          </div>
-
-          <div class="form-group">
-            <label>Merchant Name</label>
-            <input type="text" name="MERCHANT_NAME" id="field-MERCHANT_NAME" readonly />
-          </div>
-
-          <div class="form-group full-width">
-            <label>Access Token</label>
-            <input type="text" name="TOKEN" id="field-TOKEN" readonly />
-          </div>
-
-          <div class="form-group">
-            <label>Basket ID</label>
-            <input type="text" name="BASKET_ID" id="field-BASKET_ID" readonly />
-          </div>
-
-          <div class="form-group">
-            <label>Amount (PKR)</label>
-            <input type="text" name="TXNAMT" id="field-TXNAMT" readonly />
-          </div>
-
-          <div class="form-group">
-            <label>Currency</label>
-            <input type="text" name="CURRENCY_CODE" id="field-CURRENCY_CODE" readonly />
-          </div>
-
-          <div class="form-group">
-            <label>Order Date</label>
-            <input type="text" name="ORDER_DATE" id="field-ORDER_DATE" readonly />
-          </div>
-
-          <div class="form-group full-width">
-            <label>Description</label>
-            <input type="text" name="TXNDESC" id="field-TXNDESC" readonly />
-          </div>
-
-          <div class="form-group">
-            <label>Proc Code</label>
-            <input type="text" name="PROCCODE" id="field-PROCCODE" readonly />
-          </div>
-
-          <div class="form-group">
-            <label>Transaction Type</label>
-            <input type="text" name="TRAN_TYPE" id="field-TRAN_TYPE" readonly />
-          </div>
-
-          <div class="form-group full-width">
-            <label>Success URL</label>
-            <input type="text" name="SUCCESS_URL" id="field-SUCCESS_URL" readonly />
-          </div>
-
-          <div class="form-group full-width">
-            <label>Failure URL</label>
-            <input type="text" name="FAILURE_URL" id="field-FAILURE_URL" readonly />
-          </div>
-
-          <div class="form-group full-width">
-            <label>Checkout URL (Webhook)</label>
-            <input type="text" name="CHECKOUT_URL" id="field-CHECKOUT_URL" readonly />
-          </div>
-
-          <div class="form-group">
-            <label>Version</label>
-            <input type="text" name="VERSION" id="field-VERSION" readonly />
-          </div>
-
-          <div class="form-group">
-            <label>Recurring Transaction</label>
-            <input type="text" name="RECURRING_TXN" id="field-RECURRING_TXN" readonly />
-          </div>
-
-          <div class="form-group">
-            <label>Email Address</label>
-            <input type="text" name="CUSTOMER_EMAIL_ADDRESS" id="field-CUSTOMER_EMAIL_ADDRESS" readonly />
-          </div>
-
-          <div class="form-group">
-            <label>Mobile Number</label>
-            <input type="text" name="CUSTOMER_MOBILE_NO" id="field-CUSTOMER_MOBILE_NO" readonly />
-          </div>
-
-          <div class="form-group full-width">
-            <label>Signature (SHA256)</label>
-            <textarea name="SIGNATURE" id="field-SIGNATURE" readonly rows="2" style="font-family: var(--font-mono); font-size: 12px;"></textarea>
-          </div>
+            "CUSTOMER_EMAIL_ADDRESS": "parent_044275@test.com",
+            "CUSTOMER_MOBILE_NO": "923180442750"
+        }</textarea
+          >
         </div>
 
-        <button type="submit" class="action-btn" id="submit-btn" disabled>
-          <span>🚀</span> Launch Payment Checkout
-        </button>
-      </form>
+        <div class="validation-badge badge-idle" id="validation-status">
+          <span>●</span> Ready for JSON Input
+        </div>
+      </div>
+
+      <!-- Right Panel: Populated Fields & Action -->
+      <div class="panel">
+        <h2>Generated Checkout Form</h2>
+
+        <label>Target Environment</label>
+        <div class="env-selector">
+          <button
+            type="button"
+            class="env-btn active"
+            id="btn-env-uat"
+            onclick="setEnvironment('uat')"
+          >
+            Sandbox / UAT
+          </button>
+          <button
+            type="button"
+            class="env-btn"
+            id="btn-env-live"
+            onclick="setEnvironment('live')"
+          >
+            Live / Production
+          </button>
+        </div>
+
+        <form
+          id="payfast-form"
+          method="POST"
+          action="https://ipguat.apps.net.pk/Ecommerce/api/Transaction/PostTransaction"
+        >
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Merchant ID</label>
+              <input
+                type="text"
+                name="MERCHANT_ID"
+                id="field-MERCHANT_ID"
+                readonly
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Merchant Name</label>
+              <input
+                type="text"
+                name="MERCHANT_NAME"
+                id="field-MERCHANT_NAME"
+                readonly
+              />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Access Token</label>
+              <input type="text" name="TOKEN" id="field-TOKEN" readonly />
+            </div>
+
+            <div class="form-group">
+              <label>Basket ID</label>
+              <input
+                type="text"
+                name="BASKET_ID"
+                id="field-BASKET_ID"
+                readonly
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Amount (PKR)</label>
+              <input type="text" name="TXNAMT" id="field-TXNAMT" readonly />
+            </div>
+
+            <div class="form-group">
+              <label>Currency</label>
+              <input
+                type="text"
+                name="CURRENCY_CODE"
+                id="field-CURRENCY_CODE"
+                readonly
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Order Date</label>
+              <input
+                type="text"
+                name="ORDER_DATE"
+                id="field-ORDER_DATE"
+                readonly
+              />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Description</label>
+              <input type="text" name="TXNDESC" id="field-TXNDESC" readonly />
+            </div>
+
+            <div class="form-group">
+              <label>Proc Code</label>
+              <input type="text" name="PROCCODE" id="field-PROCCODE" readonly />
+            </div>
+
+            <div class="form-group">
+              <label>Transaction Type</label>
+              <input
+                type="text"
+                name="TRAN_TYPE"
+                id="field-TRAN_TYPE"
+                readonly
+              />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Success URL</label>
+              <input
+                type="text"
+                name="SUCCESS_URL"
+                id="field-SUCCESS_URL"
+                readonly
+              />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Failure URL</label>
+              <input
+                type="text"
+                name="FAILURE_URL"
+                id="field-FAILURE_URL"
+                readonly
+              />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Checkout URL (Webhook)</label>
+              <input
+                type="text"
+                name="CHECKOUT_URL"
+                id="field-CHECKOUT_URL"
+                readonly
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Version</label>
+              <input type="text" name="VERSION" id="field-VERSION" readonly />
+            </div>
+
+            <div class="form-group">
+              <label>Recurring Transaction</label>
+              <input
+                type="text"
+                name="RECURRING_TXN"
+                id="field-RECURRING_TXN"
+                readonly
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Email Address</label>
+              <input
+                type="text"
+                name="CUSTOMER_EMAIL_ADDRESS"
+                id="field-CUSTOMER_EMAIL_ADDRESS"
+                readonly
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Mobile Number</label>
+              <input
+                type="text"
+                name="CUSTOMER_MOBILE_NO"
+                id="field-CUSTOMER_MOBILE_NO"
+                readonly
+              />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Signature (SHA256)</label>
+              <textarea
+                name="SIGNATURE"
+                id="field-SIGNATURE"
+                readonly
+                rows="2"
+                style="font-family: var(--font-mono); font-size: 12px"
+              ></textarea>
+            </div>
+          </div>
+
+          <button type="submit" class="action-btn" id="submit-btn" disabled>
+            <span>🚀</span> Launch Payment Checkout
+          </button>
+        </form>
+      </div>
     </div>
-  </div>
 
-  <script>
-    const jsonInput = document.getElementById('json-input');
-    const statusBadge = document.getElementById('validation-status');
-    const submitBtn = document.getElementById('submit-btn');
-    const payfastForm = document.getElementById('payfast-form');
+    <script>
+      const jsonInput = document.getElementById("json-input");
+      const statusBadge = document.getElementById("validation-status");
+      const submitBtn = document.getElementById("submit-btn");
+      const payfastForm = document.getElementById("payfast-form");
 
-    // PayFast endpoints
-    const ENDPOINTS = {
-      uat: 'https://ipguat.apps.net.pk/Ecommerce/api/Transaction/PostTransaction',
-      live: 'https://ipg1.apps.net.pk/Ecommerce/api/Transaction/PostTransaction'
-    };
+      // PayFast endpoints
+      const ENDPOINTS = {
+        uat: "https://ipguat.apps.net.pk/Ecommerce/api/Transaction/PostTransaction",
+        live: "https://ipg1.apps.net.pk/Ecommerce/api/Transaction/PostTransaction",
+      };
 
-    let currentEnv = 'uat';
+      let currentEnv = "uat";
 
-    function setEnvironment(env) {
-      currentEnv = env;
-      document.getElementById('btn-env-uat').classList.toggle('active', env === 'uat');
-      document.getElementById('btn-env-live').classList.toggle('active', env === 'live');
-      payfastForm.action = ENDPOINTS[env];
-    }
+      function setEnvironment(env) {
+        currentEnv = env;
+        document
+          .getElementById("btn-env-uat")
+          .classList.toggle("active", env === "uat");
+        document
+          .getElementById("btn-env-live")
+          .classList.toggle("active", env === "live");
+        payfastForm.action = ENDPOINTS[env];
+      }
 
-    const payloadKeys = [
-      'MERCHANT_ID',
-      'MERCHANT_NAME',
-      'TOKEN',
-      'BASKET_ID',
-      'TXNAMT',
-      'CURRENCY_CODE',
-      'ORDER_DATE',
-      'TXNDESC',
-      'PROCCODE',
-      'TRAN_TYPE',
-      'SUCCESS_URL',
-      'FAILURE_URL',
-      'CHECKOUT_URL',
-      'VERSION',
-      'RECURRING_TXN',
-      'CUSTOMER_EMAIL_ADDRESS',
-      'CUSTOMER_MOBILE_NO',
-      'SIGNATURE'
-    ];
+      const payloadKeys = [
+        "MERCHANT_ID",
+        "MERCHANT_NAME",
+        "TOKEN",
+        "BASKET_ID",
+        "TXNAMT",
+        "CURRENCY_CODE",
+        "ORDER_DATE",
+        "TXNDESC",
+        "PROCCODE",
+        "TRAN_TYPE",
+        "SUCCESS_URL",
+        "FAILURE_URL",
+        "CHECKOUT_URL",
+        "VERSION",
+        "RECURRING_TXN",
+        "CUSTOMER_EMAIL_ADDRESS",
+        "CUSTOMER_MOBILE_NO",
+        "SIGNATURE",
+      ];
 
-    function clearForm() {
-      payloadKeys.forEach(key => {
-        const input = document.getElementById(`field-${key}`);
-        if (input) input.value = '';
-      });
-      submitBtn.disabled = true;
-    }
+      function clearForm() {
+        payloadKeys.forEach((key) => {
+          const input = document.getElementById(`field-${key}`);
+          if (input) input.value = "";
+        });
+        submitBtn.disabled = true;
+      }
 
-    function updateForm(data) {
-      payloadKeys.forEach(key => {
-        const input = document.getElementById(`field-${key}`);
-        if (input) {
-          input.value = data[key] !== undefined ? data[key] : '';
+      function updateForm(data) {
+        payloadKeys.forEach((key) => {
+          const input = document.getElementById(`field-${key}`);
+          if (input) {
+            input.value = data[key] !== undefined ? data[key] : "";
+          }
+        });
+        submitBtn.disabled = false;
+      }
+
+      function handleInput() {
+        const rawVal = jsonInput.value.trim();
+        if (!rawVal) {
+          statusBadge.className = "validation-badge badge-idle";
+          statusBadge.innerHTML = "<span>●</span> Ready for JSON Input";
+          clearForm();
+          return;
         }
-      });
-      submitBtn.disabled = false;
-    }
 
-    function handleInput() {
-      const rawVal = jsonInput.value.trim();
-      if (!rawVal) {
-        statusBadge.className = 'validation-badge badge-idle';
-        statusBadge.innerHTML = '<span>●</span> Ready for JSON Input';
-        clearForm();
-        return;
+        try {
+          const parsed = JSON.parse(rawVal);
+          statusBadge.className = "validation-badge badge-success";
+          statusBadge.innerHTML = "<span>✔</span> Valid JSON Loaded";
+          updateForm(parsed);
+        } catch (err) {
+          statusBadge.className = "validation-badge badge-error";
+          statusBadge.innerHTML = "<span>✖</span> Invalid JSON Syntax";
+          clearForm();
+        }
       }
 
-      try {
-        const parsed = JSON.parse(rawVal);
-        statusBadge.className = 'validation-badge badge-success';
-        statusBadge.innerHTML = '<span>✔</span> Valid JSON Loaded';
-        updateForm(parsed);
-      } catch (err) {
-        statusBadge.className = 'validation-badge badge-error';
-        statusBadge.innerHTML = '<span>✖</span> Invalid JSON Syntax';
-        clearForm();
+      // Event listeners
+      jsonInput.addEventListener("input", handleInput);
+
+      // Initial check in case of browser auto-fill or refresh preservation
+      if (jsonInput.value.trim()) {
+        handleInput();
       }
-    }
-
-    // Event listeners
-    jsonInput.addEventListener('input', handleInput);
-
-    // Initial check in case of browser auto-fill or refresh preservation
-    if (jsonInput.value.trim()) {
-      handleInput();
-    }
-  </script>
-</body>
+    </script>
+  </body>
 </html>

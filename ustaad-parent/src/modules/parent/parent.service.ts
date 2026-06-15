@@ -1682,10 +1682,34 @@ export default class ParentService {
         `🔍 Service: Checking if subscription already exists for offerId=${data.offerId}`
       );
       let subscription = await ParentSubscription.findOne({
-        where: { offerId: data.offerId },
+        where: {
+          offerId: data.offerId,
+        },
       });
 
-      if (!subscription) {
+      if (subscription?.status === ParentSubscriptionStatus.ACTIVE) {
+        throw new UnProcessableEntityError(
+          "Active Subscription already exists"
+        );
+      }
+      if (
+        subscription?.status === ParentSubscriptionStatus.PENDING_COMPLETION
+      ) {
+        throw new UnProcessableEntityError(
+          "Subscription is already pending completion"
+        );
+      }
+
+      if (subscription?.status === ParentSubscriptionStatus.CREATED) {
+        await subscription.update({
+          status: ParentSubscriptionStatus.EXPIRED,
+        });
+      }
+
+      if (
+        !subscription ||
+        subscription?.status === ParentSubscriptionStatus.EXPIRED
+      ) {
         console.log(
           "✍️ Service: Subscription not found. Creating a new ParentSubscription with status CREATED"
         );
@@ -1700,15 +1724,7 @@ export default class ParentService {
           amount: offer.amountMonthly,
           failureCount: 0,
         });
-      } else {
-        console.log(
-          `✍️ Service: Subscription found with ID=${subscription.id}. Updating basketId to ${payfastResult.basketId}`
-        );
-        await subscription.update({
-          basketId: payfastResult.basketId,
-        });
       }
-
       console.log(
         `✍️ Service: Creating ParentTransaction record with basketId=${payfastResult.basketId}`
       );

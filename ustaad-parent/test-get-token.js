@@ -62,7 +62,7 @@ async function getCheckoutAccessToken(basketId, amount) {
       }
     );
 
-    console.log("response", response);
+    // console.log("response", response);
 
     if (response.status === 200 && response.data?.ACCESS_TOKEN) {
       console.log("✅ Checkout Token received:", response.data.ACCESS_TOKEN);
@@ -84,8 +84,8 @@ async function getCheckoutAccessToken(basketId, amount) {
  */
 async function initiateSubscription(amount, customerEmail, customerMobile) {
   console.log(`\n🛒 [Step A2] Initiating Subscription for amount: ${amount}`);
-  // const basketId = `SUB-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-  const basketId = "SUB-1781267179741-2I0XS1";
+  const basketId = `SUB-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  // const basketId = "SUB-1781267179741-2I0XS1";
 
   try {
     const formattedAmount = Number(amount).toFixed(2);
@@ -107,7 +107,7 @@ async function initiateSubscription(amount, customerEmail, customerMobile) {
       PROCCODE: "00",
       TRAN_TYPE: "ECOMM_PURCHASE",
       SUCCESS_URL: "https://your-frontend.com/payfast/success",
-      FAILURE_URL: "https://your-frontend.com/payfast/failure",
+      FAILURE_URL: "https://webhook.site/f43417cd-0c18-4d01-b8cc-25b367d2243c",
       CHECKOUT_URL: "http://15.235.204.49:5000/parent/payfast/ipn",
       VERSION: "MERCHANT-CART-0.1",
       RECURRING_TXN: "TRUE",
@@ -186,8 +186,8 @@ async function getListsOfInstruments(accessToken, userMobileNumber) {
   try {
     const response = await axios.get(url, {
       params: {
-        merchant_user_id: userMobileNumber,
-        user_mobile_number: userMobileNumber,
+        merchant_user_id: "923181656210",
+        user_mobile_number: "923181656210",
       },
       headers: {
         Authorization: `Bearer ${accessToken}`,

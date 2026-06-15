@@ -16,7 +16,7 @@ const tutorPhone = `92300${rand}0`; // 12 digits
 const parentCnic = `42101${rand}12`; // Exactly 13 digits (5 + 6 + 2)
 const tutorCnic = `42101${rand}34`; // Exactly 13 digits (5 + 6 + 2)
 
-const password = "Password123!";
+const password = "Pass123@";
 
 console.log(
   "================================================================="
@@ -32,7 +32,9 @@ async function runWorkflow() {
     // -------------------------------------------------------------------------
     // 1. SIGNUP PARENT & TUTOR
     // -------------------------------------------------------------------------
-    console.log(`📩 Registering Parent: ${parentEmail}`);
+    console.log(
+      `📩 Registering Parent: ${parentEmail} ${parentPhone} ${parentCnic}`
+    );
     const parentSignupRes = await axios.post(`${BASE_URL}/auth/user-signup`, {
       role: "PARENT",
       firstName: "realparent",

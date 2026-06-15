@@ -1,0 +1,24 @@
+{
+  "err_code": "000",
+  "err_msg": "MIGS(PAY) transaction completed.",
+  "transaction_id": "78ec1ec4-3f37-22eb-deb6-f63b53e7d77c",
+  "basket_id": "SUB-1781288516157-Y158OD",
+  "order_date": "2026-06-12 18:21:56",
+  "Rdv_Message_Key": "",
+  "Response_Key": "1DBE1EEAA289C77406C2D9EAC47F1964",
+  "PaymentType": "",
+  "PaymentName": "Card",
+  "validation_hash": "b3c2d86d9d606cde757aa24bd26f3fc02b82a8ad27dd0ec63ee4db63e48a9711",
+  "transaction_amount": "5",
+  "merchant_amount": "5.00",
+  "discounted_amount": "",
+  "issuer_name": "",
+  "transaction_currency": "PKR",
+  "BillNumber": "",
+  "CustomerId": "",
+  "Recurring_txn": "false",
+  "additional_value": "",
+  "additional_fee": ""
+},
+
+ {"err_code":"000","err_msg":"MIGS(PAY) transaction completed.","transaction_id":"cbff434b-5da2-7d23-7b97-d26a2b014722","basket_id":"SUB-1781303208566-LVSQA7","order_date":"2026-06-12 22:26:49","Rdv_Message_Key":"","Response_Key":"889051754591115D7031829C75CBFF74","PaymentType":"","PaymentName":"Card","validation_hash":"2272294b1298a4ab27038bff4a8e5841909f704f812e770628645ee6197e4a1c","transaction_amount":"5","merchant_amount":"5.00","discounted_amount":"","issuer_name":"","transaction_currency":"PKR","BillNumber":"","CustomerId":"","Recurring_txn":"false","additional_value":"","additional_fee":""}
