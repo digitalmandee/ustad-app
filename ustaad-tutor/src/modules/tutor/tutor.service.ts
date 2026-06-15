@@ -1792,6 +1792,33 @@ export default class TutorService {
             `✅ Sent session status notification to parent ${data.parentId}`
           );
         }
+
+        // Send AWS SES email for critical session changes (holiday/cancellations)
+        try {
+          const parentUser = await User.findByPk(data.parentId);
+          if (parentUser && parentUser.email) {
+            const { sendEmailViaSES } = await import("../../services/aws-email.service");
+            if (data.status === TutorSessionStatus.TUTOR_HOLIDAY || data.status === TutorSessionStatus.CANCELLED_BY_TUTOR) {
+              const subject = data.status === TutorSessionStatus.TUTOR_HOLIDAY 
+                ? "📅 Tutor Holiday Notice: Ustaad" 
+                : "❌ Session Cancelled: Ustaad";
+              const html = `
+                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #FF9800;">Session Update</h2>
+                  <p>Dear ${parentUser.firstName || 'User'},</p>
+                  <p>This is to inform you that your tutor <strong>${tutor?.firstName || 'Tutor'} ${tutor?.lastName || ''}</strong> has marked a <strong>${data.status === TutorSessionStatus.TUTOR_HOLIDAY ? 'Holiday' : 'Cancellation'}</strong> for today's session with <strong>${sessionInfo.childName}</strong>.</p>
+                  <p>Please log in to the Ustaad platform for details or to reschedule.</p>
+                  <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                  <p style="font-size: 12px; color: #666;">Session ID: ${data.sessionId}</p>
+                </div>
+              `;
+              await sendEmailViaSES(parentUser.email, subject, html);
+              console.log(`📧 Session status email sent to parent: ${parentUser.email}`);
+            }
+          }
+        } catch (emailErr) {
+          console.error("❌ Failed to send session status email:", emailErr);
+        }
       }
     } catch (notificationError) {
       console.error(
@@ -1889,6 +1916,41 @@ export default class TutorService {
             console.log(
               `✅ Sent session update notification to parent ${data.parentId}`
             );
+          }
+
+          // Send AWS SES email for critical session changes (completed/holiday/cancellations)
+          try {
+            const parentUser = await User.findByPk(data.parentId);
+            if (parentUser && parentUser.email) {
+              const { sendEmailViaSES } = await import("../../services/aws-email.service");
+              if (data.status === TutorSessionStatus.COMPLETED || data.status === TutorSessionStatus.TUTOR_HOLIDAY || data.status === TutorSessionStatus.CANCELLED_BY_TUTOR) {
+                let subject = "";
+                let statusText = "";
+                if (data.status === TutorSessionStatus.COMPLETED) {
+                  subject = "👋 Session Completed: Ustaad";
+                  statusText = "marked as Completed";
+                } else if (data.status === TutorSessionStatus.TUTOR_HOLIDAY) {
+                  subject = "📅 Tutor Holiday Notice: Ustaad";
+                  statusText = "marked as a Holiday";
+                } else {
+                  subject = "❌ Session Cancelled: Ustaad";
+                  statusText = "Cancelled";
+                }
+                const html = `
+                  <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #4CAF50;">Session Update</h2>
+                    <p>Dear ${parentUser.firstName || 'User'},</p>
+                    <p>Your session with tutor <strong>${tutor?.firstName || 'Tutor'} ${tutor?.lastName || ''}</strong> for child <strong>${sessionInfo.childName}</strong> has been <strong>${statusText}</strong>.</p>
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                    <p style="font-size: 12px; color: #666;">Session ID: ${data.sessionId}</p>
+                  </div>
+                `;
+                await sendEmailViaSES(parentUser.email, subject, html);
+                console.log(`📧 Session edit email sent to parent: ${parentUser.email}`);
+              }
+            }
+          } catch (emailErr) {
+            console.error("❌ Failed to send session edit email:", emailErr);
           }
         }
       } catch (notificationError) {
@@ -2582,6 +2644,47 @@ export default class TutorService {
         }
       } catch (notificationError) {
         console.error("❌ Error sending notification:", notificationError);
+      }
+
+      // Send AWS SES contract status emails
+      try {
+        const parent = await User.findByPk(contract.parentId);
+        const tutor = await User.findByPk(tutorId);
+        const offer = await Offer.findByPk(contract.offerId);
+        const { sendEmailViaSES } = await import("../../services/aws-email.service");
+
+        if (status === ParentSubscriptionStatus.DISPUTE && parent && parent.email) {
+          const subject = "⚠️ Alert: Contract Disputed by Tutor";
+          const html = `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #FF9800;">Contract Disputed</h2>
+              <p>Dear ${parent.firstName || 'User'},</p>
+              <p>Tutor <strong>${tutor?.firstName || 'Tutor'} ${tutor?.lastName || ''}</strong> has disputed the contract${offer?.childName ? ` for child ${offer.childName}` : ''}.</p>
+              <p><strong>Reason</strong>: ${reason || 'No reason provided'}</p>
+              <p>This dispute has been forwarded to the administration for review.</p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+              <p style="font-size: 12px; color: #666;">Contract ID: ${contract.id}</p>
+            </div>
+          `;
+          await sendEmailViaSES(parent.email, subject, html);
+          console.log(`📧 Contract dispute email sent to parent: ${parent.email}`);
+        } else if (status === ParentSubscriptionStatus.PENDING_COMPLETION && parent && parent.email) {
+          const subject = "✅ Contract Completed by Tutor";
+          const html = `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #4CAF50;">Contract Completed</h2>
+              <p>Dear ${parent.firstName || 'User'},</p>
+              <p>Tutor <strong>${tutor?.firstName || 'Tutor'} ${tutor?.lastName || ''}</strong> has marked your contract${offer?.childName ? ` for child ${offer.childName}` : ''} as completed.</p>
+              <p>Please log in to submit your rating and complete the contract.</p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+              <p style="font-size: 12px; color: #666;">Contract ID: ${contract.id}</p>
+            </div>
+          `;
+          await sendEmailViaSES(parent.email, subject, html);
+          console.log(`📧 Contract completion email sent to parent: ${parent.email}`);
+        }
+      } catch (emailErr) {
+        console.error("❌ Failed to send contract status emails:", emailErr);
       }
 
       // 7. Return contract with completed sessions count

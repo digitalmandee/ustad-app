@@ -1177,6 +1177,29 @@ export default class AdminService {
             "/payment", // clickAction
             NotificationType.PAYMENT_STATUS_UPDATE
           );
+
+          // Send AWS SES payment update email
+          try {
+            if (user.email) {
+              const { sendEmailViaSES } = await import("../../services/aws-email.service");
+              const subject = status === TutorPaymentStatus.PAID 
+                ? "💰 Payment Processed: Ustaad" 
+                : "❌ Payment Request Rejected: Ustaad";
+              const html = `
+                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: ${status === TutorPaymentStatus.PAID ? '#4CAF50' : '#F44336'};">${status === TutorPaymentStatus.PAID ? 'Payment Approved' : 'Payment Rejected'}</h2>
+                  <p>Dear ${user.firstName || 'User'},</p>
+                  <p>${body}</p>
+                  <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                  <p style="font-size: 12px; color: #666;">Request ID: ${paymentRequest.id}</p>
+                </div>
+              `;
+              await sendEmailViaSES(user.email, subject, html);
+              console.log(`📧 Payment status email sent to: ${user.email}`);
+            }
+          } catch (emailErr) {
+            console.error("❌ Failed to send payment update email:", emailErr);
+          }
         }
       } catch (notificationError) {
         console.error("Error sending notification:", notificationError);
@@ -1457,6 +1480,28 @@ export default class AdminService {
         "/profile", // clickAction
         NotificationType.ONBOARDING_APPROVED
       );
+
+      // Send AWS SES onboarding approval email
+      try {
+        if (user.email) {
+          const { sendEmailViaSES } = await import("../../services/aws-email.service");
+          const subject = "🎉 Onboarding Approved - Welcome to Ustaad!";
+          const html = `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #4CAF50;">Congratulations!</h2>
+              <p>Dear ${user.firstName || 'User'},</p>
+              <p>Your onboarding profile has been officially reviewed and <strong>approved</strong> by the Ustaad administration!</p>
+              <p>You can now log in to your dashboard and start teaching or scheduling sessions.</p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+              <p style="font-size: 12px; color: #666;">Account ID: ${user.userId}</p>
+            </div>
+          `;
+          await sendEmailViaSES(user.email, subject, html);
+          console.log(`📧 Onboarding approval email sent to: ${user.email}`);
+        }
+      } catch (emailErr) {
+        console.error("❌ Failed to send onboarding approval email:", emailErr);
+      }
     } catch (error) {
       console.error(
         `❌ Error sending onboarding approval notification to user ${userId}:`,
@@ -1879,6 +1924,49 @@ export default class AdminService {
         "❌ Error sending dispute resolution notifications:",
         notificationError
       );
+    }
+
+    // Send AWS SES dispute resolved emails to both parent and tutor
+    try {
+      const { sendEmailViaSES } = await import("../../services/aws-email.service");
+      const parentUser = await User.findByPk(contract.parentId);
+      const tutorUser = await User.findByPk(contract.tutorId);
+
+      if (parentUser && parentUser.email) {
+        const subject = "⚖️ Dispute Resolved: Ustaad Contract";
+        const html = `
+          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #4CAF50;">Dispute Resolved</h2>
+            <p>Dear ${parentUser.firstName || 'User'},</p>
+            <p>Your contract dispute has been resolved by Ustaad administration.</p>
+            <p><strong>Final Status</strong>: ${finalStatus}</p>
+            ${adminNotes ? `<p><strong>Admin Notes</strong>: ${adminNotes}</p>` : ''}
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #666;">Contract ID: ${contractId}</p>
+          </div>
+        `;
+        await sendEmailViaSES(parentUser.email, subject, html);
+        console.log(`📧 Dispute resolved email sent to parent: ${parentUser.email}`);
+      }
+
+      if (tutorUser && tutorUser.email) {
+        const subject = "⚖️ Dispute Resolved: Ustaad Contract";
+        const html = `
+          <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #4CAF50;">Dispute Resolved</h2>
+            <p>Dear ${tutorUser.firstName || 'Tutor'},</p>
+            <p>Your contract dispute has been resolved by Ustaad administration.</p>
+            <p><strong>Final Status</strong>: ${finalStatus}</p>
+            ${adminNotes ? `<p><strong>Admin Notes</strong>: ${adminNotes}</p>` : ''}
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #666;">Contract ID: ${contractId}</p>
+          </div>
+        `;
+        await sendEmailViaSES(tutorUser.email, subject, html);
+        console.log(`📧 Dispute resolved email sent to tutor: ${tutorUser.email}`);
+      }
+    } catch (emailErr) {
+      console.error("❌ Failed to send dispute resolution emails:", emailErr);
     }
 
     return contract;

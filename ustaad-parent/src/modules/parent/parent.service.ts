@@ -848,6 +848,48 @@ export default class ParentService {
         );
       }
 
+      // Send AWS SES subscription cancellation emails
+      try {
+        const parentUser = await User.findByPk(userId);
+        const tutorUser = await User.findByPk(subscription.tutorId);
+        const offer = await Offer.findByPk(subscription.offerId);
+        const { sendEmailViaSES } = await import("../../services/aws-email.service");
+
+        if (parentUser && parentUser.email) {
+          const subject = "❌ Subscription Cancelled: Ustaad";
+          const html = `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #F44336;">Subscription Cancelled</h2>
+              <p>Dear ${parentUser.firstName || 'User'},</p>
+              <p>Your subscription for tutor <strong>${tutorUser?.firstName || 'Tutor'}</strong>${offer?.childName ? ` (for child ${offer.childName})` : ''} has been successfully cancelled.</p>
+              <p>No further charges will be made to your account. We hope to see you back soon!</p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+              <p style="font-size: 12px; color: #666;">Subscription ID: ${subscription.id}</p>
+            </div>
+          `;
+          await sendEmailViaSES(parentUser.email, subject, html);
+          console.log(`📧 Subscription cancelled confirmation email sent to parent: ${parentUser.email}`);
+        }
+
+        if (tutorUser && tutorUser.email) {
+          const subject = "❌ Alert: Tutor Subscription Cancelled";
+          const html = `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #F44336;">Subscription Cancelled</h2>
+              <p>Dear ${tutorUser.firstName || 'Tutor'},</p>
+              <p>Parent <strong>${parentUser?.firstName || 'Parent'} ${parentUser?.lastName || ''}</strong> has cancelled their subscription${offer?.childName ? ` for child ${offer.childName}` : ''}.</p>
+              <p>The contract sessions will stop. If you have any questions, please reach out to Ustaad support.</p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+              <p style="font-size: 12px; color: #666;">Subscription ID: ${subscription.id}</p>
+            </div>
+          `;
+          await sendEmailViaSES(tutorUser.email, subject, html);
+          console.log(`📧 Subscription cancelled notification email sent to tutor: ${tutorUser.email}`);
+        }
+      } catch (emailErr) {
+        console.error("❌ Failed to send subscription cancellation emails:", emailErr);
+      }
+
       return {
         message: "Subscription cancelled successfully",
         subscription: {
@@ -1237,6 +1279,47 @@ export default class ParentService {
         }
       } catch (notificationError) {
         console.error("❌ Error sending notification:", notificationError);
+      }
+
+      // Send AWS SES contract status emails
+      try {
+        const parent = await User.findByPk(parentId);
+        const tutor = await User.findByPk(contract.tutorId);
+        const offer = await Offer.findByPk(contract.offerId);
+        const { sendEmailViaSES } = await import("../../services/aws-email.service");
+
+        if (status === ParentSubscriptionStatus.DISPUTE && tutor && tutor.email) {
+          const subject = "⚠️ Alert: Contract Disputed";
+          const html = `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #FF9800;">Contract Disputed</h2>
+              <p>Dear ${tutor.firstName || 'Tutor'},</p>
+              <p>Parent <strong>${parent?.firstName || 'Parent'} ${parent?.lastName || ''}</strong> has disputed the contract${offer?.childName ? ` for child ${offer.childName}` : ''}.</p>
+              <p><strong>Reason</strong>: ${reason || 'No reason provided'}</p>
+              <p>This dispute has been forwarded to the administration for review.</p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+              <p style="font-size: 12px; color: #666;">Contract ID: ${contract.id}</p>
+            </div>
+          `;
+          await sendEmailViaSES(tutor.email, subject, html);
+          console.log(`📧 Contract dispute email sent to tutor: ${tutor.email}`);
+        } else if (status === ParentSubscriptionStatus.PENDING_COMPLETION && tutor && tutor.email) {
+          const subject = "✅ Contract Marked Completed";
+          const html = `
+            <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #4CAF50;">Contract Completed</h2>
+              <p>Dear ${tutor.firstName || 'Tutor'},</p>
+              <p>Parent <strong>${parent?.firstName || 'Parent'} ${parent?.lastName || ''}</strong> has marked your contract${offer?.childName ? ` for child ${offer.childName}` : ''} as completed.</p>
+              <p>Thank you for tutoring with Ustaad!</p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+              <p style="font-size: 12px; color: #666;">Contract ID: ${contract.id}</p>
+            </div>
+          `;
+          await sendEmailViaSES(tutor.email, subject, html);
+          console.log(`📧 Contract completion email sent to tutor: ${tutor.email}`);
+        }
+      } catch (emailErr) {
+        console.error("❌ Failed to send contract status emails:", emailErr);
       }
 
       // 7. Return contract with completed sessions count
@@ -1990,6 +2073,29 @@ export default class ParentService {
           );
         }
 
+        // Send AWS SES confirmation email
+        try {
+          const parentUser = await User.findByPk(subscription.parentId);
+          if (parentUser && parentUser.email) {
+            const { sendEmailViaSES } = await import("../../services/aws-email.service");
+            const subject = "💳 Payment Confirmed: Ustaad Subscription Active";
+            const html = `
+              <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #4CAF50;">Payment Confirmation</h2>
+                <p>Dear ${parentUser.firstName || 'User'},</p>
+                <p>Your subscription payment of <strong>PKR ${subscription.amount}</strong> was successful!</p>
+                <p>Your subscription is now active. You can start scheduling lessons with your tutor.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                <p style="font-size: 12px; color: #666;">Transaction ID: ${data.transactionId || 'N/A'}</p>
+              </div>
+            `;
+            await sendEmailViaSES(parentUser.email, subject, html);
+            console.log(`📧 Payment confirmation email sent to parent: ${parentUser.email}`);
+          }
+        } catch (emailErr) {
+          console.error("❌ Failed to send payment confirmation email:", emailErr);
+        }
+
         // Create TutorTransaction and TutorSessions and update Offer status to ACCEPTED
         console.log(
           `🔍 Finding Offer ID=${subscription.offerId} to mark as ACCEPTED`
@@ -2136,6 +2242,30 @@ export default class ParentService {
         } catch (e) {
           console.error("❌ Error sending payment failed notification:", e);
         }
+
+        // Send AWS SES payment failure email
+        try {
+          const parentUser = await User.findByPk(subscription.parentId);
+          if (parentUser && parentUser.email) {
+            const { sendEmailViaSES } = await import("../../services/aws-email.service");
+            const subject = "❌ Payment Failed: Ustaad Subscription Payment";
+            const html = `
+              <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #F44336;">Payment Failed</h2>
+                <p>Dear ${parentUser.firstName || 'User'},</p>
+                <p>We attempted to process your subscription payment of <strong>PKR ${subscription.amount}</strong>, but the transaction was unsuccessful.</p>
+                <p>Reason: ${data.errMsg || 'Unknown payment gateway error'}</p>
+                <p>Please log in and try again to activate your subscription.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                <p style="font-size: 12px; color: #666;">Basket ID: ${data.basketId}</p>
+              </div>
+            `;
+            await sendEmailViaSES(parentUser.email, subject, html);
+            console.log(`📧 Payment failure email sent to parent: ${parentUser.email}`);
+          }
+        } catch (emailErr) {
+          console.error("❌ Failed to send payment failure email:", emailErr);
+        }
       }
     } catch (error) {
       console.error("❌ Error in handleInitialPaymentIPN:", error);
@@ -2229,6 +2359,29 @@ export default class ParentService {
           );
         } catch (e) {
           console.error("❌ Error sending recurring success notification:", e);
+        }
+
+        // Send AWS SES recurring payment success email
+        try {
+          const parentUser = await User.findByPk(subscription.parentId);
+          if (parentUser && parentUser.email) {
+            const { sendEmailViaSES } = await import("../../services/aws-email.service");
+            const subject = "🔄 Subscription Renewed: Recurring Payment Successful";
+            const html = `
+              <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #4CAF50;">Subscription Renewed</h2>
+                <p>Dear ${parentUser.firstName || 'User'},</p>
+                <p>Your recurring subscription payment of <strong>PKR ${subscription.amount}</strong> was successful!</p>
+                <p>Your subscription is active and has been renewed. The next billing date is ${nextBillingDate.toLocaleDateString()}.</p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                <p style="font-size: 12px; color: #666;">Transaction ID: ${data.transactionId || 'N/A'}</p>
+              </div>
+            `;
+            await sendEmailViaSES(parentUser.email, subject, html);
+            console.log(`📧 Recurring payment success email sent to parent: ${parentUser.email}`);
+          }
+        } catch (emailErr) {
+          console.error("❌ Failed to send recurring payment success email:", emailErr);
         }
 
         // Create TutorTransaction
@@ -2357,6 +2510,29 @@ export default class ParentService {
           } catch (e) {
             console.error("❌ Error sending suspension notification:", e);
           }
+
+          // Send AWS SES subscription suspended email
+          try {
+            const parentUser = await User.findByPk(subscription.parentId);
+            if (parentUser && parentUser.email) {
+              const { sendEmailViaSES } = await import("../../services/aws-email.service");
+              const subject = "⚠️ Alert: Ustaad Subscription Suspended";
+              const html = `
+                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #FF9800;">Subscription Suspended</h2>
+                  <p>Dear ${parentUser.firstName || 'User'},</p>
+                  <p>Your subscription has been suspended after multiple failed recurring payment attempts.</p>
+                  <p>Please log in to your account and update your payment details to restore access.</p>
+                  <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                  <p style="font-size: 12px; color: #666;">Subscription ID: ${subscription.id}</p>
+                </div>
+              `;
+              await sendEmailViaSES(parentUser.email, subject, html);
+              console.log(`📧 Subscription suspended email sent to parent: ${parentUser.email}`);
+            }
+          } catch (emailErr) {
+            console.error("❌ Failed to send subscription suspended email:", emailErr);
+          }
         } else {
           console.log(
             `✍️ Incrementing failureCount to ${failureCount} for subscription ID=${subscription.id}`
@@ -2390,6 +2566,29 @@ export default class ParentService {
               "❌ Error sending recurring failure notification:",
               e
             );
+          }
+
+          // Send AWS SES recurring payment failure email
+          try {
+            const parentUser = await User.findByPk(subscription.parentId);
+            if (parentUser && parentUser.email) {
+              const { sendEmailViaSES } = await import("../../services/aws-email.service");
+              const subject = "⚠️ Payment Failed: Ustaad Recurring Subscription";
+              const html = `
+                <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #FF9800;">Recurring Payment Failed</h2>
+                  <p>Dear ${parentUser.firstName || 'User'},</p>
+                  <p>We were unable to process your recurring subscription payment of <strong>PKR ${subscription.amount}</strong>.</p>
+                  <p>Attempt ${failureCount} of 3. We will try again. To avoid suspension, please ensure your card or payment account has sufficient funds.</p>
+                  <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                  <p style="font-size: 12px; color: #666;">Subscription ID: ${subscription.id}</p>
+                </div>
+              `;
+              await sendEmailViaSES(parentUser.email, subject, html);
+              console.log(`📧 Recurring payment failure email sent to parent: ${parentUser.email}`);
+            }
+          } catch (emailErr) {
+            console.error("❌ Failed to send recurring payment failure email:", emailErr);
           }
         }
       }
