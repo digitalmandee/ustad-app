@@ -310,6 +310,30 @@ export default class ChatService {
               `/chat`,
               notificationType
             );
+
+            // Send AWS SES email notification for new tutoring offers
+            if (messageData.type === MessageType.OFFER) {
+              try {
+                const { sendEmailViaSES } = await import('../../services/aws-email.service');
+                if (receiverUser && receiverUser.email) {
+                  const subject = "📄 New Tutoring Offer Received: Ustaad";
+                  const html = `
+                    <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 5px; max-width: 600px; margin: 0 auto;">
+                      <h2 style="color: #4CAF50;">New Offer Received</h2>
+                      <p>Dear ${receiverUser.firstName || 'User'},</p>
+                      <p>Tutor <strong>${sender?.firstName || 'Tutor'} ${sender?.lastName || ''}</strong> has sent you a new tutoring offer.</p>
+                      <p>Please log in to the Ustaad app to view the offer details, including scheduling and pricing, and to accept or decline it.</p>
+                      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+                      <p style="font-size: 12px; color: #666;">This is an automated notification from Ustaad.</p>
+                    </div>
+                  `;
+                  await sendEmailViaSES(receiverUser.email, subject, html);
+                  console.log(`📧 Offer email notification sent to parent: ${receiverUser.email}`);
+                }
+              } catch (emailErr) {
+                console.error("❌ Failed to send offer email notification:", emailErr);
+              }
+            }
           }
         }
       } catch (notificationError) {
