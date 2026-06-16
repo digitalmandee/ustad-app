@@ -1,8 +1,8 @@
-import * as admin from "firebase-admin";
+import { App, initializeApp, cert } from "firebase-admin/app";
 
-let firebaseApp: admin.app.App | null = null;
+let firebaseApp: App | null = null;
 
-export function initializeFirebase(): admin.app.App {
+export function initializeFirebase(): App {
   if (firebaseApp) {
     return firebaseApp;
   }
@@ -24,8 +24,8 @@ export function initializeFirebase(): admin.app.App {
       console.log("✅ Using Firebase config from environment variables");
     }
 
-    firebaseApp = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
+    firebaseApp = initializeApp({
+      credential: cert(serviceAccount),
       projectId: serviceAccount.project_id || serviceAccount.projectId || process.env.FIREBASE_PROJECT_ID,
     });
 
@@ -40,7 +40,7 @@ export function initializeFirebase(): admin.app.App {
   }
 }
 
-export function getFirebaseApp(): admin.app.App {
+export function getFirebaseApp(): App {
   if (!firebaseApp) {
     return initializeFirebase();
   }

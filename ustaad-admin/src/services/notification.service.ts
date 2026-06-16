@@ -1,5 +1,4 @@
-import * as admin from "firebase-admin";
-import { Message } from "firebase-admin/messaging";
+import { Message, getMessaging } from "firebase-admin/messaging";
 import { getFirebaseApp } from "./firebase-con";
 import { Notification, NotificationType } from "@ustaad/shared";
 
@@ -83,7 +82,7 @@ export async function sendNotificationToUser(
       sentAt: new Date(),
     });
 
-    const response = await firebaseApp.messaging().send(notificationMessage);
+    const response = await getMessaging(firebaseApp).send(notificationMessage);
 
     console.log("✅ Notification sent successfully:", response);
 
