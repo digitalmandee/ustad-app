@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import { Message } from "firebase-admin/messaging";
 import { getFirebaseApp } from "./firebase-con";
 import { Notification, NotificationType } from "@ustaad/shared";
 
@@ -41,7 +42,7 @@ export async function sendNotificationToUser(
       });
     }
 
-    const notificationMessage: admin.messaging.Message = {
+    const notificationMessage: Message = {
       token: token,
       notification: {
         title: headline,
