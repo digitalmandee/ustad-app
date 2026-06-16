@@ -84,8 +84,8 @@ export class OtpServices {
         throw new NotAuthorizedError("User phone number not registered");
       }
 
-      const otpCode = "1111";
-      // const otpCode = generateOtp(4);
+      // const otpCode = "1111";
+      const otpCode = generateOtp(4);
       const expiryDate = addMinutes(new Date(), 10);
 
       const otpEntry = await Otp.create({
@@ -102,7 +102,7 @@ export class OtpServices {
 
       // Send OTP based on type
       if (type === "email") {
-        await this.sendEmailByTemplate(userEmail, 'otp', {
+        await this.sendEmailByTemplate(userEmail, "otp", {
           otp: otpCode,
         });
       } else if (type === "phone") {
